@@ -11,33 +11,27 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { GamePlay } from "@/components/game-play";
 import { useGameStore } from "@/lib/store";
 
-interface PreGameStartProps {
-  onBack: () => void;
-}
-
-export function PreGameStart({ onBack }: PreGameStartProps) {
-  const [gameStarted, setGameStarted] = useState(false);
-  const { players, setActivePlayer } = useGameStore();
+export function PreGameStart() {
+  const { players, setActivePlayer, setGamePhase, startGame } = useGameStore();
   const [startingPlayerId, setStartingPlayerId] = useState<number>(
-    players[0].id,
+    players[0]?.id || 1,
   );
 
   const handleStartGame = () => {
     setActivePlayer(startingPlayerId);
-    setGameStarted(true);
+    startGame();
   };
 
-  if (gameStarted) {
-    return <GamePlay />;
-  }
+  const handleBack = () => {
+    setGamePhase("setup");
+  };
 
   // If there's only one player, skip the player selection screen
   if (players.length === 1) {
     return (
-      <Card className="w-full">
+      <Card className="w-full lg:w-xl">
         <CardHeader>
           <CardTitle className="text-center">Ready to Play</CardTitle>
         </CardHeader>
@@ -47,7 +41,7 @@ export function PreGameStart({ onBack }: PreGameStartProps) {
           </p>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={onBack}>
+          <Button variant="outline" onClick={handleBack}>
             Back
           </Button>
           <Button onClick={handleStartGame}>Start Game</Button>
@@ -57,7 +51,7 @@ export function PreGameStart({ onBack }: PreGameStartProps) {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full lg:w-xl">
       <CardHeader>
         <CardTitle className="text-center">Who starts?</CardTitle>
       </CardHeader>
@@ -84,7 +78,7 @@ export function PreGameStart({ onBack }: PreGameStartProps) {
         </RadioGroup>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={handleBack}>
           Back
         </Button>
         <Button onClick={handleStartGame}>Start Game</Button>

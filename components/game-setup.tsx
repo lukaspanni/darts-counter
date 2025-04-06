@@ -23,7 +23,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import { PreGameStart } from "@/components/pre-game-start";
 import { useGameStore } from "@/lib/store";
 
 const gameSetupSchema = z.object({
@@ -38,8 +37,7 @@ const gameSetupSchema = z.object({
 type GameSetupFormValues = z.infer<typeof gameSetupSchema>;
 
 export function GameSetup() {
-  const [showPreGame, setShowPreGame] = useState(false);
-  const { setGameSettings, setPlayers } = useGameStore();
+  const { setGameSettings, setPlayers, setGamePhase } = useGameStore();
 
   const form = useForm<GameSetupFormValues>({
     resolver: zodResolver(
@@ -86,16 +84,11 @@ export function GameSetup() {
     }
 
     setPlayers(players);
-
-    setShowPreGame(true);
+    setGamePhase("preGame");
   };
 
-  if (showPreGame) {
-    return <PreGameStart onBack={() => setShowPreGame(false)} />;
-  }
-
   return (
-    <Card className="w-full">
+    <Card className="w-full lg:w-xl">
       <CardHeader>
         <CardTitle className="text-center">New Game Setup</CardTitle>
       </CardHeader>
