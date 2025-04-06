@@ -1,6 +1,3 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { Player, GameHistory } from "@/lib/types";
+import { StartNewGameButton } from "./start-new-game-button";
 
 interface GameOverProps {
   winner: Player;
@@ -94,9 +92,7 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={onNewGame} className="w-full">
-            New Game
-          </Button>
+          <StartNewGameButton onNewGame={onNewGame} />
         </CardFooter>
       </Card>
     </div>
