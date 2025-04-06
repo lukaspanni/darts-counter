@@ -4,9 +4,8 @@ import { GameSetup } from "@/components/game-setup";
 import { PreGameStart } from "@/components/pre-game-start";
 import { GamePlay } from "@/components/game-play";
 import { GameOver } from "@/components/game-over";
-import { useLocalStorage } from "@/hooks/use-local-storage";
-import { gameHistorySchema, type GameHistory } from "@/lib/schemas";
-import { useEffect, useState, useMemo } from "react"; // Import useMemo
+import { useGameHistory } from "@/lib/hooks/use-game-history";
+import { useEffect, useState, useMemo } from "react";
 import { useGameStore } from "@/lib/store-provider";
 
 export function GameController() {
@@ -19,12 +18,7 @@ export function GameController() {
     resetGame,
   } = useGameStore((state) => state);
 
-  const [gameHistory, setGameHistory] = useLocalStorage<GameHistory[]>(
-    "dartsGameHistory",
-    [],
-    gameHistorySchema,
-  );
-
+  const { gameHistory, addGame } = useGameHistory();
   const [isInitialRender, setIsInitialRender] = useState(true);
   const stablePlayers = useMemo(() => players, [players]);
 
@@ -54,10 +48,19 @@ export function GameController() {
         winner: winner.name,
         gameMode: `${gameSettings.startingScore} ${gameSettings.outMode} out`,
         roundsPlayed: currentRound,
-      } satisfies GameHistory;
-      setGameHistory((prevHistory) => [...prevHistory, newGameHistory]);
+      };
+      addGame(newGameHistory);
     }
-  }, [gamePhase, gameWinner, players, setGameHistory, gameHistory, winner]);
+  }, [
+    gamePhase,
+    gameWinner,
+    players,
+    winner,
+    gameSettings,
+    currentRound,
+    addGame,
+    isInitialRender,
+  ]);
 
   // Render the appropriate component based on game phase
   switch (gamePhase) {

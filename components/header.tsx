@@ -9,12 +9,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Sun, Moon } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 export const Header = () => {
   const { setTheme } = useTheme();
   return (
     <nav className="flex w-full items-center justify-between px-4 py-2">
-      <span>DartsScorer</span>
+      <div className="flex items-center">
+        <Link href="/" className="mr-4 inline">
+          <Image
+            src="/icon.png"
+            alt="Logo"
+            width={300}
+            height={300}
+            className="h-8 w-8"
+          />
+        </Link>
+        <Link href="/stats" className="font-bold">
+          Stats
+        </Link>
+      </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon">
