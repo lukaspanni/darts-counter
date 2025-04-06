@@ -52,7 +52,7 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
     currentAverage > winnerStats.averageScore && winnerStats.gamesPlayed > 0;
 
   return (
-    <div className="relative">
+    <div>
       <Card className="mx-auto w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center text-2xl">Game Over!</CardTitle>

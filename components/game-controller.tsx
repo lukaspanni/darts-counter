@@ -6,7 +6,7 @@ import { GamePlay } from "@/components/game-play";
 import { GameOver } from "@/components/game-over";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { gameHistorySchema, type GameHistory } from "@/lib/schemas";
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react"; // Import useMemo
 import { useGameStore } from "@/lib/store-provider";
 
 export function GameController() {
@@ -25,12 +25,22 @@ export function GameController() {
     gameHistorySchema,
   );
 
-  useEffect(() => {
-    if (gamePhase === "gameOver" && gameWinner !== null) {
-      const winner = players.find((p) => p.id === gameWinner);
-      if (!winner) return;
+  const [isInitialRender, setIsInitialRender] = useState(true);
+  const stablePlayers = useMemo(() => players, [players]);
 
-      const newGameHistory: GameHistory = {
+  const winner = useMemo(() => {
+    return stablePlayers.find((p) => p.id === gameWinner) || null;
+  }, [gameWinner, stablePlayers]);
+
+  useEffect(() => {
+    if (
+      isInitialRender &&
+      gamePhase === "gameOver" &&
+      gameWinner !== null &&
+      winner
+    ) {
+      setIsInitialRender(false);
+      const newGameHistory = {
         id: Date.now(),
         date: new Date().toISOString(),
         players: players.map((p) => ({
@@ -44,11 +54,10 @@ export function GameController() {
         winner: winner.name,
         gameMode: `${gameSettings.startingScore} ${gameSettings.outMode} out`,
         roundsPlayed: currentRound,
-      };
-
-      setGameHistory([...gameHistory, newGameHistory]);
+      } satisfies GameHistory;
+      setGameHistory((prevHistory) => [...prevHistory, newGameHistory]);
     }
-  }, [gamePhase, gameWinner, players, setGameHistory, gameHistory]);
+  }, [gamePhase, gameWinner, players, setGameHistory, gameHistory, winner]);
 
   // Render the appropriate component based on game phase
   switch (gamePhase) {
@@ -59,17 +68,14 @@ export function GameController() {
     case "playing":
       return <GamePlay />;
     case "gameOver":
-      if (gameWinner !== null) {
-        const winner = players.find((p) => p.id === gameWinner);
-        if (winner) {
-          return (
-            <GameOver
-              winner={winner}
-              gameHistory={gameHistory}
-              onNewGame={resetGame}
-            />
-          );
-        }
+      if (winner) {
+        return (
+          <GameOver
+            winner={winner}
+            gameHistory={gameHistory}
+            onNewGame={resetGame}
+          />
+        );
       }
       // Fallback in case of error
       return <GameSetup />;

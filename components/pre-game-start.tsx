@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,27 +30,11 @@ export function PreGameStart() {
     setGamePhase("setup");
   };
 
-  // If there's only one player, skip the player selection screen
-  if (players.length === 1) {
-    return (
-      <Card className="w-full lg:w-xl">
-        <CardHeader>
-          <CardTitle className="text-center">Ready to Play</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-center">
-            Single player mode: {players[0].name}
-          </p>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleBack}>
-            Back
-          </Button>
-          <Button onClick={handleStartGame}>Start Game</Button>
-        </CardFooter>
-      </Card>
-    );
-  }
+  useEffect(() => {
+    if (players.length === 1) {
+      handleStartGame();
+    }
+  }, [handleStartGame]);
 
   return (
     <Card className="w-full lg:w-xl">

@@ -208,7 +208,7 @@ export function GamePlay() {
   };
 
   return (
-    <div className="flex h-full flex-col lg:w-xl">
+    <div className="flex h-full flex-col lg:mx-auto lg:w-xl">
       {/* 180 Celebration */}
       {show180 && (
         <>
