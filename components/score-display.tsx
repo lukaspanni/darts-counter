@@ -26,7 +26,7 @@ export function ScoreDisplay({
   // Calculate average score - fixed formula with 2 decimal places
   const calculateAverage = (player: Player) => {
     if (player.dartsThrown === 0) return 0;
-    return (player.totalScore / player.dartsThrown).toFixed(2);
+    return ((player.totalScore / player.dartsThrown) * 3).toFixed(2);
   };
 
   // Determine if we should show checkout suggestion

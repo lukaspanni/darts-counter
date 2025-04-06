@@ -1,6 +1,5 @@
 "use client";
 
-import { useGameStore } from "@/lib/store";
 import { GameSetup } from "@/components/game-setup";
 import { PreGameStart } from "@/components/pre-game-start";
 import { GamePlay } from "@/components/game-play";
@@ -8,9 +7,17 @@ import { GameOver } from "@/components/game-over";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { gameHistorySchema, type GameHistory } from "@/lib/schemas";
 import { useEffect } from "react";
+import { useGameStore } from "@/lib/store-provider";
 
 export function GameController() {
-  const { gamePhase, players, gameWinner, resetGame } = useGameStore();
+  const {
+    gameSettings,
+    currentRound,
+    gamePhase,
+    players,
+    gameWinner,
+    resetGame,
+  } = useGameStore((state) => state);
 
   const [gameHistory, setGameHistory] = useLocalStorage<GameHistory[]>(
     "dartsGameHistory",
@@ -18,13 +25,10 @@ export function GameController() {
     gameHistorySchema,
   );
 
-  // Record game in history when a game completes
   useEffect(() => {
     if (gamePhase === "gameOver" && gameWinner !== null) {
       const winner = players.find((p) => p.id === gameWinner);
       if (!winner) return;
-
-      const { gameSettings, currentRound } = useGameStore.getState();
 
       const newGameHistory: GameHistory = {
         id: Date.now(),

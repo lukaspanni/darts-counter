@@ -11,7 +11,7 @@ export interface GameSettings {
   startingScore: number;
   outMode: "single" | "double";
   roundsToWin: number;
-  checkoutAssist: boolean; // Added checkout assist setting
+  checkoutAssist: boolean;
 }
 
 export interface GameHistory {

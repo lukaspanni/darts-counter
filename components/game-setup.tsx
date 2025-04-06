@@ -1,19 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -22,8 +10,20 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useGameStore } from "@/lib/store";
+import { useGameStore } from "@/lib/store-provider";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const gameSetupSchema = z.object({
   startingScore: z.enum(["501", "301"]),
@@ -37,7 +37,9 @@ const gameSetupSchema = z.object({
 type GameSetupFormValues = z.infer<typeof gameSetupSchema>;
 
 export function GameSetup() {
-  const { setGameSettings, setPlayers, setGamePhase } = useGameStore();
+  const { setGameSettings, setPlayers, setGamePhase } = useGameStore(
+    (state) => state,
+  );
 
   const form = useForm<GameSetupFormValues>({
     resolver: zodResolver(

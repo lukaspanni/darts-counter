@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ScoreDisplay } from "@/components/score-display";
+import { ScoreKeypad } from "@/components/score-keypad";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,12 +12,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useGameStore } from "@/lib/store";
-import { ScoreDisplay } from "@/components/score-display";
-import { ScoreKeypad } from "@/components/score-keypad";
 import { findCheckout } from "@/lib/checkout";
+import { useGameStore } from "@/lib/store-provider";
 import confetti from "canvas-confetti";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useEffect, useState } from "react";
 
 export function GamePlay() {
   const {
@@ -33,7 +33,7 @@ export function GamePlay() {
     resetGame,
     roundWinner,
     setRoundWinner,
-  } = useGameStore();
+  } = useGameStore((state) => state);
 
   const [showRoundWonModal, setShowRoundWonModal] = useState(false);
   const [show180, setShow180] = useState(false);
@@ -195,6 +195,7 @@ export function GamePlay() {
 
     const lastScore = currentRoundScores[currentRoundScores.length - 1];
     updatePlayerScore(activePlayerId, activePlayer.score + lastScore);
+    // Update dart thrown count and current round state
     addDartThrown(activePlayerId, -1);
     setDartsInRound((prev) => prev - 1);
     setCurrentScore((prev) => prev - lastScore);

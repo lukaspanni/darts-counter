@@ -1,12 +1,12 @@
 "use client";
+import { createStore } from "zustand/vanilla";
 
-import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type { Player, GameSettings } from "@/lib/types";
 
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
-interface GameState {
+export type GameStoreState = {
   gamePhase: GamePhase;
   players: Player[];
   activePlayerId: number;
@@ -15,8 +15,9 @@ interface GameState {
   currentRoundScores: number[];
   roundWinner: number | null;
   gameWinner: number | null;
+};
 
-  // Actions
+export type GameStoreActions = {
   setPlayers: (players: Player[]) => void;
   setGameSettings: (settings: GameSettings) => void;
   setActivePlayer: (playerId: number) => void;
@@ -37,7 +38,9 @@ interface GameState {
   startNextRound: () => void;
   setRoundWinner: (playerId: number | null) => void;
   setGameWinner: (playerId: number | null) => void;
-}
+};
+
+export type GameStore = GameStoreState & GameStoreActions;
 
 const initialGameSettings: GameSettings = {
   startingScore: 501,
@@ -46,87 +49,35 @@ const initialGameSettings: GameSettings = {
   checkoutAssist: false,
 };
 
-export const useGameStore = create<GameState>()(
-  immer((set) => ({
-    gamePhase: "setup",
-    players: [],
-    activePlayerId: 1,
-    gameSettings: initialGameSettings,
-    currentRound: 1,
-    currentRoundScores: [],
-    roundWinner: null,
-    gameWinner: null,
+const initialGameStoreState: GameStoreState = {
+  gamePhase: "setup",
+  players: [],
+  activePlayerId: 1,
+  gameSettings: initialGameSettings,
+  currentRound: 1,
+  currentRoundScores: [],
+  roundWinner: null,
+  gameWinner: null,
+};
 
-    setPlayers: (players) => set({ players }),
+export const createGameStore = (
+  initState: GameStoreState = initialGameStoreState,
+) =>
+  createStore<GameStore>()(
+    immer((set) => ({
+      ...initState,
 
-    setGameSettings: (settings) => set({ gameSettings: settings }),
+      setPlayers: (players) => set({ players }),
 
-    setActivePlayer: (playerId) => set({ activePlayerId: playerId }),
+      setGameSettings: (settings) => set({ gameSettings: settings }),
 
-    switchPlayer: () =>
-      set((state) => {
-        // If there's only one player, don't switch
-        if (state.players.length <= 1) return;
+      setActivePlayer: (playerId) => set({ activePlayerId: playerId }),
 
-        const currentActiveId = state.activePlayerId;
-        const otherPlayer = state.players.find((p) => p.id !== currentActiveId);
-        if (otherPlayer) {
-          state.activePlayerId = otherPlayer.id;
-        }
-      }),
+      switchPlayer: () =>
+        set((state) => {
+          // If there's only one player, don't switch
+          if (state.players.length <= 1) return;
 
-    updatePlayerScore: (playerId, newScore) =>
-      set((state) => {
-        const playerIndex = state.players.findIndex((p) => p.id === playerId);
-        if (playerIndex !== -1) {
-          const oldScore = state.players[playerIndex].score;
-          const scoreDifference = oldScore - newScore;
-
-          state.players[playerIndex].score = newScore;
-
-          // Add to total score if this is a valid score (not a reset)
-          if (scoreDifference > 0) {
-            state.players[playerIndex].totalScore += scoreDifference;
-          }
-        }
-      }),
-
-    incrementRoundsWon: (playerId) =>
-      set((state) => {
-        const playerIndex = state.players.findIndex((p) => p.id === playerId);
-        if (playerIndex !== -1) {
-          state.players[playerIndex].roundsWon += 1;
-        }
-      }),
-
-    incrementRound: () =>
-      set((state) => {
-        state.currentRound += 1;
-      }),
-
-    resetCurrentRoundScores: () => set({ currentRoundScores: [] }),
-
-    updateCurrentRoundScores: (scores) => set({ currentRoundScores: scores }),
-
-    addDartThrown: (playerId, count = 1) =>
-      set((state) => {
-        const playerIndex = state.players.findIndex((p) => p.id === playerId);
-        if (playerIndex !== -1) {
-          state.players[playerIndex].dartsThrown += count;
-        }
-      }),
-
-    setGamePhase: (phase) => set({ gamePhase: phase }),
-
-    startGame: () =>
-      set((state) => {
-        state.gamePhase = "playing";
-      }),
-
-    finishRound: () =>
-      set((state) => {
-        // If there's only one player, don't switch
-        if (state.players.length > 1) {
           const currentActiveId = state.activePlayerId;
           const otherPlayer = state.players.find(
             (p) => p.id !== currentActiveId,
@@ -134,59 +85,115 @@ export const useGameStore = create<GameState>()(
           if (otherPlayer) {
             state.activePlayerId = otherPlayer.id;
           }
-        }
+        }),
 
-        state.currentRoundScores = [];
-      }),
+      updatePlayerScore: (playerId, newScore) =>
+        set((state) => {
+          const playerIndex = state.players.findIndex((p) => p.id === playerId);
+          if (playerIndex !== -1) {
+            const oldScore = state.players[playerIndex].score;
+            const scoreDifference = oldScore - newScore;
+            state.players[playerIndex].score = newScore;
+            state.players[playerIndex].totalScore += scoreDifference;
+          }
+        }),
 
-    handleRoundWin: (playerId) =>
-      set((state) => {
-        // Increment rounds won
-        const playerIndex = state.players.findIndex((p) => p.id === playerId);
-        if (playerIndex !== -1) {
-          state.players[playerIndex].roundsWon += 1;
-        }
+      incrementRoundsWon: (playerId) =>
+        set((state) => {
+          const playerIndex = state.players.findIndex((p) => p.id === playerId);
+          if (playerIndex !== -1) {
+            state.players[playerIndex].roundsWon += 1;
+          }
+        }),
 
-        // Set the round winner
-        state.roundWinner = playerId;
+      incrementRound: () =>
+        set((state) => {
+          state.currentRound += 1;
+        }),
 
-        // Check if game is over
-        const player = state.players.find((p) => p.id === playerId);
-        if (player && player.roundsWon >= state.gameSettings.roundsToWin) {
-          state.gameWinner = playerId;
-          state.gamePhase = "gameOver";
-        }
-      }),
+      resetCurrentRoundScores: () => set({ currentRoundScores: [] }),
 
-    startNextRound: () =>
-      set((state) => {
-        // Reset players' scores to starting score
-        state.players.forEach((player, index) => {
-          state.players[index].score = state.gameSettings.startingScore;
-        });
+      updateCurrentRoundScores: (scores) => set({ currentRoundScores: scores }),
 
-        // Increment round
-        state.currentRound += 1;
+      addDartThrown: (playerId, count = 1) =>
+        set((state) => {
+          const playerIndex = state.players.findIndex((p) => p.id === playerId);
+          if (playerIndex !== -1) {
+            state.players[playerIndex].dartsThrown += count;
+          }
+        }),
 
-        // Reset current round data
-        state.currentRoundScores = [];
-        state.roundWinner = null;
-      }),
+      setGamePhase: (phase) => set({ gamePhase: phase }),
 
-    setRoundWinner: (playerId) => set({ roundWinner: playerId }),
+      startGame: () =>
+        set((state) => {
+          state.gamePhase = "playing";
+        }),
 
-    setGameWinner: (playerId) => set({ gameWinner: playerId }),
+      finishRound: () =>
+        set((state) => {
+          // If there's only one player, don't switch
+          if (state.players.length > 1) {
+            const currentActiveId = state.activePlayerId;
+            const otherPlayer = state.players.find(
+              (p) => p.id !== currentActiveId,
+            );
+            if (otherPlayer) {
+              state.activePlayerId = otherPlayer.id;
+            }
+          }
 
-    resetGame: () =>
-      set({
-        gamePhase: "setup",
-        players: [],
-        activePlayerId: 1,
-        gameSettings: initialGameSettings,
-        currentRound: 1,
-        currentRoundScores: [],
-        roundWinner: null,
-        gameWinner: null,
-      }),
-  })),
-);
+          state.currentRoundScores = [];
+        }),
+
+      handleRoundWin: (playerId) =>
+        set((state) => {
+          // Increment rounds won
+          const playerIndex = state.players.findIndex((p) => p.id === playerId);
+          if (playerIndex !== -1) {
+            state.players[playerIndex].roundsWon += 1;
+          }
+
+          // Set the round winner
+          state.roundWinner = playerId;
+
+          // Check if game is over
+          const player = state.players.find((p) => p.id === playerId);
+          if (player && player.roundsWon >= state.gameSettings.roundsToWin) {
+            state.gameWinner = playerId;
+            state.gamePhase = "gameOver";
+          }
+        }),
+
+      startNextRound: () =>
+        set((state) => {
+          // Reset players' scores to starting score
+          state.players.forEach((player, index) => {
+            state.players[index].score = state.gameSettings.startingScore;
+          });
+
+          // Increment round
+          state.currentRound += 1;
+
+          // Reset current round data
+          state.currentRoundScores = [];
+          state.roundWinner = null;
+        }),
+
+      setRoundWinner: (playerId) => set({ roundWinner: playerId }),
+
+      setGameWinner: (playerId) => set({ gameWinner: playerId }),
+
+      resetGame: () =>
+        set({
+          gamePhase: "setup",
+          players: [],
+          activePlayerId: 1,
+          gameSettings: initialGameSettings,
+          currentRound: 1,
+          currentRoundScores: [],
+          roundWinner: null,
+          gameWinner: null,
+        }),
+    })),
+  );
