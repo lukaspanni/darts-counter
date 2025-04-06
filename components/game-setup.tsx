@@ -21,7 +21,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useGameStore } from "@/lib/store-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -90,7 +89,7 @@ export function GameSetup() {
   };
 
   return (
-    <Card className="w-full lg:w-xl">
+    <Card className="w-full lg:mx-auto lg:w-xl">
       <CardHeader>
         <CardTitle className="text-center">New Game Setup</CardTitle>
       </CardHeader>
