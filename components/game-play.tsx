@@ -13,57 +13,53 @@ import {
 import { useGameStore } from "@/lib/store";
 import { ScoreDisplay } from "@/components/score-display";
 import { ScoreKeypad } from "@/components/score-keypad";
-import { GameOver } from "@/components/game-over";
-import { useLocalStorage } from "@/hooks/use-local-storage";
-import { gameHistorySchema, type GameHistory } from "@/lib/schemas";
 import { findCheckout } from "@/lib/checkout";
 import confetti from "canvas-confetti";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Header } from "@/components/header";
 
 export function GamePlay() {
   const {
     players,
     activePlayerId,
     gameSettings,
-    switchPlayer,
+    finishRound,
     updatePlayerScore,
-    incrementRoundsWon,
+    handleRoundWin,
     currentRound,
-    incrementRound,
-    resetCurrentRoundScores,
+    startNextRound,
     currentRoundScores,
     updateCurrentRoundScores,
     addDartThrown,
     resetGame,
+    roundWinner,
+    setRoundWinner,
   } = useGameStore();
 
   const [showRoundWonModal, setShowRoundWonModal] = useState(false);
-  const [showGameOverModal, setShowGameOverModal] = useState(false);
-  const [roundWinner, setRoundWinner] = useState<number | null>(null);
-  const [gameOver, setGameOver] = useState(false);
-  const [gameWinner, setGameWinner] = useState<number | null>(null);
-
   const [show180, setShow180] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
   const [checkoutSuggestion, setCheckoutSuggestion] = useState<string | null>(
     null,
   );
-
-  const [gameHistory, setGameHistory] = useLocalStorage<GameHistory[]>(
-    "dartsGameHistory",
-    [],
-    gameHistorySchema,
-  );
-
-  const activePlayer = players.find((p) => p.id === activePlayerId)!;
-
   const [currentScore, setCurrentScore] = useState(0);
   const [modifier, setModifier] = useState<"single" | "double" | "triple">(
     "single",
   );
   const [dartsInRound, setDartsInRound] = useState(0);
+
+  const activePlayer = players.find((p) => p.id === activePlayerId)!;
+
+  // Show round won modal when a round winner is set
+  useEffect(() => {
+    if (roundWinner !== null) {
+      setShowRoundWonModal(true);
+      void confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+    }
+  }, [roundWinner]);
 
   useEffect(() => {
     if (gameSettings.checkoutAssist && activePlayer) {
@@ -79,25 +75,24 @@ export function GamePlay() {
     }
   }, [
     activePlayer,
-    activePlayer.score,
+    activePlayer?.score,
     dartsInRound,
     gameSettings.checkoutAssist,
     gameSettings.outMode,
   ]);
 
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const message =
-        "Are you sure you want to leave? Your game progress will be lost.";
-      e.preventDefault();
-      e.returnValue = message;
-      return message;
+    const abortController = new AbortController();
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload, {
+      signal: abortController.signal,
+    });
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      abortController.abort();
     };
   }, []);
 
@@ -129,7 +124,7 @@ export function GamePlay() {
     const newScore = activePlayer.score - scoreToAdd;
 
     if (newScore < 0 || (gameSettings.outMode === "double" && newScore === 1)) {
-      finishRound();
+      endTurn();
       return;
     }
 
@@ -150,11 +145,11 @@ export function GamePlay() {
         updateCurrentRoundScores(roundScoresCopy);
         setCurrentScore((prev) => prev + scoreToAdd);
 
-        handleRoundWin();
+        handleRoundWin(activePlayerId);
         return;
       } else {
         // Invalid checkout - bust
-        finishRound();
+        endTurn();
         return;
       }
     }
@@ -179,57 +174,20 @@ export function GamePlay() {
     setModifier("single");
   };
 
-  const handleRoundWin = () => {
-    incrementRoundsWon(activePlayerId);
-    setRoundWinner(activePlayerId);
-    setShowRoundWonModal(true);
-
-    const updatedPlayer = players.find((p) => p.id === activePlayerId)!;
-    if (updatedPlayer.roundsWon + 1 >= gameSettings.roundsToWin) {
-      setGameWinner(activePlayerId);
-      setGameOver(true);
-    }
-  };
-
-  const finishRound = () => {
-    if (players.length > 1) {
-      switchPlayer();
-    }
+  const endTurn = () => {
+    finishRound();
     setDartsInRound(0);
     setCurrentScore(0);
     setModifier("single");
-    resetCurrentRoundScores();
   };
 
-  const startNextRound = () => {
+  const handleRoundComplete = () => {
     setShowRoundWonModal(false);
-    players.forEach((player) => {
-      updatePlayerScore(player.id, gameSettings.startingScore);
-    });
-
-    incrementRound();
-    finishRound();
-
-    if (gameOver) {
-      const newGameHistory: GameHistory = {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        players: players.map((p) => ({
-          name: p.name,
-          roundsWon: p.roundsWon,
-          averageScore:
-            p.dartsThrown > 0
-              ? Number((p.totalScore / p.dartsThrown).toFixed(2))
-              : 0,
-        })),
-        winner: players.find((p) => p.id === gameWinner)?.name || "",
-        gameMode: `${gameSettings.startingScore} ${gameSettings.outMode} out`,
-        roundsPlayed: currentRound,
-      };
-
-      setGameHistory([...gameHistory, newGameHistory]);
-      setShowGameOverModal(true);
-    }
+    startNextRound();
+    setDartsInRound(0);
+    setCurrentScore(0);
+    setModifier("single");
+    setRoundWinner(null);
   };
 
   const handleUndo = () => {
@@ -248,18 +206,8 @@ export function GamePlay() {
     }
   };
 
-  if (showGameOverModal) {
-    return (
-      <GameOver
-        winner={players.find((p) => p.id === gameWinner)!}
-        gameHistory={gameHistory}
-        onNewGame={resetGame}
-      />
-    );
-  }
-
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="flex h-full flex-col lg:w-xl">
       {/* 180 Celebration */}
       {show180 && (
         <>
@@ -286,10 +234,16 @@ export function GamePlay() {
         onModifierChange={setModifier}
         currentModifier={modifier}
         onUndo={handleUndo}
-        onFinishRound={finishRound}
+        onFinishRound={endTurn}
         dartsInRound={dartsInRound}
       />
-      <Button onClick={() => setShowConfirmDialog(true)}>Reset Game</Button>
+      <Button
+        variant={"destructive"}
+        className="mt-6"
+        onClick={() => setShowConfirmDialog(true)}
+      >
+        Reset Game
+      </Button>
 
       {/* Round Won Modal */}
       <Dialog open={showRoundWonModal} onOpenChange={setShowRoundWonModal}>
@@ -319,9 +273,7 @@ export function GamePlay() {
           </div>
 
           <DialogFooter className="sm:justify-center">
-            <Button onClick={startNextRound}>
-              {gameOver ? "End Game" : "Next Round"}
-            </Button>
+            <Button onClick={handleRoundComplete}>Next Round</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -330,10 +282,6 @@ export function GamePlay() {
         onClose={() => setShowConfirmDialog(false)}
         onConfirm={() => {
           resetGame();
-          setShowConfirmDialog(false);
-          setGameOver(false);
-          setGameWinner(null);
-          setShowGameOverModal(false);
         }}
         title="Reset Game"
         description="Are you sure you want to reset the game? All progress will be lost."

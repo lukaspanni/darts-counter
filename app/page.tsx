@@ -1,9 +1,9 @@
-import { GameSetup } from "@/components/game-setup";
+import { GameController } from "@/components/game-controller";
 
 export default function Home() {
   return (
-    <main className="flex w-full flex-col px-4 py-8">
-      <GameSetup />
+    <main className="flex-grow flex-col p-4">
+      <GameController />
     </main>
   );
 }

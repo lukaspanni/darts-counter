@@ -4,12 +4,17 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type { Player, GameSettings } from "@/lib/types";
 
+type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
+
 interface GameState {
+  gamePhase: GamePhase;
   players: Player[];
   activePlayerId: number;
   gameSettings: GameSettings;
   currentRound: number;
   currentRoundScores: number[];
+  roundWinner: number | null;
+  gameWinner: number | null;
 
   // Actions
   setPlayers: (players: Player[]) => void;
@@ -23,6 +28,15 @@ interface GameState {
   updateCurrentRoundScores: (scores: number[]) => void;
   addDartThrown: (playerId: number, count?: number) => void;
   resetGame: () => void;
+
+  // Game phase management
+  setGamePhase: (phase: GamePhase) => void;
+  startGame: () => void;
+  finishRound: () => void;
+  handleRoundWin: (playerId: number) => void;
+  startNextRound: () => void;
+  setRoundWinner: (playerId: number | null) => void;
+  setGameWinner: (playerId: number | null) => void;
 }
 
 const initialGameSettings: GameSettings = {
@@ -34,11 +48,14 @@ const initialGameSettings: GameSettings = {
 
 export const useGameStore = create<GameState>()(
   immer((set) => ({
+    gamePhase: "setup",
     players: [],
     activePlayerId: 1,
     gameSettings: initialGameSettings,
     currentRound: 1,
     currentRoundScores: [],
+    roundWinner: null,
+    gameWinner: null,
 
     setPlayers: (players) => set({ players }),
 
@@ -99,13 +116,77 @@ export const useGameStore = create<GameState>()(
         }
       }),
 
+    setGamePhase: (phase) => set({ gamePhase: phase }),
+
+    startGame: () =>
+      set((state) => {
+        state.gamePhase = "playing";
+      }),
+
+    finishRound: () =>
+      set((state) => {
+        // If there's only one player, don't switch
+        if (state.players.length > 1) {
+          const currentActiveId = state.activePlayerId;
+          const otherPlayer = state.players.find(
+            (p) => p.id !== currentActiveId,
+          );
+          if (otherPlayer) {
+            state.activePlayerId = otherPlayer.id;
+          }
+        }
+
+        state.currentRoundScores = [];
+      }),
+
+    handleRoundWin: (playerId) =>
+      set((state) => {
+        // Increment rounds won
+        const playerIndex = state.players.findIndex((p) => p.id === playerId);
+        if (playerIndex !== -1) {
+          state.players[playerIndex].roundsWon += 1;
+        }
+
+        // Set the round winner
+        state.roundWinner = playerId;
+
+        // Check if game is over
+        const player = state.players.find((p) => p.id === playerId);
+        if (player && player.roundsWon >= state.gameSettings.roundsToWin) {
+          state.gameWinner = playerId;
+          state.gamePhase = "gameOver";
+        }
+      }),
+
+    startNextRound: () =>
+      set((state) => {
+        // Reset players' scores to starting score
+        state.players.forEach((player, index) => {
+          state.players[index].score = state.gameSettings.startingScore;
+        });
+
+        // Increment round
+        state.currentRound += 1;
+
+        // Reset current round data
+        state.currentRoundScores = [];
+        state.roundWinner = null;
+      }),
+
+    setRoundWinner: (playerId) => set({ roundWinner: playerId }),
+
+    setGameWinner: (playerId) => set({ gameWinner: playerId }),
+
     resetGame: () =>
       set({
+        gamePhase: "setup",
         players: [],
         activePlayerId: 1,
         gameSettings: initialGameSettings,
         currentRound: 1,
         currentRoundScores: [],
+        roundWinner: null,
+        gameWinner: null,
       }),
   })),
 );
