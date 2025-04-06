@@ -45,7 +45,7 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
 
   const currentAverage =
     winner.dartsThrown > 0
-      ? Number((winner.totalScore / winner.dartsThrown).toFixed(2))
+      ? Number(((winner.totalScore / winner.dartsThrown) * 3).toFixed(2))
       : 0;
 
   const isAboveAverage =

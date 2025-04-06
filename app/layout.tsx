@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { GameStoreProvider } from "@/lib/store-provider";
 
 export const metadata: Metadata = {
   title: "Darts Scorer",
@@ -23,11 +24,13 @@ export default function RootLayout({
           attribute="class"
           disableTransitionOnChange
         >
-          <div className="flex min-h-screen flex-col divide-y">
-            <Header />
-            {children}
-            <Footer />
-          </div>
+          <GameStoreProvider>
+            <div className="flex min-h-screen flex-col divide-y">
+              <Header />
+              {children}
+              <Footer />
+            </div>
+          </GameStoreProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useGameStore } from "@/lib/store";
+import { useGameStore } from "@/lib/store-provider";
 
 export function PreGameStart() {
-  const { players, setActivePlayer, setGamePhase, startGame } = useGameStore();
+  const { players, setActivePlayer, setGamePhase, startGame } = useGameStore(
+    (state) => state,
+  );
   const [startingPlayerId, setStartingPlayerId] = useState<number>(
     players[0]?.id || 1,
   );
