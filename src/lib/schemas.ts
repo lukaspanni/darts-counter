@@ -40,3 +40,5 @@ export const gameHistorySchema = z.array(
 export type GameHistory = z.infer<typeof gameHistorySchema>[number];
 export type Dart = string;
 export type Checkout = Dart[];
+export type ScoreModifier = "single" | "double" | "triple";
+export type OutMode = z.infer<typeof gameSettingsSchema>["outMode"];

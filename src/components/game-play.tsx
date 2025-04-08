@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { findCheckout } from "@/lib/checkout";
+import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import confetti from "canvas-confetti";
 import { useEffect, useState } from "react";
@@ -42,9 +43,6 @@ export function GamePlay() {
     null,
   );
   const [currentScore, setCurrentScore] = useState(0);
-  const [modifier, setModifier] = useState<"single" | "double" | "triple">(
-    "single",
-  );
   const [dartsInRound, setDartsInRound] = useState(0);
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
@@ -114,36 +112,37 @@ export function GamePlay() {
     }
   };
 
-  const handleScoreEntry = (value: number) => {
+  const isValidOut = (
+    modifier: ScoreModifier,
+    outMode: "single" | "double",
+  ) => {
+    if (outMode === "single") return true;
+    if (modifier === "double") return modifier === "double";
+    return false;
+  };
+
+  const handleScoreEntry = (
+    scoreAfterModifier: number,
+    modifier: ScoreModifier,
+  ) => {
     if (dartsInRound >= 3) return;
-
-    let scoreToAdd = value;
-    if (modifier === "double") scoreToAdd = value * 2;
-    if (modifier === "triple") scoreToAdd = value * 3;
-
-    const newScore = activePlayer.score - scoreToAdd;
+    const newScore = activePlayer.score - scoreAfterModifier;
 
     if (newScore < 0 || (gameSettings.outMode === "double" && newScore === 1)) {
+      // Invalid score - bust, do not update player score
       endTurn();
       return;
     }
 
     if (newScore === 0) {
-      const isValidOut =
-        gameSettings.outMode === "single" ||
-        (gameSettings.outMode === "double" && modifier === "double") ||
-        (gameSettings.outMode === "double" &&
-          value === 25 &&
-          modifier === "double"); // Bull
-
-      if (isValidOut) {
+      if (isValidOut(modifier, gameSettings.outMode)) {
         updatePlayerScore(activePlayerId, newScore);
         addDartThrown(activePlayerId);
         setDartsInRound((prev) => prev + 1);
 
-        const roundScoresCopy = [...currentRoundScores, scoreToAdd];
+        const roundScoresCopy = [...currentRoundScores, scoreAfterModifier];
         updateCurrentRoundScores(roundScoresCopy);
-        setCurrentScore((prev) => prev + scoreToAdd);
+        setCurrentScore((prev) => prev + scoreAfterModifier);
 
         handleRoundWin(activePlayerId);
         return;
@@ -157,12 +156,12 @@ export function GamePlay() {
     updatePlayerScore(activePlayerId, newScore);
     addDartThrown(activePlayerId);
     setDartsInRound((prev) => prev + 1);
-    setCurrentScore((prev) => prev + scoreToAdd);
+    setCurrentScore((prev) => prev + scoreAfterModifier);
 
-    const roundScoresCopy = [...currentRoundScores, scoreToAdd];
+    const roundScoresCopy = [...currentRoundScores, scoreAfterModifier];
     updateCurrentRoundScores(roundScoresCopy);
 
-    if (dartsInRound === 2 && currentScore + scoreToAdd === 180) {
+    if (dartsInRound === 2 && currentScore + scoreAfterModifier === 180) {
       setShow180(true);
       void confetti({
         particleCount: 100,
@@ -170,15 +169,12 @@ export function GamePlay() {
         origin: { y: 0.6 },
       });
     }
-
-    setModifier("single");
   };
 
   const endTurn = () => {
     finishRound();
     setDartsInRound(0);
     setCurrentScore(0);
-    setModifier("single");
   };
 
   const handleRoundComplete = () => {
@@ -186,7 +182,6 @@ export function GamePlay() {
     startNextRound();
     setDartsInRound(0);
     setCurrentScore(0);
-    setModifier("single");
     setRoundWinner(null);
   };
 
@@ -232,8 +227,6 @@ export function GamePlay() {
 
       <ScoreKeypad
         onScoreEntry={handleScoreEntry}
-        onModifierChange={setModifier}
-        currentModifier={modifier}
         onUndo={handleUndo}
         onFinishRound={endTurn}
         dartsInRound={dartsInRound}
