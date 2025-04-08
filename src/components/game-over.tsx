@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Player, GameHistory } from "@/lib/types";
+import type { Player, GameHistory } from "@/lib/schemas";
 import { StartNewGameButton } from "./start-new-game-button";
 
 interface GameOverProps {

@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { GameHistory } from "@/lib/types";
+import { GameHistory } from "@/lib/schemas";
 import { format } from "date-fns";
 import { DeleteGameButton } from "./delete-game-button";
 import { Input } from "./ui/input";

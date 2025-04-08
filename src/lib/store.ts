@@ -2,7 +2,7 @@
 import { createStore } from "zustand/vanilla";
 
 import { immer } from "zustand/middleware/immer";
-import type { Player, GameSettings } from "@/lib/types";
+import type { Player, GameSettings } from "@/lib/schemas";
 
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 

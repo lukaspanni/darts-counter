@@ -1,4 +1,4 @@
-import type { Dart, Checkout } from "@/lib/types";
+import type { Dart, Checkout } from "@/lib/schemas";
 
 const NUMBER_OF_SCORES = 20;
 

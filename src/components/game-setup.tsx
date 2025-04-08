@@ -19,18 +19,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { gameSettingsSchema } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const gameSetupSchema = z.object({
-  startingScore: z.enum(["501", "301"]),
-  outMode: z.enum(["single", "double"]),
+const gameSetupSchema = gameSettingsSchema.extend({
+  startingScore: z.enum(["301", "501"]),
   roundsToWin: z.enum(["1", "3", "5", "7"]),
   player1: z.string().min(1, "Player 1 name is required"),
   player2: z.string().optional(),
-  checkoutAssist: z.boolean().default(false),
 });
 
 type GameSetupFormValues = z.infer<typeof gameSetupSchema>;

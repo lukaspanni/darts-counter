@@ -20,11 +20,13 @@ export function GameController() {
 
   const { gameHistory, addGame } = useGameHistory();
   const [isInitialRender, setIsInitialRender] = useState(true);
-  const stablePlayers = useMemo(() => players, [players]);
+
 
   const winner = useMemo(() => {
-    return stablePlayers.find((p) => p.id === gameWinner) || null;
-  }, [gameWinner, stablePlayers]);
+    return !!gameWinner
+      ? null
+      : players.find((p) => p.id === gameWinner) || null;
+  }, [gameWinner, players]);
 
   useEffect(() => {
     if (

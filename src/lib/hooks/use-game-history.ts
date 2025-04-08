@@ -1,4 +1,4 @@
-import { GameHistory } from "@/lib/types";
+import { GameHistory } from "@/lib/schemas";
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "game-history";
