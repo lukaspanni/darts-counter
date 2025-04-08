@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb } from "lucide-react";
-import type { Player } from "@/lib/types";
+import type { Player } from "@/lib/schemas";
 
 interface ScoreDisplayProps {
   players: Player[];
