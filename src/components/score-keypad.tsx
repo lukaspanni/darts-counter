@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import type { ScoreModifier } from "@/lib/schemas";
 import { RotateCcw, Check } from "lucide-react";
+import { useState } from "react";
 
 interface ScoreKeypadProps {
-  onScoreEntry: (value: number) => void;
-  onModifierChange: (modifier: "single" | "double" | "triple") => void;
-  currentModifier: "single" | "double" | "triple";
+  onScoreEntry: (scoreAfterModifier: number, modifier: ScoreModifier) => void;
   onUndo: () => void;
   onFinishRound: () => void;
   dartsInRound: number;
@@ -15,14 +15,22 @@ interface ScoreKeypadProps {
 
 export function ScoreKeypad({
   onScoreEntry,
-  onModifierChange,
-  currentModifier,
   onUndo,
   onFinishRound,
   dartsInRound,
 }: ScoreKeypadProps) {
+  const [modifier, setModifier] = useState<ScoreModifier>("single");
   // Generate buttons 1-20
   const numberButtons = Array.from({ length: 20 }, (_, i) => i + 1);
+
+  const onScoreButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const value = parseInt(e.currentTarget.value);
+    onScoreEntry(
+      value * (modifier === "single" ? 1 : modifier === "double" ? 2 : 3),
+      modifier,
+    );
+    setModifier("single");
+  };
 
   return (
     <Card>
@@ -30,24 +38,24 @@ export function ScoreKeypad({
         {/* Modifier buttons */}
         <div className="mb-4 grid grid-cols-3 gap-2">
           <Button
-            variant={currentModifier === "single" ? "default" : "outline"}
-            onClick={() => onModifierChange("single")}
+            variant={modifier === "single" ? "default" : "outline"}
+            onClick={() => setModifier("single")}
             className="h-10"
             disabled={dartsInRound >= 3}
           >
             Single
           </Button>
           <Button
-            variant={currentModifier === "double" ? "default" : "outline"}
-            onClick={() => onModifierChange("double")}
+            variant={modifier === "double" ? "default" : "outline"}
+            onClick={() => setModifier("double")}
             className="h-10"
             disabled={dartsInRound >= 3}
           >
             Double
           </Button>
           <Button
-            variant={currentModifier === "triple" ? "default" : "outline"}
-            onClick={() => onModifierChange("triple")}
+            variant={modifier === "triple" ? "default" : "outline"}
+            onClick={() => setModifier("triple")}
             className="h-10"
             disabled={dartsInRound >= 3}
           >
@@ -60,8 +68,9 @@ export function ScoreKeypad({
           {numberButtons.map((num) => (
             <Button
               key={num}
+              value={num}
               variant="outline"
-              onClick={() => onScoreEntry(num)}
+              onClick={onScoreButtonClick}
               disabled={dartsInRound >= 3}
               className="h-10 w-full"
             >
@@ -70,15 +79,17 @@ export function ScoreKeypad({
           ))}
           <Button
             variant="outline"
-            onClick={() => onScoreEntry(25)}
-            disabled={dartsInRound >= 3 || currentModifier === "triple"}
+            value={25}
+            onClick={onScoreButtonClick}
+            disabled={dartsInRound >= 3 || modifier === "triple"}
             className="h-10"
           >
             Bull
           </Button>
           <Button
             variant="outline"
-            onClick={() => onScoreEntry(0)}
+            value={0}
+            onClick={onScoreButtonClick}
             disabled={dartsInRound >= 3}
             className="h-10"
           >

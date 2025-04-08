@@ -68,11 +68,8 @@ export const createGameStore = (
       ...initState,
 
       setPlayers: (players) => set({ players }),
-
       setGameSettings: (settings) => set({ gameSettings: settings }),
-
       setActivePlayer: (playerId) => set({ activePlayerId: playerId }),
-
       switchPlayer: () =>
         set((state) => {
           // If there's only one player, don't switch
@@ -112,9 +109,7 @@ export const createGameStore = (
         }),
 
       resetCurrentRoundScores: () => set({ currentRoundScores: [] }),
-
       updateCurrentRoundScores: (scores) => set({ currentRoundScores: scores }),
-
       addDartThrown: (playerId, count = 1) =>
         set((state) => {
           const playerIndex = state.players.findIndex((p) => p.id === playerId);
@@ -122,14 +117,11 @@ export const createGameStore = (
             state.players[playerIndex].dartsThrown += count;
           }
         }),
-
       setGamePhase: (phase) => set({ gamePhase: phase }),
-
       startGame: () =>
         set((state) => {
           state.gamePhase = "playing";
         }),
-
       finishRound: () =>
         set((state) => {
           // If there's only one player, don't switch
@@ -145,7 +137,6 @@ export const createGameStore = (
 
           state.currentRoundScores = [];
         }),
-
       handleRoundWin: (playerId) =>
         set((state) => {
           // Increment rounds won
@@ -164,7 +155,6 @@ export const createGameStore = (
             state.gamePhase = "gameOver";
           }
         }),
-
       startNextRound: () =>
         set((state) => {
           // Reset players' scores to starting score
@@ -179,11 +169,8 @@ export const createGameStore = (
           state.currentRoundScores = [];
           state.roundWinner = null;
         }),
-
       setRoundWinner: (playerId) => set({ roundWinner: playerId }),
-
       setGameWinner: (playerId) => set({ gameWinner: playerId }),
-
       resetGame: () =>
         set({
           gamePhase: "setup",
