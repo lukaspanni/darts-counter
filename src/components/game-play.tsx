@@ -1,5 +1,4 @@
-"use client";
-
+import "client-only";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ScoreDisplay } from "@/components/score-display";
 import { ScoreKeypad } from "@/components/score-keypad";
@@ -44,6 +43,7 @@ export function GamePlay() {
   );
   const [currentScore, setCurrentScore] = useState(0);
   const [dartsInRound, setDartsInRound] = useState(0);
+  const [lastThrowBust, setLastThrowBust] = useState(false);
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
 
@@ -104,14 +104,6 @@ export function GamePlay() {
     }
   }, [show180]);
 
-  const canFinish = (score: number): boolean => {
-    if (gameSettings.outMode === "single") {
-      return score <= 20 || score === 25 || score === 50;
-    } else {
-      return (score <= 40 && score % 2 === 0) || score === 50;
-    }
-  };
-
   const isValidOut = (
     modifier: ScoreModifier,
     outMode: "single" | "double",
@@ -126,14 +118,16 @@ export function GamePlay() {
     modifier: ScoreModifier,
   ) => {
     if (dartsInRound >= 3) return;
-    const newScore = activePlayer.score - scoreAfterModifier;
+    let newScore = activePlayer.score - scoreAfterModifier;
+    let validatedScore = scoreAfterModifier;
 
+    // Handle bust or finish
     if (newScore < 0 || (gameSettings.outMode === "double" && newScore === 1)) {
-      // Invalid score - bust, do not update player score
-      endTurn();
-      return;
+      // Invalid score - bust, keep player score, but do not end turn to allow for undo
+      newScore = activePlayer.score;
+      validatedScore = 0;
+      setLastThrowBust(true);
     }
-
     if (newScore === 0) {
       if (isValidOut(modifier, gameSettings.outMode)) {
         updatePlayerScore(activePlayerId, newScore);
@@ -146,22 +140,22 @@ export function GamePlay() {
 
         handleRoundWin(activePlayerId);
         return;
-      } else {
-        // Invalid checkout - bust
-        endTurn();
-        return;
       }
+      // Invalid checkout - bust, keep player score, but do not end turn to allow for undo
+      newScore = activePlayer.score;
+      validatedScore = 0;
+      setLastThrowBust(true);
     }
 
     updatePlayerScore(activePlayerId, newScore);
     addDartThrown(activePlayerId);
     setDartsInRound((prev) => prev + 1);
-    setCurrentScore((prev) => prev + scoreAfterModifier);
+    setCurrentScore((prev) => prev + validatedScore);
 
-    const roundScoresCopy = [...currentRoundScores, scoreAfterModifier];
+    const roundScoresCopy = [...currentRoundScores, validatedScore];
     updateCurrentRoundScores(roundScoresCopy);
 
-    if (dartsInRound === 2 && currentScore + scoreAfterModifier === 180) {
+    if (dartsInRound === 2 && currentScore + validatedScore === 180) {
       setShow180(true);
       void confetti({
         particleCount: 100,
@@ -186,9 +180,12 @@ export function GamePlay() {
   };
 
   const handleUndo = () => {
+    console.log("Undoing last score entry");
+    setLastThrowBust(false);
     if (dartsInRound === 0 || currentRoundScores.length === 0) return;
 
     const lastScore = currentRoundScores[currentRoundScores.length - 1];
+    console.log("Last score:", lastScore);
     updatePlayerScore(activePlayerId, activePlayer.score + lastScore);
     // Update dart thrown count and current round state
     addDartThrown(activePlayerId, -1);
@@ -197,6 +194,7 @@ export function GamePlay() {
     const roundScoresCopy = [...currentRoundScores];
     roundScoresCopy.pop();
     updateCurrentRoundScores(roundScoresCopy);
+    console.log(roundScoresCopy, dartsInRound, currentRoundScores);
     if (show180 && currentScore - lastScore !== 180) {
       setShow180(false);
     }
@@ -220,9 +218,9 @@ export function GamePlay() {
         activePlayerId={activePlayerId}
         currentRound={currentRound}
         dartsInRound={dartsInRound}
-        canFinish={canFinish}
         currentRoundScore={currentScore}
         checkoutSuggestion={checkoutSuggestion}
+        bust={lastThrowBust}
       />
 
       <ScoreKeypad
@@ -230,6 +228,7 @@ export function GamePlay() {
         onUndo={handleUndo}
         onFinishRound={endTurn}
         dartsInRound={dartsInRound}
+        canThrowMoreDarts={dartsInRound < 3 && !lastThrowBust}
       />
       <Button
         variant={"destructive"}

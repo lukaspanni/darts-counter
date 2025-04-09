@@ -1,3 +1,4 @@
+import "client-only";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb } from "lucide-react";
@@ -8,9 +9,9 @@ interface ScoreDisplayProps {
   activePlayerId: number;
   currentRound: number;
   dartsInRound: number;
-  canFinish: (score: number) => boolean;
   currentRoundScore: number;
   checkoutSuggestion: string | null;
+  bust: boolean;
 }
 
 export function ScoreDisplay({
@@ -20,6 +21,7 @@ export function ScoreDisplay({
   dartsInRound,
   currentRoundScore,
   checkoutSuggestion,
+  bust,
 }: ScoreDisplayProps) {
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
 
@@ -28,10 +30,6 @@ export function ScoreDisplay({
     if (player.dartsThrown === 0) return 0;
     return ((player.totalScore / player.dartsThrown) * 3).toFixed(2);
   };
-
-  // Determine if we should show checkout suggestion
-  const showCheckout = checkoutSuggestion && dartsInRound < 3;
-
   return (
     <div className="mb-4 space-y-4">
       <Card>
@@ -46,7 +44,7 @@ export function ScoreDisplay({
             <div className="bg-muted flex flex-col items-center rounded-lg p-2">
               <span className="text-sm font-medium">{activePlayer.name}</span>
               <span
-                className={`text-4xl font-bold ${showCheckout ? "text-green-500" : ""}`}
+                className={`text-4xl font-bold ${!!checkoutSuggestion ? "text-green-500" : ""}`}
               >
                 {activePlayer.score}
               </span>
@@ -65,7 +63,7 @@ export function ScoreDisplay({
                   <span className="text-sm font-medium">{player.name}</span>
                   <span
                     className={`text-4xl font-bold ${
-                      player.id === activePlayerId && showCheckout
+                      player.id === activePlayerId && !!checkoutSuggestion
                         ? "text-green-500"
                         : ""
                     }`}
@@ -81,7 +79,7 @@ export function ScoreDisplay({
           )}
 
           {/* Checkout suggestion */}
-          {showCheckout && (
+          {!!checkoutSuggestion && (
             <div className="mt-3 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-2">
               <Lightbulb className="h-4 w-4 text-green-600" />
               <div>
@@ -108,12 +106,18 @@ export function ScoreDisplay({
 
           {/* Visual indicator for darts thrown */}
           <div className="mt-3 mb-1 flex justify-center gap-2">
-            {[0, 1, 2].map((index) => (
-              <div
-                key={index}
-                className={`h-3 w-3 rounded-full ${index < dartsInRound ? "bg-primary" : "bg-muted-foreground/30"}`}
-              />
-            ))}
+            {bust ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-red-500">Bust!</span>
+              </div>
+            ) : (
+              [0, 1, 2].map((index) => (
+                <div
+                  key={index}
+                  className={`h-3 w-3 rounded-full ${index < dartsInRound ? "bg-primary" : "bg-muted-foreground/30"}`}
+                />
+              ))
+            )}
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
