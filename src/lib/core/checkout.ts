@@ -55,7 +55,7 @@ export function findCheckout(
     }
 
     for (const dart of allThrows) {
-      const newScore = currentScore - dartScores[dart];
+      const newScore = currentScore - (dartScores[dart] ?? 0);
       if (newScore >= (doubleCheckout ? 2 : 1)) {
         const next = dfs(dartsLeft - 1, newScore, [...path, dart]);
         if (next) {

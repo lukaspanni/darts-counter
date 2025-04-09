@@ -7,6 +7,7 @@ export const playerSchema = z.object({
   roundsWon: z.number(),
   dartsThrown: z.number(),
   totalScore: z.number(),
+  scoreHistory: z.array(z.array(z.number()).max(3)),
 });
 
 export type Player = z.infer<typeof playerSchema>;

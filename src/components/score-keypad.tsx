@@ -91,7 +91,7 @@ export function ScoreKeypad({
             variant="outline"
             value={0}
             onClick={onScoreButtonClick}
-            disabled={!canThrowMoreDarts}
+            disabled={!canThrowMoreDarts || modifier !== "single"}
             className="h-10"
           >
             Miss
