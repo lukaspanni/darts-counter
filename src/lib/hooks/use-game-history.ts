@@ -1,29 +1,24 @@
-import { GameHistory } from "@/lib/schemas";
-import { useEffect, useState } from "react";
+import { GameHistory, gameHistorySchema } from "@/lib/schemas";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 const STORAGE_KEY = "game-history";
 
 export function useGameHistory() {
-  const [gameHistory, setGameHistory] = useState<GameHistory[]>([]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setGameHistory(JSON.parse(stored));
-    }
-  }, []);
+  const [gameHistory, setGameHistory] = useLocalStorage<GameHistory[]>(
+    STORAGE_KEY,
+    [],
+    gameHistorySchema,
+  );
 
   const addGame = (game: GameHistory) => {
     const newHistory = [...gameHistory, game];
     console.log("Adding game to history:", newHistory);
     setGameHistory(newHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
   };
 
   const removeGame = (gameId: string) => {
     const newHistory = gameHistory.filter((g) => g.id !== parseInt(gameId));
     setGameHistory(newHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
   };
 
   // Sort games by date, newest first
