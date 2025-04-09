@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { findCheckout } from "@/lib/checkout";
+import { findCheckout } from "@/lib/core/checkout";
 import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import confetti from "canvas-confetti";
@@ -23,16 +23,12 @@ export function GamePlay() {
     activePlayerId,
     gameSettings,
     finishRound,
-    updatePlayerScore,
-    handleRoundWin,
-    currentRound,
     startNextRound,
-    currentRoundScores,
-    updateCurrentRoundScores,
-    addDartThrown,
+    currentRound,
+    handleDartThrow,
+    handleUndoThrow,
     resetGame,
     roundWinner,
-    setRoundWinner,
   } = useGameStore((state) => state);
 
   const [showRoundWonModal, setShowRoundWonModal] = useState(false);
@@ -46,18 +42,6 @@ export function GamePlay() {
   const [lastThrowBust, setLastThrowBust] = useState(false);
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
-
-  // Show round won modal when a round winner is set
-  useEffect(() => {
-    if (roundWinner !== null) {
-      setShowRoundWonModal(true);
-      void confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    }
-  }, [roundWinner]);
 
   useEffect(() => {
     if (gameSettings.checkoutAssist && activePlayer) {
@@ -73,7 +57,7 @@ export function GamePlay() {
     }
   }, [
     activePlayer,
-    activePlayer?.score,
+    activePlayer.score,
     dartsInRound,
     gameSettings.checkoutAssist,
     gameSettings.outMode,
@@ -104,58 +88,29 @@ export function GamePlay() {
     }
   }, [show180]);
 
-  const isValidOut = (
-    modifier: ScoreModifier,
-    outMode: "single" | "double",
-  ) => {
-    if (outMode === "single") return true;
-    if (modifier === "double") return modifier === "double";
-    return false;
-  };
-
   const handleScoreEntry = (
     scoreAfterModifier: number,
     modifier: ScoreModifier,
   ) => {
-    if (dartsInRound >= 3) return;
-    let newScore = activePlayer.score - scoreAfterModifier;
-    let validatedScore = scoreAfterModifier;
+    const result = handleDartThrow(scoreAfterModifier, modifier);
 
-    // Handle bust or finish
-    if (newScore < 0 || (gameSettings.outMode === "double" && newScore === 1)) {
-      // Invalid score - bust, keep player score, but do not end turn to allow for undo
-      newScore = activePlayer.score;
-      validatedScore = 0;
-      setLastThrowBust(true);
-    }
-    if (newScore === 0) {
-      if (isValidOut(modifier, gameSettings.outMode)) {
-        updatePlayerScore(activePlayerId, newScore);
-        addDartThrown(activePlayerId);
-        setDartsInRound((prev) => prev + 1);
-
-        const roundScoresCopy = [...currentRoundScores, scoreAfterModifier];
-        updateCurrentRoundScores(roundScoresCopy);
-        setCurrentScore((prev) => prev + scoreAfterModifier);
-
-        handleRoundWin(activePlayerId);
-        return;
-      }
-      // Invalid checkout - bust, keep player score, but do not end turn to allow for undo
-      newScore = activePlayer.score;
-      validatedScore = 0;
-      setLastThrowBust(true);
-    }
-
-    updatePlayerScore(activePlayerId, newScore);
-    addDartThrown(activePlayerId);
+    // Update local component state
     setDartsInRound((prev) => prev + 1);
-    setCurrentScore((prev) => prev + validatedScore);
+    setCurrentScore((prev) => prev + result.validatedScore);
+    setLastThrowBust(result.isBust);
 
-    const roundScoresCopy = [...currentRoundScores, validatedScore];
-    updateCurrentRoundScores(roundScoresCopy);
+    console.log(result);
+    if (result.isRoundWin) {
+      setShowRoundWonModal(true);
+      void confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+      return;
+    }
 
-    if (dartsInRound === 2 && currentScore + validatedScore === 180) {
+    if (result.currentRoundTotal === 180) {
       setShow180(true);
       void confetti({
         particleCount: 100,
@@ -169,6 +124,8 @@ export function GamePlay() {
     finishRound();
     setDartsInRound(0);
     setCurrentScore(0);
+    setLastThrowBust(false);
+    setShow180(false);
   };
 
   const handleRoundComplete = () => {
@@ -176,26 +133,16 @@ export function GamePlay() {
     startNextRound();
     setDartsInRound(0);
     setCurrentScore(0);
-    setRoundWinner(null);
+    setShow180(false);
   };
 
   const handleUndo = () => {
-    console.log("Undoing last score entry");
-    setLastThrowBust(false);
-    if (dartsInRound === 0 || currentRoundScores.length === 0) return;
+    const result = handleUndoThrow();
 
-    const lastScore = currentRoundScores[currentRoundScores.length - 1];
-    console.log("Last score:", lastScore);
-    updatePlayerScore(activePlayerId, activePlayer.score + lastScore);
-    // Update dart thrown count and current round state
-    addDartThrown(activePlayerId, -1);
-    setDartsInRound((prev) => prev - 1);
-    setCurrentScore((prev) => prev - lastScore);
-    const roundScoresCopy = [...currentRoundScores];
-    roundScoresCopy.pop();
-    updateCurrentRoundScores(roundScoresCopy);
-    console.log(roundScoresCopy, dartsInRound, currentRoundScores);
-    if (show180 && currentScore - lastScore !== 180) {
+    if (result.success) {
+      setLastThrowBust(false);
+      setDartsInRound((prev) => prev - 1);
+      setCurrentScore(result.newRoundTotal);
       setShow180(false);
     }
   };
