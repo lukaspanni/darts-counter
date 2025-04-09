@@ -1,5 +1,4 @@
-"use client";
-
+import "client-only";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {

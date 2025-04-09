@@ -1,5 +1,4 @@
-"use client";
-
+import "client-only";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ScoreModifier } from "@/lib/schemas";
@@ -11,6 +10,7 @@ interface ScoreKeypadProps {
   onUndo: () => void;
   onFinishRound: () => void;
   dartsInRound: number;
+  canThrowMoreDarts: boolean;
 }
 
 export function ScoreKeypad({
@@ -18,6 +18,7 @@ export function ScoreKeypad({
   onUndo,
   onFinishRound,
   dartsInRound,
+  canThrowMoreDarts,
 }: ScoreKeypadProps) {
   const [modifier, setModifier] = useState<ScoreModifier>("single");
   // Generate buttons 1-20
@@ -41,7 +42,7 @@ export function ScoreKeypad({
             variant={modifier === "single" ? "default" : "outline"}
             onClick={() => setModifier("single")}
             className="h-10"
-            disabled={dartsInRound >= 3}
+            disabled={!canThrowMoreDarts}
           >
             Single
           </Button>
@@ -49,7 +50,7 @@ export function ScoreKeypad({
             variant={modifier === "double" ? "default" : "outline"}
             onClick={() => setModifier("double")}
             className="h-10"
-            disabled={dartsInRound >= 3}
+            disabled={!canThrowMoreDarts}
           >
             Double
           </Button>
@@ -57,7 +58,7 @@ export function ScoreKeypad({
             variant={modifier === "triple" ? "default" : "outline"}
             onClick={() => setModifier("triple")}
             className="h-10"
-            disabled={dartsInRound >= 3}
+            disabled={!canThrowMoreDarts}
           >
             Triple
           </Button>
@@ -71,7 +72,7 @@ export function ScoreKeypad({
               value={num}
               variant="outline"
               onClick={onScoreButtonClick}
-              disabled={dartsInRound >= 3}
+              disabled={!canThrowMoreDarts}
               className="h-10 w-full"
             >
               {num}
@@ -81,7 +82,7 @@ export function ScoreKeypad({
             variant="outline"
             value={25}
             onClick={onScoreButtonClick}
-            disabled={dartsInRound >= 3 || modifier === "triple"}
+            disabled={!canThrowMoreDarts || modifier === "triple"}
             className="h-10"
           >
             Bull
@@ -90,7 +91,7 @@ export function ScoreKeypad({
             variant="outline"
             value={0}
             onClick={onScoreButtonClick}
-            disabled={dartsInRound >= 3}
+            disabled={!canThrowMoreDarts}
             className="h-10"
           >
             Miss
@@ -111,10 +112,10 @@ export function ScoreKeypad({
             onClick={onFinishRound}
             disabled={dartsInRound === 0}
             className="h-12"
-            variant={dartsInRound === 3 ? "default" : "outline"}
+            variant={!canThrowMoreDarts ? "default" : "outline"}
           >
             <Check className="mr-2 h-4 w-4" />
-            {dartsInRound === 3 ? "Confirm Round" : "Finish Round"}
+            {!canThrowMoreDarts ? "Confirm Round" : "Finish Round"}
           </Button>
         </div>
       </CardContent>

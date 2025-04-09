@@ -21,6 +21,9 @@ export function GameController() {
   const { gameHistory, addGame } = useGameHistory();
   const [isInitialRender, setIsInitialRender] = useState(true);
 
+  useEffect(() => {
+    console.log(players);
+  }, [players]);
 
   const winner = useMemo(() => {
     return !!gameWinner
