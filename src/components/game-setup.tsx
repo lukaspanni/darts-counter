@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { gameSettingsSchema } from "@/lib/schemas";
+import { gameSettingsSchema, type Player } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -60,26 +60,10 @@ export function GameSetup() {
       checkoutAssist: data.checkoutAssist,
     });
 
-    const players = [
-      {
-        id: 1,
-        name: data.player1,
-        score: Number.parseInt(data.startingScore),
-        roundsWon: 0,
-        dartsThrown: 0,
-        totalScore: 0,
-      },
-    ];
+    const players: { name: string }[] = [{ name: data.player1 }];
 
     if (data.player2 && data.player2.trim() !== "") {
-      players.push({
-        id: 2,
-        name: data.player2,
-        score: Number.parseInt(data.startingScore),
-        roundsWon: 0,
-        dartsThrown: 0,
-        totalScore: 0,
-      });
+      players.push({ name: data.player2 });
     }
 
     setPlayers(players);

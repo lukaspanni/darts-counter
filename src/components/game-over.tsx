@@ -22,18 +22,18 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
   };
 
   // Calculate historical stats
-  gameHistory.forEach((game) => {
-    game.players.forEach((player) => {
-      if (player.name === winner.name) {
-        winnerStats.gamesPlayed++;
-        winnerStats.averageScore += player.averageScore;
+
+  gameHistory
+    .filter((game) => game.players.find((p) => p.name === winner.name))
+    .filter(Boolean)
+    .forEach((game) => {
+      winnerStats.gamesPlayed++;
+      winnerStats.averageScore +=
+        game.players.find((p) => p.name === winner.name)?.averageScore || 0;
+      if (game.winner === winner.name) {
+        winnerStats.gamesWon++;
       }
     });
-
-    if (game.winner === winner.name) {
-      winnerStats.gamesWon++;
-    }
-  });
 
   if (winnerStats.gamesPlayed > 0) {
     winnerStats.averageScore = Number(

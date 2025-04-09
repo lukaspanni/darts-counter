@@ -25,19 +25,8 @@ export function GameController() {
     console.log(players);
   }, [players]);
 
-  const winner = useMemo(() => {
-    return !!gameWinner
-      ? null
-      : players.find((p) => p.id === gameWinner) || null;
-  }, [gameWinner, players]);
-
   useEffect(() => {
-    if (
-      isInitialRender &&
-      gamePhase === "gameOver" &&
-      gameWinner !== null &&
-      winner
-    ) {
+    if (isInitialRender && gamePhase === "gameOver" && gameWinner !== null) {
       setIsInitialRender(false);
       const newGameHistory = {
         id: Date.now(),
@@ -50,7 +39,7 @@ export function GameController() {
               ? Number((p.totalScore / p.dartsThrown).toFixed(2))
               : 0,
         })),
-        winner: winner.name,
+        winner: players.find((p) => p.id === gameWinner)?.name || "",
         gameMode: `${gameSettings.startingScore} ${gameSettings.outMode} out`,
         roundsPlayed: currentRound,
       };
@@ -60,7 +49,6 @@ export function GameController() {
     gamePhase,
     gameWinner,
     players,
-    winner,
     gameSettings,
     currentRound,
     addGame,
@@ -76,10 +64,10 @@ export function GameController() {
     case "playing":
       return <GamePlay />;
     case "gameOver":
-      if (winner) {
+      if (gameWinner) {
         return (
           <GameOver
-            winner={winner}
+            winner={players.find((p) => p.id === gameWinner)!}
             gameHistory={gameHistory}
             onNewGame={resetGame}
           />
