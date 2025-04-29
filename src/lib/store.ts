@@ -3,7 +3,7 @@ import { createStore } from "zustand/vanilla";
 import { immer } from "zustand/middleware/immer";
 import type { Player, GameSettings, ScoreModifier } from "@/lib/schemas";
 import { computeDartThrow } from "./core/darts-score";
-import { createPlayers } from "./core/plaer-init";
+import { createPlayers } from "./core/player-init";
 
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
