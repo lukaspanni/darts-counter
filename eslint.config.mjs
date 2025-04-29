@@ -39,8 +39,10 @@ export default tseslint.config(
           ignorePrimitives: true,
         },
       ],
+      "@typescript-eslint/unbound-method": "warn", //ignore for zustand store access
     },
   },
+
   {
     linterOptions: {
       reportUnusedDisableDirectives: true,
