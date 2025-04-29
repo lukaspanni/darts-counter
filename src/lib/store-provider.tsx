@@ -16,7 +16,7 @@ export interface GameStoreProviderProps {
 
 export const GameStoreProvider = ({ children }: GameStoreProviderProps) => {
   const storeRef = useRef<GameStoreApi | null>(null);
-  if (storeRef.current === null) storeRef.current = createGameStore();
+  storeRef.current ??= createGameStore();
 
   return (
     <GameStoreContext.Provider value={storeRef.current}>

@@ -29,7 +29,7 @@ export function GameController() {
     if (isInitialRender && gamePhase === "gameOver" && gameWinner !== null) {
       setIsInitialRender(false);
       const newGameHistory = {
-        id: Date.now(),
+        id: crypto.randomUUID(),
         date: new Date().toISOString(),
         players: players.map((p) => ({
           name: p.name,
