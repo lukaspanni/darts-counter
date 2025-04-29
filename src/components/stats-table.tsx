@@ -9,20 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { GameHistory } from "@/lib/schemas";
 import { format } from "date-fns";
-import { DeleteGameButton } from "./delete-game-button";
 import { Input } from "./ui/input";
-import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
-
-interface StatsTableProps {
-  games: GameHistory[];
-  onGameDeleted?: () => void;
-}
+import { ArrowUpDown, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Button } from "./ui/button";
+import { useGameHistory } from "@/lib/hooks/use-game-history";
 
 type SortField = "date" | "gameMode" | "result";
 
-export function StatsTable({ games, onGameDeleted }: StatsTableProps) {
+export function StatsTable() {
+  const { gameHistory, removeGame } = useGameHistory();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -46,7 +43,7 @@ export function StatsTable({ games, onGameDeleted }: StatsTableProps) {
     );
   };
 
-  const filteredAndSortedGames = games
+  const filteredAndSortedGames = gameHistory
     .filter((game) =>
       game.players.some((player) =>
         player.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -103,6 +100,14 @@ export function StatsTable({ games, onGameDeleted }: StatsTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {filteredAndSortedGames.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center">
+                  No games found
+                </TableCell>
+              </TableRow>
+            )}
+
             {filteredAndSortedGames.map((game) => (
               <TableRow key={game.id}>
                 <TableCell>
@@ -129,10 +134,14 @@ export function StatsTable({ games, onGameDeleted }: StatsTableProps) {
                   {game.players.map((player) => player.roundsWon).join(" : ")}
                 </TableCell>
                 <TableCell>
-                  <DeleteGameButton
-                    gameId={game.id.toString()}
-                    onSuccess={onGameDeleted}
-                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => removeGame(game.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

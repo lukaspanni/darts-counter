@@ -9,6 +9,8 @@
     "isolatedModules": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
     "checkJs": true,
     "lib": [
       "dom",

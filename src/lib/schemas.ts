@@ -29,7 +29,7 @@ export const gameHistoryPlayerSchema = z.object({
 
 export const gameHistorySchema = z.array(
   z.object({
-    id: z.number(),
+    id: z.string().uuid(),
     date: z.string(),
     players: z.array(gameHistoryPlayerSchema),
     winner: z.string(),

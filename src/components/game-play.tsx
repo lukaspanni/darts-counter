@@ -99,7 +99,6 @@ export function GamePlay() {
     setCurrentScore((prev) => prev + result.validatedScore);
     setLastThrowBust(result.isBust);
 
-    console.log(result);
     if (result.isRoundWin) {
       setShowRoundWonModal(true);
       void confetti({
