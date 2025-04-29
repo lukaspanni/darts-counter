@@ -153,8 +153,10 @@ export const createGameStore = (initState: GameStoreState = initialState) =>
           if (!p) return;
 
           const roundIdx = state.currentRound - 1;
+          const originalScore = p.score;
+
           p.score = newScore;
-          p.totalScore += player.score - newScore;
+          p.totalScore += originalScore - newScore;
           p.dartsThrown += 1;
           p.scoreHistory[roundIdx] ??= [];
           p.scoreHistory[roundIdx].push(validatedScore);
