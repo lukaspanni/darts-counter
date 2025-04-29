@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { gameSettingsSchema, type Player } from "@/lib/schemas";
+import { gameSettingsSchema } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -55,7 +55,7 @@ export function GameSetup() {
   const onSubmit = (data: GameSetupFormValues) => {
     setGameSettings({
       startingScore: Number.parseInt(data.startingScore),
-      outMode: data.outMode as "single" | "double",
+      outMode: data.outMode,
       roundsToWin: Number.parseInt(data.roundsToWin),
       checkoutAssist: data.checkoutAssist,
     });

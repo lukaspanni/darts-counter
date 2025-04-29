@@ -5,7 +5,7 @@ import { PreGameStart } from "@/components/pre-game-start";
 import { GamePlay } from "@/components/game-play";
 import { GameOver } from "@/components/game-over";
 import { useGameHistory } from "@/lib/hooks/use-game-history";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore } from "@/lib/store-provider";
 
 export function GameController() {
