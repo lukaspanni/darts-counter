@@ -33,7 +33,7 @@ export function PreGameStart() {
     if (players.length === 1) {
       handleStartGame();
     }
-  }, [handleStartGame]);
+  }, [handleStartGame, players.length]);
 
   return (
     <Card className="w-full lg:w-xl">
