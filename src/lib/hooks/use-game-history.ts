@@ -1,4 +1,4 @@
-import { GameHistory, gameHistorySchema } from "@/lib/schemas";
+import { type GameHistory, gameHistorySchema } from "@/lib/schemas";
 import { loadFromLocalStorage, saveToLocalStorage } from "@/lib/local-storage";
 import { useEffect, useState } from "react";
 
