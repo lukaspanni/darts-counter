@@ -39,6 +39,11 @@ export const gameHistorySchema = z.array(
 );
 
 export type GameHistory = z.infer<typeof gameHistorySchema>[number];
+export const uiSettingsSchema = z.object({
+  enhancedView: z.boolean(),
+});
+
+export type UiSettings = z.infer<typeof uiSettingsSchema>;
 export type Dart = string;
 export type Checkout = Dart[];
 export type ScoreModifier = "single" | "double" | "triple";
