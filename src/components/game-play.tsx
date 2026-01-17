@@ -1,5 +1,6 @@
 import "client-only";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Dartboard } from "@/components/dartboard";
 import { ScoreDisplay } from "@/components/score-display";
 import { ScoreKeypad } from "@/components/score-keypad";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { findCheckout } from "@/lib/core/checkout";
+import { useUiSettings } from "@/lib/hooks/use-ui-settings";
 import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
+import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
 import { useEffect, useState } from "react";
 
@@ -40,8 +43,11 @@ export function GamePlay() {
   const [currentScore, setCurrentScore] = useState(0);
   const [dartsInRound, setDartsInRound] = useState(0);
   const [lastThrowBust, setLastThrowBust] = useState(false);
+  const { settings } = useUiSettings();
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
+  const canThrowMoreDarts = dartsInRound < 3 && !lastThrowBust;
+  const showEnhancedView = settings.enhancedView;
 
   useEffect(() => {
     if (gameSettings.checkoutAssist && activePlayer) {
@@ -147,7 +153,12 @@ export function GamePlay() {
   };
 
   return (
-    <div className="flex h-full flex-col lg:mx-auto lg:w-xl">
+    <div
+      className={cn(
+        "flex h-full flex-col",
+        showEnhancedView ? "lg:mx-auto lg:max-w-6xl" : "lg:mx-auto lg:w-xl",
+      )}
+    >
       {/* 180 Celebration */}
       {show180 && (
         <>
@@ -169,20 +180,48 @@ export function GamePlay() {
         bust={lastThrowBust}
       />
 
-      <ScoreKeypad
-        onScoreEntry={handleScoreEntry}
-        onUndo={handleUndo}
-        onFinishRound={endTurn}
-        dartsInRound={dartsInRound}
-        canThrowMoreDarts={dartsInRound < 3 && !lastThrowBust}
-      />
-      <Button
-        variant={"destructive"}
-        className="mt-6"
-        onClick={() => setShowConfirmDialog(true)}
-      >
-        Reset Game
-      </Button>
+      {showEnhancedView ? (
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="flex flex-col gap-4 lg:w-1/2">
+            <ScoreKeypad
+              onScoreEntry={handleScoreEntry}
+              onUndo={handleUndo}
+              onFinishRound={endTurn}
+              dartsInRound={dartsInRound}
+              canThrowMoreDarts={canThrowMoreDarts}
+            />
+            <Button
+              variant={"destructive"}
+              onClick={() => setShowConfirmDialog(true)}
+            >
+              Reset Game
+            </Button>
+          </div>
+          <div className="lg:w-1/2">
+            <Dartboard
+              onScoreEntry={handleScoreEntry}
+              disabled={!canThrowMoreDarts}
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          <ScoreKeypad
+            onScoreEntry={handleScoreEntry}
+            onUndo={handleUndo}
+            onFinishRound={endTurn}
+            dartsInRound={dartsInRound}
+            canThrowMoreDarts={canThrowMoreDarts}
+          />
+          <Button
+            variant={"destructive"}
+            className="mt-6"
+            onClick={() => setShowConfirmDialog(true)}
+          >
+            Reset Game
+          </Button>
+        </>
+      )}
 
       {/* Round Won Modal */}
       <Dialog open={showRoundWonModal} onOpenChange={setShowRoundWonModal}>
