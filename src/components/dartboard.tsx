@@ -7,6 +7,13 @@ import { cn } from "@/lib/utils";
 const BOARD_NUMBERS = [
   20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5,
 ];
+const MODIFIER_MULTIPLIER: Record<ScoreModifier, number> = {
+  single: 1,
+  double: 2,
+  triple: 3,
+};
+const OUTER_BULL_SCORE = 25;
+const BULLSEYE_SCORE = 50;
 
 const CENTER = 100;
 const SEGMENT_ANGLE = 360 / BOARD_NUMBERS.length;
@@ -97,10 +104,9 @@ type DartboardProps = {
 };
 
 export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
-  const handleScore = (score: number, modifier: ScoreModifier) => {
+  const handleScore = (scoreAfterModifier: number, modifier: ScoreModifier) => {
     if (disabled) return;
-    const multiplier = modifier === "double" ? 2 : modifier === "triple" ? 3 : 1;
-    onScoreEntry(score * multiplier, modifier);
+    onScoreEntry(scoreAfterModifier, modifier);
   };
 
   return (
@@ -128,12 +134,16 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
                 startAngle,
                 endAngle,
               );
+              const multiplier = MODIFIER_MULTIPLIER[ring.modifier];
               return (
                 <path
                   key={`${ring.key}-${value}`}
                   d={path}
-                  onClick={() => handleScore(value, ring.modifier)}
-                  className={`${ring.getClassName(index)} cursor-pointer stroke-background stroke-[0.5px]`}
+                  onClick={() => handleScore(value * multiplier, ring.modifier)}
+                  className={cn(
+                    ring.getClassName(index),
+                    "cursor-pointer stroke-background stroke-[0.5px]",
+                  )}
                 >
                   <title>
                     {ring.modifier} {value}
@@ -152,7 +162,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
                 y={labelPosition.y}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="pointer-events-none fill-muted-foreground text-[7px] font-semibold"
+                className="pointer-events-none fill-muted-foreground text-xs font-semibold"
               >
                 {value}
               </text>
@@ -162,8 +172,10 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
             cx={CENTER}
             cy={CENTER}
             r={20}
-            className="fill-green-600 stroke-background stroke-[0.5px] cursor-pointer"
-            onClick={() => handleScore(25, "single")}
+            className={cn(
+              "fill-green-600 dark:fill-green-500 stroke-background stroke-[0.5px] cursor-pointer",
+            )}
+            onClick={() => handleScore(OUTER_BULL_SCORE, "single")}
           >
             <title>Outer bull (25)</title>
           </circle>
@@ -171,14 +183,16 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
             cx={CENTER}
             cy={CENTER}
             r={10}
-            className="fill-red-600 stroke-background stroke-[0.5px] cursor-pointer"
-            onClick={() => handleScore(25, "double")}
+            className={cn(
+              "fill-red-600 dark:fill-red-500 stroke-background stroke-[0.5px] cursor-pointer",
+            )}
+            onClick={() => handleScore(BULLSEYE_SCORE, "double")}
           >
             <title>Bullseye (50)</title>
           </circle>
         </svg>
         <p className="text-muted-foreground text-xs">
-          Tap a segment to enter the score.
+          Select a segment to enter the score.
         </p>
       </CardContent>
     </Card>
