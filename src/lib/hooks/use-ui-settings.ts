@@ -12,10 +12,14 @@ export function useUiSettings() {
   const [settings, setSettings] = useState<UiSettings>(defaultSettings);
 
   useEffect(() => {
-    const { ok, result } = loadFromLocalStorage(STORAGE_KEY, uiSettingsSchema);
+    const { ok, result, error } = loadFromLocalStorage(
+      STORAGE_KEY,
+      uiSettingsSchema,
+    );
     if (ok) {
       setSettings(result);
     } else {
+      console.error("Failed to load UI settings from local storage:", error);
       saveToLocalStorage(STORAGE_KEY, defaultSettings);
     }
   }, []);

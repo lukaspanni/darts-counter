@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
 import { useEffect, useState } from "react";
 
+const MAX_DARTS_PER_ROUND = 3;
+
 export function GamePlay() {
   const {
     players,
@@ -46,7 +48,8 @@ export function GamePlay() {
   const { settings } = useUiSettings();
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
-  const canThrowMoreDarts = dartsInRound < 3 && !lastThrowBust;
+  const canThrowMoreDarts =
+    dartsInRound < MAX_DARTS_PER_ROUND && !lastThrowBust;
   const showEnhancedView = settings.enhancedView;
 
   useEffect(() => {
