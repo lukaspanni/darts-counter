@@ -29,6 +29,7 @@ const gameSetupSchema = gameSettingsSchema.extend({
   roundsToWin: z.enum(["1", "3", "5", "7"]),
   player1: z.string().min(1, "Player 1 name is required"),
   player2: z.string().optional(),
+  checkoutAssist: z.boolean(),
 });
 
 type GameSetupFormValues = z.infer<typeof gameSetupSchema>;
@@ -39,9 +40,7 @@ export function GameSetup() {
   );
 
   const form = useForm<GameSetupFormValues>({
-    resolver: zodResolver(
-      gameSetupSchema.and(z.object({ checkoutAssist: z.boolean() })),
-    ),
+    resolver: zodResolver(gameSetupSchema),
     defaultValues: {
       startingScore: "501",
       outMode: "single",
