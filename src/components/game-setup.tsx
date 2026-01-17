@@ -29,6 +29,8 @@ const gameSetupSchema = gameSettingsSchema.extend({
   roundsToWin: z.enum(["1", "3", "5", "7"]),
   player1: z.string().min(1, "Player 1 name is required"),
   player2: z.string().optional(),
+  // Override checkoutAssist from parent schema to ensure it's always boolean (not optional)
+  // In Zod v4, .default() makes fields optional in the input type
   checkoutAssist: z.boolean(),
 });
 
