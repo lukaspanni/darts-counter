@@ -30,7 +30,7 @@ export const SettingsMenu = () => {
             updateSettings({ enhancedView: checked })
           }
         >
-          Enhanced large display view
+          Large display layout
         </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>
