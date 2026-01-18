@@ -106,13 +106,14 @@ type DartboardProps = {
   disabled?: boolean;
 };
 
+const getCursorClass = (disabled: boolean) =>
+  disabled ? "cursor-not-allowed" : "cursor-pointer";
+
 export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
   const handleScore = (scoreAfterModifier: number, modifier: ScoreModifier) => {
     if (disabled) return;
     onScoreEntry(scoreAfterModifier, modifier);
   };
-  const getCursorClass = () =>
-    disabled ? "cursor-not-allowed" : "cursor-pointer";
 
   return (
     <Card>
@@ -127,7 +128,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
           className={cn(
             "h-[260px] w-[260px] sm:h-[320px] sm:w-[320px]",
             disabled && "pointer-events-none opacity-60",
-            getCursorClass(),
+            getCursorClass(disabled),
           )}
         >
           {ringDefinitions.map((ring) =>
@@ -148,7 +149,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
                   onClick={() => handleScore(value * multiplier, ring.modifier)}
                   className={cn(
                     ring.getClassName(index),
-                    getCursorClass(),
+                    getCursorClass(disabled),
                     "stroke-background stroke-[0.5px]",
                   )}
                 >
@@ -181,7 +182,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
             r={OUTER_BULL_RADIUS}
             className={cn(
               "fill-green-600 dark:fill-green-500 stroke-background stroke-[0.5px]",
-              getCursorClass(),
+              getCursorClass(disabled),
             )}
             onClick={() => handleScore(OUTER_BULL_SCORE, "single")}
           >
@@ -193,7 +194,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
             r={10}
             className={cn(
               "fill-red-600 dark:fill-red-500 stroke-background stroke-[0.5px]",
-              getCursorClass(),
+              getCursorClass(disabled),
             )}
             onClick={() => handleScore(BULLSEYE_SCORE, "double")}
           >
