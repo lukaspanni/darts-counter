@@ -14,6 +14,7 @@ const MODIFIER_MULTIPLIER: Record<ScoreModifier, number> = {
 };
 const INNER_SINGLE_INNER_RADIUS = 30;
 const OUTER_BULL_SCORE = 25;
+// Match the inner single ring edge to avoid an unscored gap.
 const OUTER_BULL_RADIUS = INNER_SINGLE_INNER_RADIUS;
 const BULLSEYE_SCORE = 50;
 
