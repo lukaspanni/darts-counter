@@ -200,7 +200,7 @@ export function GamePlay() {
               Reset Game
             </Button>
           </div>
-          <div className="lg:w-1/2">
+          <div className="hidden lg:block lg:w-1/2">
             <Dartboard
               onScoreEntry={handleScoreEntry}
               disabled={!canThrowMoreDarts}
