@@ -27,7 +27,7 @@ export const SettingsMenu = () => {
         <DropdownMenuCheckboxItem
           checked={settings.enhancedView}
           onCheckedChange={(checked) =>
-            updateSettings({ enhancedView: checked === true })
+            updateSettings({ enhancedView: checked })
           }
         >
           Enhanced large display view
