@@ -12,8 +12,9 @@ const MODIFIER_MULTIPLIER: Record<ScoreModifier, number> = {
   double: 2,
   triple: 3,
 };
+const INNER_SINGLE_INNER_RADIUS = 30;
 const OUTER_BULL_SCORE = 25;
-const OUTER_BULL_RADIUS = 30;
+const OUTER_BULL_RADIUS = INNER_SINGLE_INNER_RADIUS;
 const BULLSEYE_SCORE = 50;
 
 const CENTER = 100;
@@ -90,7 +91,7 @@ const ringDefinitions: RingDefinition[] = [
   {
     key: "inner-single",
     outerRadius: 50,
-    innerRadius: 30,
+    innerRadius: INNER_SINGLE_INNER_RADIUS,
     modifier: "single",
     getClassName: (index) =>
       index % 2 === 0
