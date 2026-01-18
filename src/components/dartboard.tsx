@@ -108,6 +108,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
     if (disabled) return;
     onScoreEntry(scoreAfterModifier, modifier);
   };
+  const cursorClass = disabled ? "cursor-not-allowed" : "cursor-pointer";
 
   return (
     <Card>
@@ -121,7 +122,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
           aria-label="Interactive dartboard"
           className={cn(
             "h-[260px] w-[260px] sm:h-[320px] sm:w-[320px]",
-            disabled && "pointer-events-none opacity-60",
+            disabled && "opacity-60",
           )}
         >
           {ringDefinitions.map((ring) =>
@@ -142,7 +143,8 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
                   onClick={() => handleScore(value * multiplier, ring.modifier)}
                   className={cn(
                     ring.getClassName(index),
-                    "cursor-pointer stroke-background stroke-[0.5px]",
+                    cursorClass,
+                    "stroke-background stroke-[0.5px]",
                   )}
                 >
                   <title>
@@ -171,10 +173,8 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
           <circle
             cx={CENTER}
             cy={CENTER}
-            r={20}
-            className={cn(
-              "fill-green-600 dark:fill-green-500 stroke-background stroke-[0.5px] cursor-pointer",
-            )}
+            r={30}
+            className={`fill-green-600 dark:fill-green-500 stroke-background stroke-[0.5px] ${cursorClass}`}
             onClick={() => handleScore(OUTER_BULL_SCORE, "single")}
           >
             <title>Outer bull (25)</title>
@@ -183,9 +183,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
             cx={CENTER}
             cy={CENTER}
             r={10}
-            className={cn(
-              "fill-red-600 dark:fill-red-500 stroke-background stroke-[0.5px] cursor-pointer",
-            )}
+            className={`fill-red-600 dark:fill-red-500 stroke-background stroke-[0.5px] ${cursorClass}`}
             onClick={() => handleScore(BULLSEYE_SCORE, "double")}
           >
             <title>Bullseye (50)</title>
