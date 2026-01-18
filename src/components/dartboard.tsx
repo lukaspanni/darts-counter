@@ -20,6 +20,7 @@ const BULLSEYE_SCORE = 50;
 
 const CENTER = 100;
 const SEGMENT_ANGLE = 360 / BOARD_NUMBERS.length;
+const LABEL_RADIUS = 108;
 
 const polarToCartesian = (radius: number, angleInDegrees: number) => {
   const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
@@ -126,7 +127,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
           role="img"
           aria-label="Interactive dartboard"
           className={cn(
-            "h-[260px] w-[260px] sm:h-[320px] sm:w-[320px]",
+            "h-[260px] w-[260px] overflow-visible sm:h-[320px] sm:w-[320px]",
             disabled && "pointer-events-none opacity-60",
             getCursorClass(disabled),
           )}
@@ -162,7 +163,7 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
           )}
           {BOARD_NUMBERS.map((value, index) => {
             const angle = index * SEGMENT_ANGLE;
-            const labelPosition = polarToCartesian(112, angle);
+            const labelPosition = polarToCartesian(LABEL_RADIUS, angle);
             return (
               <text
                 key={`label-${value}`}
