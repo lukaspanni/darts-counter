@@ -207,7 +207,7 @@ export function GamePlay() {
             </Button>
           </div>
           {isLargeScreen && (
-            <div className="lg:w-1/2">
+            <div className="w-1/2">
               <Dartboard
                 onScoreEntry={handleScoreEntry}
                 disabled={!canThrowMoreDarts}
