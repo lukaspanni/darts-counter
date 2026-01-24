@@ -193,6 +193,12 @@ export function GamePlay() {
               dartsInRound={dartsInRound}
               canThrowMoreDarts={canThrowMoreDarts}
             />
+            <div className="lg:hidden">
+              <Dartboard
+                onScoreEntry={handleScoreEntry}
+                disabled={!canThrowMoreDarts}
+              />
+            </div>
             <Button
               variant={"destructive"}
               onClick={() => setShowConfirmDialog(true)}

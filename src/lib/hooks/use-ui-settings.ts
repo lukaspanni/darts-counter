@@ -16,15 +16,8 @@ export function useUiSettings() {
   const wasLargeScreenRef = useRef(false);
   const hasMediaQueryRef = useRef(false);
   const enforceSmallScreenDefaults = useCallback(() => {
-    setSettings((prev) => {
-      if (!prev.enhancedView) return prev;
-      const next = { ...prev, enhancedView: false };
-      saveToLocalStorage(STORAGE_KEY, next);
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
-      }
-      return next;
-    });
+    // No longer enforce small screen defaults - allow enhanced view on all screen sizes
+    return;
   }, []);
 
   useEffect(() => {
@@ -74,9 +67,6 @@ export function useUiSettings() {
 
   const updateSettings = (updates: Partial<UiSettings>) => {
     setSettings((prev) => {
-      if (!isLargeScreen && updates.enhancedView) {
-        return prev;
-      }
       const next = { ...prev, ...updates };
       saveToLocalStorage(STORAGE_KEY, next);
       if (typeof window !== "undefined") {
@@ -90,7 +80,7 @@ export function useUiSettings() {
     settings,
     updateSettings,
     isLargeScreen,
-    isEnhancedViewActive: isLargeScreen && settings.enhancedView,
+    isEnhancedViewActive: settings.enhancedView,
     enforceSmallScreenDefaults,
   };
 }
