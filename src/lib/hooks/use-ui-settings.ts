@@ -19,7 +19,9 @@ export function useUiSettings() {
       if (!prev.enhancedView) return prev;
       const next = { ...prev, enhancedView: false };
       saveToLocalStorage(STORAGE_KEY, next);
-      window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+      }
       return next;
     });
   }, []);
@@ -34,6 +36,7 @@ export function useUiSettings() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const syncSettings = () => {
       const { ok, result, error } = loadFromLocalStorage(
         STORAGE_KEY,
@@ -74,7 +77,9 @@ export function useUiSettings() {
       }
       const next = { ...prev, ...updates };
       saveToLocalStorage(STORAGE_KEY, next);
-      window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+      }
       return next;
     });
   };
