@@ -12,12 +12,7 @@ import { useUiSettings } from "@/lib/hooks/use-ui-settings";
 import { Settings } from "lucide-react";
 
 export const SettingsMenu = () => {
-  const {
-    settings,
-    updateSettings,
-    isLargeScreen,
-    enforceSmallScreenDefaults,
-  } = useUiSettings();
+  const { settings, updateSettings, isLargeScreen } = useUiSettings();
 
   return (
     <DropdownMenu>
@@ -31,13 +26,7 @@ export const SettingsMenu = () => {
         <DropdownMenuLabel>Settings</DropdownMenuLabel>
         <DropdownMenuCheckboxItem
           checked={settings.enhancedView}
-          onCheckedChange={(checked) => {
-            if (!isLargeScreen) {
-              enforceSmallScreenDefaults();
-              return;
-            }
-            updateSettings({ enhancedView: checked });
-          }}
+          onCheckedChange={(checked) => updateSettings({ enhancedView: checked })}
           disabled={!isLargeScreen}
         >
           Large display layout
