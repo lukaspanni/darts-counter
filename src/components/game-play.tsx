@@ -155,6 +155,11 @@ export function GamePlay() {
     }
   };
 
+  const dartboardProps = {
+    onScoreEntry: handleScoreEntry,
+    disabled: !canThrowMoreDarts,
+  };
+
   return (
     <div
       className={cn(
@@ -193,12 +198,7 @@ export function GamePlay() {
               dartsInRound={dartsInRound}
               canThrowMoreDarts={canThrowMoreDarts}
             />
-            {!isLargeScreen && (
-              <Dartboard
-                onScoreEntry={handleScoreEntry}
-                disabled={!canThrowMoreDarts}
-              />
-            )}
+            {!isLargeScreen && <Dartboard {...dartboardProps} />}
             <Button
               variant={"destructive"}
               onClick={() => setShowConfirmDialog(true)}
@@ -208,10 +208,7 @@ export function GamePlay() {
           </div>
           {isLargeScreen && (
             <div className="w-1/2">
-              <Dartboard
-                onScoreEntry={handleScoreEntry}
-                disabled={!canThrowMoreDarts}
-              />
+              <Dartboard {...dartboardProps} />
             </div>
           )}
         </div>
