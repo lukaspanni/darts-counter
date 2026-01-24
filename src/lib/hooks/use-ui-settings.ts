@@ -14,11 +14,14 @@ export function useUiSettings() {
   const [settings, setSettings] = useState<UiSettings>(defaultSettings);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const enforceSmallScreenDefaults = useCallback(() => {
-    const next = { ...settings, enhancedView: false };
-    saveToLocalStorage(STORAGE_KEY, next);
-    setSettings(next);
-    window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
-  }, [settings]);
+    setSettings((prev) => {
+      if (!prev.enhancedView) return prev;
+      const next = { ...prev, enhancedView: false };
+      saveToLocalStorage(STORAGE_KEY, next);
+      window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(LARGE_SCREEN_QUERY);
