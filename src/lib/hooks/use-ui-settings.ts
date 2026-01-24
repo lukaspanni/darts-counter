@@ -13,7 +13,7 @@ const defaultSettings: UiSettings = {
 export function useUiSettings() {
   const [settings, setSettings] = useState<UiSettings>(defaultSettings);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
-  const wasLargeScreenRef = useRef(false);
+  const wasLargeScreenRef = useRef<boolean | null>(null);
   const enforceSmallScreenDefaults = useCallback(() => {
     setSettings((prev) => {
       if (!prev.enhancedView) return prev;
@@ -64,6 +64,10 @@ export function useUiSettings() {
   }, []);
 
   useEffect(() => {
+    if (wasLargeScreenRef.current === null) {
+      wasLargeScreenRef.current = isLargeScreen;
+      return;
+    }
     if (wasLargeScreenRef.current && !isLargeScreen) {
       enforceSmallScreenDefaults();
     }
