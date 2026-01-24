@@ -33,7 +33,7 @@ export const SettingsMenu = () => {
           checked={settings.enhancedView}
           onCheckedChange={(checked) => {
             if (!isLargeScreen) {
-              enforceSmallScreenDefaults(false);
+              enforceSmallScreenDefaults();
               return;
             }
             updateSettings({ enhancedView: checked });
