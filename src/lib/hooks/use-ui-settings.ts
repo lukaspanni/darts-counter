@@ -4,13 +4,23 @@ import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "ui-settings";
 const SETTINGS_UPDATED_EVENT = "ui-settings-updated";
+const LARGE_SCREEN_QUERY = "(min-width: 1024px)";
 
 const defaultSettings: UiSettings = {
-  enhancedView: false,
+  enhancedView: true,
 };
 
 export function useUiSettings() {
   const [settings, setSettings] = useState<UiSettings>(defaultSettings);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(LARGE_SCREEN_QUERY);
+    const updateMatch = () => setIsLargeScreen(mediaQuery.matches);
+    updateMatch();
+    mediaQuery.addEventListener("change", updateMatch);
+    return () => mediaQuery.removeEventListener("change", updateMatch);
+  }, []);
 
   useEffect(() => {
     const syncSettings = () => {
@@ -37,10 +47,13 @@ export function useUiSettings() {
       window.removeEventListener("storage", handleUpdate);
       window.removeEventListener(SETTINGS_UPDATED_EVENT, handleUpdate);
     };
-  }, []);
+  }, [isLargeScreen]);
 
   const updateSettings = (updates: Partial<UiSettings>) => {
     setSettings((prev) => {
+      if (!isLargeScreen && updates.enhancedView) {
+        return prev;
+      }
       const next = { ...prev, ...updates };
       saveToLocalStorage(STORAGE_KEY, next);
       window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
@@ -48,5 +61,10 @@ export function useUiSettings() {
     });
   };
 
-  return { settings, updateSettings };
+  return {
+    settings,
+    updateSettings,
+    isLargeScreen,
+    isEnhancedViewActive: isLargeScreen && settings.enhancedView,
+  };
 }
