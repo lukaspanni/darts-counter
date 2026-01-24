@@ -54,8 +54,7 @@ export function ScoreKeypad({
           </span>
         </Button>
       </CardHeader>
-      {!isCollapsed && (
-        <CardContent className="p-4">
+      <CardContent className={`p-4 ${isCollapsed ? "hidden lg:block" : ""}`}>
           {/* Modifier buttons */}
           <div className="mb-4 grid grid-cols-3 gap-2">
             <Button
@@ -139,7 +138,6 @@ export function ScoreKeypad({
             </Button>
           </div>
         </CardContent>
-      )}
     </Card>
   );
 }
