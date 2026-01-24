@@ -1,6 +1,6 @@
 import "client-only";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ScoreModifier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
@@ -114,12 +114,18 @@ const getCursorClass = (disabled: boolean) =>
 export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
   const [clickedSegment, setClickedSegment] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (clickedSegment) {
+      const timeoutId = setTimeout(() => setClickedSegment(null), 200);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [clickedSegment]);
+
   const handleScore = (scoreAfterModifier: number, modifier: ScoreModifier, segmentKey: string) => {
     if (disabled) return;
     
     // Trigger visual feedback
     setClickedSegment(segmentKey);
-    setTimeout(() => setClickedSegment(null), 200);
     
     onScoreEntry(scoreAfterModifier, modifier);
   };
