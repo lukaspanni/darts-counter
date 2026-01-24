@@ -45,12 +45,12 @@ export function GamePlay() {
   const [currentScore, setCurrentScore] = useState(0);
   const [dartsInRound, setDartsInRound] = useState(0);
   const [lastThrowBust, setLastThrowBust] = useState(false);
-  const { settings } = useUiSettings();
+  const { isEnhancedViewActive } = useUiSettings();
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
   const canThrowMoreDarts =
     dartsInRound < MAX_DARTS_PER_ROUND && !lastThrowBust;
-  const showEnhancedView = settings.enhancedView;
+  const showEnhancedView = isEnhancedViewActive;
 
   useEffect(() => {
     if (gameSettings.checkoutAssist && activePlayer) {
