@@ -47,7 +47,16 @@ export function useUiSettings() {
       window.removeEventListener("storage", handleUpdate);
       window.removeEventListener(SETTINGS_UPDATED_EVENT, handleUpdate);
     };
-  }, [isLargeScreen]);
+  }, []);
+
+  useEffect(() => {
+    if (!isLargeScreen) {
+      const next = { ...settings, enhancedView: false };
+      saveToLocalStorage(STORAGE_KEY, next);
+      setSettings(next);
+      window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+    }
+  }, [isLargeScreen, settings]);
 
   const updateSettings = (updates: Partial<UiSettings>) => {
     setSettings((prev) => {
@@ -61,10 +70,20 @@ export function useUiSettings() {
     });
   };
 
+  const enforceSmallScreenDefaults = (nextIsLargeScreen: boolean) => {
+    if (!nextIsLargeScreen) {
+      const next = { ...settings, enhancedView: false };
+      saveToLocalStorage(STORAGE_KEY, next);
+      setSettings(next);
+      window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+    }
+  };
+
   return {
     settings,
     updateSettings,
     isLargeScreen,
     isEnhancedViewActive: isLargeScreen && settings.enhancedView,
+    enforceSmallScreenDefaults,
   };
 }
