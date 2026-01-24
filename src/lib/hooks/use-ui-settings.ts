@@ -1,6 +1,6 @@
 import { type UiSettings, uiSettingsSchema } from "@/lib/schemas";
 import { loadFromLocalStorage, saveToLocalStorage } from "@/lib/local-storage";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "ui-settings";
 const SETTINGS_UPDATED_EVENT = "ui-settings-updated";
@@ -13,6 +13,12 @@ const defaultSettings: UiSettings = {
 export function useUiSettings() {
   const [settings, setSettings] = useState<UiSettings>(defaultSettings);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const enforceSmallScreenDefaults = useCallback(() => {
+    const next = { ...settings, enhancedView: false };
+    saveToLocalStorage(STORAGE_KEY, next);
+    setSettings(next);
+    window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+  }, [settings]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(LARGE_SCREEN_QUERY);
@@ -51,12 +57,9 @@ export function useUiSettings() {
 
   useEffect(() => {
     if (!isLargeScreen) {
-      const next = { ...settings, enhancedView: false };
-      saveToLocalStorage(STORAGE_KEY, next);
-      setSettings(next);
-      window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+      enforceSmallScreenDefaults();
     }
-  }, [isLargeScreen, settings]);
+  }, [enforceSmallScreenDefaults, isLargeScreen]);
 
   const updateSettings = (updates: Partial<UiSettings>) => {
     setSettings((prev) => {
@@ -68,15 +71,6 @@ export function useUiSettings() {
       window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
       return next;
     });
-  };
-
-  const enforceSmallScreenDefaults = (nextIsLargeScreen: boolean) => {
-    if (!nextIsLargeScreen) {
-      const next = { ...settings, enhancedView: false };
-      saveToLocalStorage(STORAGE_KEY, next);
-      setSettings(next);
-      window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
-    }
   };
 
   return {
