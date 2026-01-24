@@ -13,7 +13,8 @@ const defaultSettings: UiSettings = {
 export function useUiSettings() {
   const [settings, setSettings] = useState<UiSettings>(defaultSettings);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
-  const wasLargeScreenRef = useRef<boolean | null>(null);
+  const wasLargeScreenRef = useRef(false);
+  const hasMediaQueryRef = useRef(false);
   const enforceSmallScreenDefaults = useCallback(() => {
     setSettings((prev) => {
       if (!prev.enhancedView) return prev;
@@ -29,6 +30,7 @@ export function useUiSettings() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mediaQuery = window.matchMedia(LARGE_SCREEN_QUERY);
+    hasMediaQueryRef.current = true;
     const updateMatch = () => setIsLargeScreen(mediaQuery.matches);
     updateMatch();
     mediaQuery.addEventListener("change", updateMatch);
@@ -64,11 +66,7 @@ export function useUiSettings() {
   }, []);
 
   useEffect(() => {
-    if (wasLargeScreenRef.current === null) {
-      wasLargeScreenRef.current = isLargeScreen;
-      return;
-    }
-    if (wasLargeScreenRef.current && !isLargeScreen) {
+    if (hasMediaQueryRef.current && wasLargeScreenRef.current && !isLargeScreen) {
       enforceSmallScreenDefaults();
     }
     wasLargeScreenRef.current = isLargeScreen;
