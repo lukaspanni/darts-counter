@@ -45,7 +45,7 @@ export function GamePlay() {
   const [currentScore, setCurrentScore] = useState(0);
   const [dartsInRound, setDartsInRound] = useState(0);
   const [lastThrowBust, setLastThrowBust] = useState(false);
-  const { isEnhancedViewActive } = useUiSettings();
+  const { isEnhancedViewActive, settings } = useUiSettings();
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
   const canThrowMoreDarts =
@@ -110,21 +110,25 @@ export function GamePlay() {
 
     if (result.isRoundWin) {
       setShowRoundWonModal(true);
-      void confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
+      if (!settings.noBullshitMode) {
+        void confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      }
       return;
     }
 
     if (result.currentRoundTotal === 180) {
       setShow180(true);
-      void confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
+      if (!settings.noBullshitMode) {
+        void confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      }
     }
   };
 
