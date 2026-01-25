@@ -10,7 +10,8 @@
 	"migrations": [
 		{
 			"new_sqlite_classes": [
-				"WebSocketHibernationTest"
+				"Game",
+				"GameRegistry"
 			],
 			"tag": "v1"
 		}
