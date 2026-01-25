@@ -21,7 +21,12 @@ export interface PlayerAverageHistory {
 export function calculatePlayerStats(
   gameHistory: GameHistory[],
 ): PlayerStats[] {
-  const playerMap = new Map<string, PlayerStats>();
+  const playerMap = new Map<
+    string,
+    Omit<PlayerStats, "averageScore" | "averagePerRound"> & {
+      totalAverageScore: number;
+    }
+  >();
 
   gameHistory.forEach((game) => {
     game.players.forEach((player) => {
@@ -29,7 +34,7 @@ export function calculatePlayerStats(
 
       if (existing) {
         existing.gamesPlayed++;
-        existing.averageScore += player.averageScore;
+        existing.totalAverageScore += player.averageScore;
         if (game.winner === player.name) {
           existing.gamesWon++;
         }
@@ -38,25 +43,28 @@ export function calculatePlayerStats(
           name: player.name,
           gamesPlayed: 1,
           gamesWon: game.winner === player.name ? 1 : 0,
-          averageScore: player.averageScore,
-          averagePerRound: 0, // Will be calculated below
+          totalAverageScore: player.averageScore,
         });
       }
     });
   });
 
   // Calculate final averages
-  const stats = Array.from(playerMap.values()).map((player) => ({
-    ...player,
-    averageScore:
-      player.gamesPlayed > 0
-        ? Number((player.averageScore / player.gamesPlayed).toFixed(2))
-        : 0,
-    averagePerRound:
-      player.gamesPlayed > 0
-        ? Number(((player.averageScore / player.gamesPlayed) * 3).toFixed(2))
-        : 0,
-  }));
+  const stats: PlayerStats[] = Array.from(playerMap.values()).map(
+    (player) => {
+      const avgScore =
+        player.gamesPlayed > 0
+          ? player.totalAverageScore / player.gamesPlayed
+          : 0;
+      return {
+        name: player.name,
+        gamesPlayed: player.gamesPlayed,
+        gamesWon: player.gamesWon,
+        averageScore: Number(avgScore.toFixed(2)),
+        averagePerRound: Number((avgScore * 3).toFixed(2)),
+      };
+    },
+  );
 
   // Sort by games played descending
   return stats.sort((a, b) => b.gamesPlayed - a.gamesPlayed);

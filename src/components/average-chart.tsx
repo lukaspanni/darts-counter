@@ -35,21 +35,26 @@ export function AverageChart({
   gameHistory,
   selectedPlayer,
 }: AverageChartProps) {
-  const chartData = useMemo(() => {
+  const { chartData, players } = useMemo(() => {
     const history = calculatePlayerAverageHistory(gameHistory, selectedPlayer);
 
     if (selectedPlayer) {
       // Single player view - simple format
-      return history.map((item) => ({
-        gameNumber: item.gameNumber,
-        [item.name]: item.average,
-      }));
+      return {
+        chartData: history.map((item) => ({
+          gameNumber: item.gameNumber,
+          [item.name]: item.average,
+        })),
+        players: [selectedPlayer],
+      };
     }
 
     // Multi-player view - group by game number
     const grouped = new Map<number, Record<string, number | string>>();
+    const names = new Set<string>();
 
     history.forEach((item) => {
+      names.add(item.name);
       const existing = grouped.get(item.gameNumber) ?? {
         gameNumber: item.gameNumber,
       };
@@ -57,22 +62,12 @@ export function AverageChart({
       grouped.set(item.gameNumber, existing);
     });
 
-    return Array.from(grouped.values()).sort(
-      (a, b) => (a.gameNumber as number) - (b.gameNumber as number),
-    );
-  }, [gameHistory, selectedPlayer]);
-
-  const players = useMemo(() => {
-    if (selectedPlayer) {
-      return [selectedPlayer];
-    }
-
-    // Get unique player names
-    const names = new Set<string>();
-    calculatePlayerAverageHistory(gameHistory).forEach((item) => {
-      names.add(item.name);
-    });
-    return Array.from(names);
+    return {
+      chartData: Array.from(grouped.values()).sort(
+        (a, b) => (a.gameNumber as number) - (b.gameNumber as number),
+      ),
+      players: Array.from(names),
+    };
   }, [gameHistory, selectedPlayer]);
 
   if (chartData.length === 0) {
