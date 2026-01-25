@@ -172,7 +172,7 @@ export function GamePlay() {
       )}
     >
       {/* 180 Celebration */}
-      {show180 && (
+      {show180 && !settings.noBullshitMode && (
         <>
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <div className="animate-bounce rounded-lg bg-black/70 px-8 py-4 text-4xl font-bold text-white">
