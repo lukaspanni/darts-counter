@@ -10,9 +10,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Brush,
 } from "recharts";
 import { calculatePlayerAverageHistory } from "@/lib/player-stats";
 import type { GameHistory } from "@/lib/schemas";
+import { format } from "date-fns";
 
 interface AverageChartProps {
   gameHistory: GameHistory[];
@@ -39,34 +41,54 @@ export function AverageChart({
     const history = calculatePlayerAverageHistory(gameHistory, selectedPlayer);
 
     if (selectedPlayer) {
-      // Single player view - simple format
+      // Single player view - simple format with date
       return {
         chartData: history.map((item) => ({
-          gameNumber: item.gameNumber,
+          date: new Date(item.date).getTime(),
+          dateFormatted: format(new Date(item.date), "dd.MM.yyyy"),
           [item.name]: item.average,
         })),
         players: [selectedPlayer],
       };
     }
 
-    // Multi-player view - group by game number
-    const grouped = new Map<number, Record<string, number | string>>();
-    const names = new Set<string>();
+    // Multi-player view - group by date, using all game dates for x-axis
+    const allDates = new Set<number>();
+    const playerDataByDate = new Map<string, Map<number, number>>();
 
     history.forEach((item) => {
-      names.add(item.name);
-      const existing = grouped.get(item.gameNumber) ?? {
-        gameNumber: item.gameNumber,
-      };
-      existing[item.name] = item.average;
-      grouped.set(item.gameNumber, existing);
+      const dateTime = new Date(item.date).getTime();
+      allDates.add(dateTime);
+
+      if (!playerDataByDate.has(item.name)) {
+        playerDataByDate.set(item.name, new Map());
+      }
+      playerDataByDate.get(item.name)!.set(dateTime, item.average);
     });
 
+    // Create chart data with all dates, filling in player values where they exist
+    const chartData = Array.from(allDates)
+      .sort((a, b) => a - b)
+      .map((dateTime) => {
+        const dataPoint: Record<string, number | string> = {
+          date: dateTime,
+          dateFormatted: format(new Date(dateTime), "dd.MM.yyyy"),
+        };
+
+        playerDataByDate.forEach((dateMap, playerName) => {
+          // Only set value if player has data for this date
+          if (dateMap.has(dateTime)) {
+            dataPoint[playerName] = dateMap.get(dateTime)!;
+          }
+          // Otherwise leave undefined for connectNulls to interpolate
+        });
+
+        return dataPoint;
+      });
+
     return {
-      chartData: Array.from(grouped.values()).sort(
-        (a, b) => (a.gameNumber as number) - (b.gameNumber as number),
-      ),
-      players: Array.from(names),
+      chartData,
+      players: Array.from(playerDataByDate.keys()),
     };
   }, [gameHistory, selectedPlayer]);
 
@@ -95,14 +117,36 @@ export function AverageChart({
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
-              dataKey="gameNumber"
-              label={{ value: "Game Number", position: "insideBottom", offset: -5 }}
+              dataKey="date"
+              type="number"
+              domain={["auto", "auto"]}
+              scale="time"
+              tickFormatter={(timestamp: number) =>
+                format(new Date(timestamp), "dd.MM.yy")
+              }
+              label={{ value: "Date", position: "insideBottom", offset: -5 }}
             />
             <YAxis
-              label={{ value: "Average (per round)", angle: -90, position: "insideLeft" }}
+              label={{
+                value: "Average (per round)",
+                angle: -90,
+                position: "insideLeft",
+              }}
             />
-            <Tooltip />
+            <Tooltip
+              labelFormatter={(timestamp) =>
+                format(new Date(timestamp as number), "dd.MM.yyyy")
+              }
+            />
             <Legend />
+            <Brush
+              dataKey="date"
+              height={30}
+              stroke="#8884d8"
+              tickFormatter={(timestamp: number) =>
+                format(new Date(timestamp), "dd.MM")
+              }
+            />
             {players.map((player, index) => (
               <Line
                 key={player}
@@ -112,6 +156,7 @@ export function AverageChart({
                 strokeWidth={2}
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
+                connectNulls
               />
             ))}
           </LineChart>
