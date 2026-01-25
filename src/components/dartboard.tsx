@@ -1,5 +1,6 @@
 import "client-only";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ScoreModifier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
@@ -111,8 +112,21 @@ const getCursorClass = (disabled: boolean) =>
   disabled ? "cursor-not-allowed" : "cursor-pointer";
 
 export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
-  const handleScore = (scoreAfterModifier: number, modifier: ScoreModifier) => {
+  const [clickedSegment, setClickedSegment] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (clickedSegment) {
+      const timeoutId = setTimeout(() => setClickedSegment(null), 200);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [clickedSegment]);
+
+  const handleScore = (scoreAfterModifier: number, modifier: ScoreModifier, segmentKey: string) => {
     if (disabled) return;
+    
+    // Trigger visual feedback
+    setClickedSegment(segmentKey);
+    
     onScoreEntry(scoreAfterModifier, modifier);
   };
 
@@ -143,15 +157,19 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
                 endAngle,
               );
               const multiplier = MODIFIER_MULTIPLIER[ring.modifier];
+              const segmentKey = `${ring.key}-${value}`;
+              const isClicked = clickedSegment === segmentKey;
+              
               return (
                 <path
-                  key={`${ring.key}-${value}`}
+                  key={segmentKey}
                   d={path}
-                  onClick={() => handleScore(value * multiplier, ring.modifier)}
+                  onClick={() => handleScore(value * multiplier, ring.modifier, segmentKey)}
                   className={cn(
                     ring.getClassName(index),
                     getCursorClass(disabled),
-                    "stroke-background stroke-[0.5px]",
+                    "stroke-background stroke-[0.5px] transition-opacity duration-200",
+                    isClicked && "opacity-60",
                   )}
                 >
                   <title>
@@ -182,10 +200,11 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
             cy={CENTER}
             r={OUTER_BULL_RADIUS}
             className={cn(
-              "fill-green-600 dark:fill-green-500 stroke-background stroke-[0.5px]",
+              "fill-green-600 dark:fill-green-500 stroke-background stroke-[0.5px] transition-opacity duration-200",
               getCursorClass(disabled),
+              clickedSegment === "outer-bull" && "opacity-60",
             )}
-            onClick={() => handleScore(OUTER_BULL_SCORE, "single")}
+            onClick={() => handleScore(OUTER_BULL_SCORE, "single", "outer-bull")}
           >
             <title>Outer bull (25)</title>
           </circle>
@@ -194,10 +213,11 @@ export function Dartboard({ onScoreEntry, disabled = false }: DartboardProps) {
             cy={CENTER}
             r={10}
             className={cn(
-              "fill-red-600 dark:fill-red-500 stroke-background stroke-[0.5px]",
+              "fill-red-600 dark:fill-red-500 stroke-background stroke-[0.5px] transition-opacity duration-200",
               getCursorClass(disabled),
+              clickedSegment === "bullseye" && "opacity-60",
             )}
-            onClick={() => handleScore(BULLSEYE_SCORE, "double")}
+            onClick={() => handleScore(BULLSEYE_SCORE, "double", "bullseye")}
           >
             <title>Bullseye (50)</title>
           </circle>

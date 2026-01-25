@@ -30,6 +30,12 @@ export const SettingsMenu = () => {
         >
           Darts Board Entry
         </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={settings.noBullshitMode}
+          onCheckedChange={(checked) => updateSettings({ noBullshitMode: checked })}
+        >
+          No-bullshit mode
+        </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

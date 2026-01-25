@@ -41,6 +41,7 @@ export const gameHistorySchema = z.array(
 export type GameHistory = z.infer<typeof gameHistorySchema>[number];
 export const uiSettingsSchema = z.object({
   enhancedView: z.boolean(),
+  noBullshitMode: z.boolean().default(false),
 });
 
 export type UiSettings = z.infer<typeof uiSettingsSchema>;

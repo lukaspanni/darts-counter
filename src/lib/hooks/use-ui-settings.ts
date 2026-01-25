@@ -8,6 +8,7 @@ const LARGE_SCREEN_QUERY = "(min-width: 1024px)";
 
 const defaultSettings: UiSettings = {
   enhancedView: true,
+  noBullshitMode: false,
 };
 
 export function useUiSettings() {
@@ -66,6 +67,5 @@ export function useUiSettings() {
     settings,
     updateSettings,
     isLargeScreen,
-    isEnhancedViewActive: settings.enhancedView,
   };
 }
