@@ -2,7 +2,6 @@ import type {
   ClientEvent,
   ServerEvent,
   LiveStreamConnection,
-  LiveStreamGameMetadata,
 } from "./live-stream-types";
 
 export type LiveStreamEventHandler = (event: ServerEvent) => void;
@@ -10,7 +9,7 @@ export type LiveStreamEventHandler = (event: ServerEvent) => void;
 export class LiveStreamManager {
   private ws: WebSocket | null = null;
   private connection: LiveStreamConnection | null = null;
-  private eventHandlers: Set<LiveStreamEventHandler> = new Set();
+  private eventHandlers = new Set<LiveStreamEventHandler>();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectTimeout: number | null = null;
@@ -33,9 +32,13 @@ export class LiveStreamManager {
         return null;
       }
 
-      const data = (await response.json()) as LiveStreamConnection;
-      this.connection = data;
-      return data;
+      const data: unknown = await response.json();
+      const connection = data as {
+        gameId: string;
+        hostSecret: string;
+      };
+      this.connection = connection;
+      return connection;
     } catch (error) {
       console.error("Error creating game:", error);
       return null;
@@ -70,9 +73,12 @@ export class LiveStreamManager {
         this.reconnectAttempts = 0;
       };
 
-      this.ws.onmessage = (event) => {
+      this.ws.onmessage = (event: MessageEvent) => {
         try {
-          const data = JSON.parse(event.data) as ServerEvent;
+          const eventData: unknown = event.data;
+          const dataString =
+            typeof eventData === "string" ? eventData : String(eventData);
+          const data = JSON.parse(dataString) as ServerEvent;
           this.notifyHandlers(data);
         } catch (error) {
           console.error("[LiveStream] Error parsing message:", error);
@@ -92,11 +98,17 @@ export class LiveStreamManager {
         this.ws = null;
 
         // Attempt to reconnect
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        if (
+          this.reconnectAttempts < this.maxReconnectAttempts &&
+          this.connection
+        ) {
           this.reconnectAttempts++;
-          const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+          const delay = Math.min(
+            1000 * 2 ** this.reconnectAttempts,
+            30000,
+          );
           console.log(`[LiveStream] Reconnecting in ${delay}ms...`);
-          
+
           this.reconnectTimeout = window.setTimeout(() => {
             if (this.connection) {
               this.connect(workerUrl, this.connection, isHost);

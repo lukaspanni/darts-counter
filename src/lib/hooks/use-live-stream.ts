@@ -5,7 +5,6 @@ import { LiveStreamManager } from "@/lib/live-stream-manager";
 import type {
   ClientEvent,
   ServerEvent,
-  LiveStreamConnection,
   LiveStreamState,
 } from "@/lib/live-stream-types";
 
@@ -24,9 +23,7 @@ export function useLiveStream() {
 
   // Initialize manager
   useEffect(() => {
-    if (!managerRef.current) {
-      managerRef.current = new LiveStreamManager();
-    }
+    managerRef.current ??= new LiveStreamManager();
   }, []);
 
   // Subscribe to events
@@ -103,7 +100,11 @@ export function useLiveStream() {
 
   const subscribeToEvents = useCallback(
     (handler: (event: ServerEvent) => void) => {
-      if (!managerRef.current) return () => {};
+      if (!managerRef.current) {
+        return () => {
+          // Cleanup function
+        };
+      }
       return managerRef.current.subscribe(handler);
     },
     [],

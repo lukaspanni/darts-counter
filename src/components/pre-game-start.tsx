@@ -1,5 +1,5 @@
 import "client-only";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,14 +21,14 @@ export function PreGameStart() {
     players[0]?.id || 1,
   );
 
-  const handleStartGame = () => {
+  const handleStartGame = useCallback(() => {
     setActivePlayer(startingPlayerId);
     startGame();
-  };
+  }, [startingPlayerId, setActivePlayer, startGame]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setGamePhase("setup");
-  };
+  }, [setGamePhase]);
 
   useEffect(() => {
     if (players.length === 1) {
