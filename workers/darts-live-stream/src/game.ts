@@ -8,6 +8,15 @@ import {
 	clientEventSchema,
 } from './types';
 
+/**
+ * Game Durable Object
+ * 
+ * Manages the state and WebSocket connections for a single game stream.
+ * - Stores game metadata and host secret
+ * - Validates host authentication
+ * - Broadcasts events to all connected viewers
+ * - Provides state synchronization for late joiners
+ */
 export class Game extends DurableObject<Env> {
 	private sessions: Map<WebSocket, Session> = new Map();
 	private state: GameState | null = null;

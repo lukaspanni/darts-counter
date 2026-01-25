@@ -5,6 +5,14 @@ interface GameRegistryEntry {
 	createdAt: number;
 }
 
+/**
+ * GameRegistry Durable Object
+ * 
+ * Tracks all active game streams in the system.
+ * - Registers new games when created
+ * - Provides game discovery (future enhancement)
+ * - Automatically cleans up old game entries (24 hour retention)
+ */
 export class GameRegistry extends DurableObject<Env> {
 	async registerGame(gameId: string): Promise<void> {
 		console.log(`[GameRegistry] Registering game with ID: ${gameId}`);

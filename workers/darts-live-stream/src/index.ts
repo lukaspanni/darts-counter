@@ -1,3 +1,11 @@
+/**
+ * Live Stream Worker - Entry Point
+ * 
+ * This worker handles WebSocket connections for live streaming dart games.
+ * It routes requests to appropriate Durable Objects (Game or GameRegistry)
+ * and manages the creation and subscription of game streams.
+ */
+
 export { GameRegistry } from './game-registry';
 export { Game } from './game';
 
