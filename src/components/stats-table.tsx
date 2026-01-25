@@ -116,9 +116,8 @@ export function StatsTable() {
                 <TableCell>{game.gameMode}</TableCell>
                 <TableCell>
                   {game.players.map((player, i) => (
-                    <>
+                    <span key={player.name}>
                       <span
-                        key={player.name}
                         className={
                           player.name === game.winner
                             ? "text-primary font-bold"
@@ -128,7 +127,7 @@ export function StatsTable() {
                         {player.name}
                       </span>
                       {i < game.players.length - 1 ? <span> vs. </span> : null}
-                    </>
+                    </span>
                   ))}
                   <br />
                   {game.players.map((player) => player.roundsWon).join(" : ")}
