@@ -45,12 +45,12 @@ export function GamePlay() {
   const [currentScore, setCurrentScore] = useState(0);
   const [dartsInRound, setDartsInRound] = useState(0);
   const [lastThrowBust, setLastThrowBust] = useState(false);
-  const { isEnhancedViewActive, settings } = useUiSettings();
+  const { isLargeScreen, settings } = useUiSettings();
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
   const canThrowMoreDarts =
     dartsInRound < MAX_DARTS_PER_ROUND && !lastThrowBust;
-  const showEnhancedView = isEnhancedViewActive;
+  const showEnhancedView = settings.enhancedView;
 
   useEffect(() => {
     if (gameSettings.checkoutAssist && activePlayer) {
@@ -159,6 +159,11 @@ export function GamePlay() {
     }
   };
 
+  const dartboardProps = {
+    onScoreEntry: handleScoreEntry,
+    disabled: !canThrowMoreDarts,
+  };
+
   return (
     <div
       className={cn(
@@ -197,6 +202,7 @@ export function GamePlay() {
               dartsInRound={dartsInRound}
               canThrowMoreDarts={canThrowMoreDarts}
             />
+            {!isLargeScreen && <Dartboard {...dartboardProps} />}
             <Button
               variant={"destructive"}
               onClick={() => setShowConfirmDialog(true)}
@@ -204,12 +210,11 @@ export function GamePlay() {
               Reset Game
             </Button>
           </div>
-          <div className="hidden lg:block lg:w-1/2">
-            <Dartboard
-              onScoreEntry={handleScoreEntry}
-              disabled={!canThrowMoreDarts}
-            />
-          </div>
+          {isLargeScreen && (
+            <div className="w-1/2">
+              <Dartboard {...dartboardProps} />
+            </div>
+          )}
         </div>
       ) : (
         <>
