@@ -1,8 +1,8 @@
 import "client-only";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { ScoreModifier } from "@/lib/schemas";
-import { RotateCcw, Check } from "lucide-react";
+import { RotateCcw, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
 interface ScoreKeypadProps {
@@ -21,6 +21,7 @@ export function ScoreKeypad({
   canThrowMoreDarts,
 }: ScoreKeypadProps) {
   const [modifier, setModifier] = useState<ScoreModifier>("single");
+  const [isCollapsed, setIsCollapsed] = useState(false);
   // Generate buttons 1-20
   const numberButtons = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -35,90 +36,108 @@ export function ScoreKeypad({
 
   return (
     <Card>
-      <CardContent className="p-4">
-        {/* Modifier buttons */}
-        <div className="mb-4 grid grid-cols-3 gap-2">
-          <Button
-            variant={modifier === "single" ? "default" : "outline"}
-            onClick={() => setModifier("single")}
-            className="h-10"
-            disabled={!canThrowMoreDarts}
-          >
-            Single
-          </Button>
-          <Button
-            variant={modifier === "double" ? "default" : "outline"}
-            onClick={() => setModifier("double")}
-            className="h-10"
-            disabled={!canThrowMoreDarts}
-          >
-            Double
-          </Button>
-          <Button
-            variant={modifier === "triple" ? "default" : "outline"}
-            onClick={() => setModifier("triple")}
-            className="h-10"
-            disabled={!canThrowMoreDarts}
-          >
-            Triple
-          </Button>
-        </div>
-
-        {/* Number grid */}
-        <div className="mb-4 grid grid-cols-5 gap-2">
-          {numberButtons.map((num) => (
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2 lg:hidden">
+        <h3 className="text-sm font-medium">Score Entry</h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="h-8 w-8 p-0"
+        >
+          {isCollapsed ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronUp className="h-4 w-4" />
+          )}
+          <span className="sr-only">
+            {isCollapsed ? "Expand" : "Collapse"} keypad
+          </span>
+        </Button>
+      </CardHeader>
+      <CardContent className={`p-4 ${isCollapsed ? "hidden lg:block" : ""}`}>
+          {/* Modifier buttons */}
+          <div className="mb-4 grid grid-cols-3 gap-2">
             <Button
-              key={num}
-              value={num}
-              variant="outline"
-              onClick={onScoreButtonClick}
+              variant={modifier === "single" ? "default" : "outline"}
+              onClick={() => setModifier("single")}
+              className="h-10"
               disabled={!canThrowMoreDarts}
-              className="h-10 w-full"
             >
-              {num}
+              Single
             </Button>
-          ))}
-          <Button
-            variant="outline"
-            value={25}
-            onClick={onScoreButtonClick}
-            disabled={!canThrowMoreDarts || modifier === "triple"}
-            className="h-10"
-          >
-            Bull
-          </Button>
-          <Button
-            variant="outline"
-            value={0}
-            onClick={onScoreButtonClick}
-            disabled={!canThrowMoreDarts || modifier !== "single"}
-            className="h-10"
-          >
-            Miss
-          </Button>
-        </div>
+            <Button
+              variant={modifier === "double" ? "default" : "outline"}
+              onClick={() => setModifier("double")}
+              className="h-10"
+              disabled={!canThrowMoreDarts}
+            >
+              Double
+            </Button>
+            <Button
+              variant={modifier === "triple" ? "default" : "outline"}
+              onClick={() => setModifier("triple")}
+              className="h-10"
+              disabled={!canThrowMoreDarts}
+            >
+              Triple
+            </Button>
+          </div>
 
-        {/* Control buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            variant="outline"
-            onClick={onUndo}
-            disabled={dartsInRound === 0}
-            className="h-12"
-          >
-            <RotateCcw className="mr-2 h-4 w-4" /> Undo
-          </Button>
-          <Button
-            onClick={onFinishRound}
-            disabled={dartsInRound === 0}
-            className="h-12"
-            variant={!canThrowMoreDarts ? "default" : "outline"}
-          >
-            <Check className="mr-2 h-4 w-4" />
-            {!canThrowMoreDarts ? "Confirm Round" : "Finish Round"}
-          </Button>
-        </div>
-      </CardContent>
+          {/* Number grid */}
+          <div className="mb-4 grid grid-cols-5 gap-2">
+            {numberButtons.map((num) => (
+              <Button
+                key={num}
+                value={num}
+                variant="outline"
+                onClick={onScoreButtonClick}
+                disabled={!canThrowMoreDarts}
+                className="h-10 w-full"
+              >
+                {num}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              value={25}
+              onClick={onScoreButtonClick}
+              disabled={!canThrowMoreDarts || modifier === "triple"}
+              className="h-10"
+            >
+              Bull
+            </Button>
+            <Button
+              variant="outline"
+              value={0}
+              onClick={onScoreButtonClick}
+              disabled={!canThrowMoreDarts || modifier !== "single"}
+              className="h-10"
+            >
+              Miss
+            </Button>
+          </div>
+
+          {/* Control buttons */}
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant="outline"
+              onClick={onUndo}
+              disabled={dartsInRound === 0}
+              className="h-12"
+            >
+              <RotateCcw className="mr-2 h-4 w-4" /> Undo
+            </Button>
+            <Button
+              onClick={onFinishRound}
+              disabled={dartsInRound === 0}
+              className="h-12"
+              variant={!canThrowMoreDarts ? "default" : "outline"}
+            >
+              <Check className="mr-2 h-4 w-4" />
+              {!canThrowMoreDarts ? "Confirm Round" : "Finish Round"}
+            </Button>
+          </div>
+        </CardContent>
     </Card>
   );
 }
