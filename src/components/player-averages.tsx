@@ -71,7 +71,7 @@ export function PlayerAverages({
   };
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-4 lg:max-w-4xl">
       <h3 className="text-xl font-semibold">Player Averages</h3>
       <div className="rounded-md border">
         <Table>
