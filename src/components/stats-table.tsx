@@ -67,7 +67,7 @@ export function StatsTable() {
     });
 
   return (
-    <div className="w-full space-y-4 lg:max-w-4xl">
+    <div className="w-full space-y-4">
       <Input
         placeholder="Search players..."
         value={searchTerm}
