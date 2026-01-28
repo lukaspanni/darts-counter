@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { findCheckout } from "@/lib/core/checkout";
 import { useUiSettings } from "@/lib/hooks/use-ui-settings";
+import { useLiveStream } from "@/lib/hooks/use-live-stream";
 import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,8 @@ export function GamePlay() {
     resetGame,
     roundWinner,
   } = useGameStore((state) => state);
+
+  const { state: liveStreamState, sendEvent } = useLiveStream();
 
   const [showRoundWonModal, setShowRoundWonModal] = useState(false);
   const [show180, setShow180] = useState(false);
@@ -103,6 +106,21 @@ export function GamePlay() {
   ) => {
     const result = handleDartThrow(scoreAfterModifier, modifier);
 
+    // Send score event to live stream if active
+    if (liveStreamState.isActive && liveStreamState.status === "connected") {
+      sendEvent({
+        type: "score",
+        playerId: activePlayerId,
+        score: scoreAfterModifier,
+        modifier,
+        newScore: result.newScore,
+        validatedScore: result.validatedScore,
+        isRoundWin: result.isRoundWin,
+        isBust: result.isBust,
+        currentRoundTotal: result.currentRoundTotal,
+      });
+    }
+
     // Update local component state
     setDartsInRound((prev) => prev + 1);
     setCurrentScore((prev) => prev + result.validatedScore);
@@ -141,6 +159,15 @@ export function GamePlay() {
   };
 
   const handleRoundComplete = () => {
+    // Send round finish event to live stream if active
+    if (liveStreamState.isActive && liveStreamState.status === "connected") {
+      sendEvent({
+        type: "roundFinish",
+        roundNumber: currentRound,
+        winnerId: roundWinner,
+      });
+    }
+
     setShowRoundWonModal(false);
     startNextRound();
     setDartsInRound(0);
@@ -152,6 +179,16 @@ export function GamePlay() {
     const result = handleUndoThrow();
 
     if (result.success) {
+      // Send undo event to live stream if active
+      if (liveStreamState.isActive && liveStreamState.status === "connected") {
+        sendEvent({
+          type: "undo",
+          playerId: activePlayerId,
+          lastScore: result.lastScore,
+          newRoundTotal: result.newRoundTotal,
+        });
+      }
+
       setLastThrowBust(false);
       setDartsInRound((prev) => prev - 1);
       setCurrentScore(result.newRoundTotal);
