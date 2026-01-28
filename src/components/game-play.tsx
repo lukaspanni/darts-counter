@@ -100,6 +100,49 @@ export function GamePlay() {
     }
   }, [show180]);
 
+  // Send initial game state when live stream becomes active
+  useEffect(() => {
+    if (
+      liveStreamState.isActive &&
+      liveStreamState.status === "connected" &&
+      players.length > 0
+    ) {
+      // Send initial game update with current state
+      sendEvent({
+        type: "gameUpdate",
+        metadata: {
+          gameId: liveStreamState.connection?.gameId || "",
+          startingScore: gameSettings.startingScore,
+          outMode: gameSettings.outMode,
+          roundsToWin: gameSettings.roundsToWin,
+          players: players.map((p) => ({
+            id: p.id,
+            name: p.name,
+            score: p.score,
+            roundsWon: p.roundsWon,
+            dartsThrown: p.dartsThrown,
+            totalScore: p.totalScore,
+          })),
+          currentRound,
+          activePlayerId,
+          gamePhase: "playing",
+          roundWinner,
+          gameWinner: null,
+        },
+      });
+    }
+  }, [
+    liveStreamState.isActive,
+    liveStreamState.status,
+    liveStreamState.connection,
+    players,
+    gameSettings,
+    currentRound,
+    activePlayerId,
+    roundWinner,
+    sendEvent,
+  ]);
+
   const handleScoreEntry = (
     scoreAfterModifier: number,
     modifier: ScoreModifier,
