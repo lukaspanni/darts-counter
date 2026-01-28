@@ -36,6 +36,13 @@ export class Game extends DurableObject<Env> {
 	}
 
 	public async init(hostSecret: string): Promise<void> {
+		// Check if game is already initialized to prevent re-initialization
+		const existingState = await this.ctx.storage.get<GameState>('state');
+		if (existingState) {
+			console.warn('[Game DO] Game already initialized, refusing to re-initialize');
+			throw new Error('Game already initialized');
+		}
+
 		console.log('[Game DO] Initializing game with host secret');
 		this.state = {
 			hostSecret,
@@ -62,16 +69,11 @@ export class Game extends DurableObject<Env> {
 		// Check if this is a host connection
 		const hostSecret = request.headers.get('X-DO-Host-Secret');
 		const isHost = hostSecret === this.state.hostSecret;
-		const role: Session['role'] = isHost ? 'host' : 'viewer';
+		const role = isHost ? 'host' : 'viewer';
 
 		console.log('[Game DO] Processing request with session ID:', sessionId, 'role:', role);
 
-		const webSocketPair = new WebSocketPair();
-		const [client, server] = Object.values(webSocketPair);
-
-		if (!server) {
-			return new Response('Failed to create WebSocket', { status: 500 });
-		}
+		const { 0: client, 1: server } = new WebSocketPair();
 
 		this.ctx.acceptWebSocket(server);
 

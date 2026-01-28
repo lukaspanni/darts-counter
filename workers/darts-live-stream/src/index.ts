@@ -9,11 +9,11 @@
 export { GameRegistry } from './game-registry';
 export { Game } from './game';
 
-const GAME_REGISTRIY_DO_NAME = 'GameRegistry';
+const GAME_REGISTRY_DO_NAME = 'GameRegistry';
 const PATH_REGEX = /^\/game(\/([a-z0-9-]{36}))?\/?$/i;
 
 // PLAN
-// - Creating games is handles using POST requests to /game with a host-secret
+// - Creating games is handled using POST requests to /game with a host-secret
 //   - A game is created inside the worker by creating a new Durable Object instance and setting the host secret
 //     - The new game is stored in a global Durable Object that tracks all active games together with the creation timestamp
 //   - The game id is returned to the client
@@ -32,7 +32,7 @@ const handleCreateGame = async (request: Request, env: Env, ctx: ExecutionContex
 	const hostSecret = Array.from(crypto.getRandomValues(new Uint8Array(16)))
 		.map((b) => b.toString(16).padStart(2, '0'))
 		.join('');
-	console.log('[Worker] Creating game with ID:', gameId, 'and host secret:', hostSecret);
+	console.log('[Worker] Creating game with ID:', gameId);
 
 	try {
 		// create the DO for the game and initialize it with the host secret
@@ -41,7 +41,7 @@ const handleCreateGame = async (request: Request, env: Env, ctx: ExecutionContex
 		await gameStub.init(hostSecret);
 
 		// register the new game
-		const gameRegistryId = env.GAME_REGISTRY.idFromName(GAME_REGISTRIY_DO_NAME);
+		const gameRegistryId = env.GAME_REGISTRY.idFromName(GAME_REGISTRY_DO_NAME);
 		const gameRegistryStub = env.GAME_REGISTRY.get(gameRegistryId);
 		await gameRegistryStub.registerGame(gameId);
 
@@ -69,10 +69,10 @@ const handleSubscribeGame = async (request: Request, env: Env, ctx: ExecutionCon
 	const upgradeHeader = request.headers.get('Upgrade');
 	if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') return new Response('Expected Upgrade: websocket', { status: 426 });
 
-	// Extract session ID and host secret from query params or headers
+	// Extract session ID from query params or headers, host secret only from headers
 	const url = new URL(request.url);
 	const sessionId = url.searchParams.get('sessionId') || request.headers.get('X-DO-Session-Id') || crypto.randomUUID();
-	const hostSecret = url.searchParams.get('hostSecret') || request.headers.get('X-DO-Host-Secret');
+	const hostSecret = request.headers.get('X-DO-Host-Secret');
 
 	// Create a new request with the extracted values as headers for the DO
 	const doRequest = new Request(request.url, request);

@@ -28,7 +28,7 @@ The live stream feature uses Cloudflare Durable Objects to provide:
 3. **GameRegistry Durable Object**
    - Tracks active games
    - Provides game discovery (future feature)
-   - Cleans up old game entries
+   - Provides cleanup method for old game entries (requires periodic invocation)
 
 4. **Frontend Integration**
    - Host controls: Start/stop stream, share URL

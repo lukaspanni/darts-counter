@@ -1,87 +1,118 @@
-// This file contains types shared between the main app and the live stream feature
-// These should match the worker types for proper type safety
+import { z } from "zod";
+import { playerSchema, gameSettingsSchema } from "./schemas";
 
-export type ScoreModifier = "single" | "double" | "triple";
+// Derive score modifier from existing schema
+export const scoreModifierSchema = z.enum(["single", "double", "triple"]);
+export type ScoreModifier = z.infer<typeof scoreModifierSchema>;
 
-export interface LiveStreamGameMetadata {
-  gameId: string;
-  startingScore: number;
-  outMode: "single" | "double";
-  roundsToWin: number;
-  players: Array<{
-    id: number;
-    name: string;
-    score: number;
-    roundsWon: number;
-    dartsThrown: number;
-    totalScore: number;
-  }>;
-  currentRound: number;
-  activePlayerId: number;
-  gamePhase: "setup" | "preGame" | "playing" | "gameOver";
-  roundWinner: number | null;
-  gameWinner: number | null;
-}
+// Game metadata schema - derived from existing player and game settings schemas
+export const liveStreamPlayerSchema = playerSchema.pick({
+  id: true,
+  name: true,
+  score: true,
+  roundsWon: true,
+  dartsThrown: true,
+  totalScore: true,
+});
 
-export interface ScoreEvent {
-  type: "score";
-  playerId: number;
-  score: number;
-  modifier: ScoreModifier;
-  newScore: number;
-  validatedScore: number;
-  isRoundWin: boolean;
-  isBust: boolean;
-  currentRoundTotal: number;
-}
+export const liveStreamGameMetadataSchema = z.object({
+  gameId: z.string().uuid(),
+  startingScore: z.number(),
+  outMode: gameSettingsSchema.shape.outMode,
+  roundsToWin: z.number(),
+  players: z.array(liveStreamPlayerSchema),
+  currentRound: z.number(),
+  activePlayerId: z.number(),
+  gamePhase: z.enum(["setup", "preGame", "playing", "gameOver"]),
+  roundWinner: z.number().nullable(),
+  gameWinner: z.number().nullable(),
+});
 
-export interface UndoEvent {
-  type: "undo";
-  playerId: number;
-  lastScore: number;
-  newRoundTotal: number;
-}
+export type LiveStreamGameMetadata = z.infer<
+  typeof liveStreamGameMetadataSchema
+>;
 
-export interface RoundFinishEvent {
-  type: "roundFinish";
-  roundNumber: number;
-  winnerId: number | null;
-}
+// Client event schemas (messages from client to server)
+export const scoreEventSchema = z.object({
+  type: z.literal("score"),
+  playerId: z.number(),
+  score: z.number(),
+  modifier: scoreModifierSchema,
+  newScore: z.number(),
+  validatedScore: z.number(),
+  isRoundWin: z.boolean(),
+  isBust: z.boolean(),
+  currentRoundTotal: z.number(),
+});
 
-export interface GameFinishEvent {
-  type: "gameFinish";
-  winnerId: number;
-}
+export const undoEventSchema = z.object({
+  type: z.literal("undo"),
+  playerId: z.number(),
+  lastScore: z.number(),
+  newRoundTotal: z.number(),
+});
 
-export interface GameUpdateEvent {
-  type: "gameUpdate";
-  metadata: LiveStreamGameMetadata;
-}
+export const roundFinishEventSchema = z.object({
+  type: z.literal("roundFinish"),
+  roundNumber: z.number(),
+  winnerId: z.number().nullable(),
+});
 
-export type ClientEvent =
-  | ScoreEvent
-  | UndoEvent
-  | RoundFinishEvent
-  | GameFinishEvent
-  | GameUpdateEvent;
+export const gameFinishEventSchema = z.object({
+  type: z.literal("gameFinish"),
+  winnerId: z.number(),
+});
 
-export interface SyncEvent {
-  type: "sync";
-  metadata: LiveStreamGameMetadata;
-}
+export const gameUpdateEventSchema = z.object({
+  type: z.literal("gameUpdate"),
+  metadata: liveStreamGameMetadataSchema,
+});
 
-export interface BroadcastEvent {
-  type: "broadcast";
-  event: ClientEvent;
-}
+// Union of all client events
+export const clientEventSchema = z.discriminatedUnion("type", [
+  scoreEventSchema,
+  undoEventSchema,
+  roundFinishEventSchema,
+  gameFinishEventSchema,
+  gameUpdateEventSchema,
+]);
 
-export interface ErrorEvent {
-  type: "error";
-  message: string;
-}
+export type ClientEvent = z.infer<typeof clientEventSchema>;
 
-export type ServerEvent = SyncEvent | BroadcastEvent | ErrorEvent;
+// Server event schemas (messages from server to client)
+export const syncEventSchema = z.object({
+  type: z.literal("sync"),
+  metadata: liveStreamGameMetadataSchema,
+});
 
+export const broadcastEventSchema = z.object({
+  type: z.literal("broadcast"),
+  event: clientEventSchema,
+});
+
+export const errorEventSchema = z.object({
+  type: z.literal("error"),
+  message: z.string(),
+});
+
+// Union of all server events
+export const serverEventSchema = z.discriminatedUnion("type", [
+  syncEventSchema,
+  broadcastEventSchema,
+  errorEventSchema,
+]);
+
+export type ServerEvent = z.infer<typeof serverEventSchema>;
+
+// API response schemas
+export const createGameResponseSchema = z.object({
+  gameId: z.string().uuid(),
+  hostSecret: z.string(),
+});
+
+export type CreateGameResponse = z.infer<typeof createGameResponseSchema>;
+
+// Connection and state types
 export interface LiveStreamConnection {
   gameId: string;
   hostSecret: string;

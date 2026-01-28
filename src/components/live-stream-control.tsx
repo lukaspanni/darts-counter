@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
+import { getStatusColor, getStatusText } from "@/lib/live-stream-utils";
 import { Copy, Check, Radio, RadioTower } from "lucide-react";
 import { useState } from "react";
 
@@ -27,32 +28,6 @@ export function LiveStreamControl() {
     }
   };
 
-  const getStatusColor = () => {
-    switch (state.status) {
-      case "connected":
-        return "text-green-500";
-      case "connecting":
-        return "text-yellow-500";
-      case "error":
-        return "text-red-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
-  const getStatusText = () => {
-    switch (state.status) {
-      case "connected":
-        return "Live";
-      case "connecting":
-        return "Connecting...";
-      case "error":
-        return state.error || "Error";
-      default:
-        return "Not streaming";
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -67,8 +42,10 @@ export function LiveStreamControl() {
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Radio className={`h-4 w-4 ${getStatusColor()}`} />
-            <span className="text-sm font-medium">{getStatusText()}</span>
+            <Radio className={`h-4 w-4 ${getStatusColor(state.status)}`} />
+            <span className="text-sm font-medium">
+              {getStatusText(state.status, state.error)}
+            </span>
           </div>
           {!state.isActive ? (
             <Button onClick={startLiveStream} size="sm">

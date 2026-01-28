@@ -108,7 +108,7 @@ Share your games in real-time with viewers around the world!
 4. Viewers can watch live at that URL
 5. All score updates are broadcast automatically
 
-For detailed setup and usage instructions, see [LIVE_STREAM.md](./LIVE_STREAM.md).
+For detailed setup and usage instructions, see [live-stream.md](./docs/live-stream.md).
 
 ## Project Structure
 

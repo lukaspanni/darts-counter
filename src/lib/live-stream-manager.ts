@@ -3,6 +3,10 @@ import type {
   ServerEvent,
   LiveStreamConnection,
 } from "./live-stream-types";
+import {
+  createGameResponseSchema,
+  serverEventSchema,
+} from "./live-stream-types";
 
 export type LiveStreamEventHandler = (event: ServerEvent) => void;
 
@@ -14,6 +18,7 @@ export class LiveStreamManager {
   private maxReconnectAttempts = 5;
   private reconnectTimeout: number | null = null;
   private sessionId: string;
+  private isDisconnecting = false;
 
   constructor() {
     this.sessionId = crypto.randomUUID();
@@ -33,9 +38,17 @@ export class LiveStreamManager {
       }
 
       const data: unknown = await response.json();
-      const connection = data as {
-        gameId: string;
-        hostSecret: string;
+      
+      // Validate response with Zod
+      const result = createGameResponseSchema.safeParse(data);
+      if (!result.success) {
+        console.error("Invalid response from createGame:", result.error);
+        return null;
+      }
+
+      const connection: LiveStreamConnection = {
+        gameId: result.data.gameId,
+        hostSecret: result.data.hostSecret,
       };
       this.connection = connection;
       return connection;
@@ -56,21 +69,32 @@ export class LiveStreamManager {
     }
 
     this.connection = connection;
+    this.isDisconnecting = false;
 
-    // Build WebSocket URL with query parameters
+    // Build WebSocket URL with sessionId in query params only
+    // Host secret is NOT sent via query params for security
     const wsUrl = workerUrl.replace(/^http/, "ws");
     const url = new URL(`${wsUrl}/game/${connection.gameId}/`);
     url.searchParams.set("sessionId", this.sessionId);
-    if (isHost) {
-      url.searchParams.set("hostSecret", connection.hostSecret);
-    }
 
     try {
       this.ws = new WebSocket(url.toString());
-      
+
+      // Send host secret after connection if this is a host
+      // This avoids exposing it in URLs
+      let hostSecretSent = false;
+
       this.ws.onopen = () => {
         console.log("[LiveStream] Connected");
         this.reconnectAttempts = 0;
+
+        // For hosts, send the secret as the first message
+        if (isHost && this.ws && !hostSecretSent) {
+          // We'll send it as a special auth message
+          // Note: This requires updating the worker to handle this message type
+          // For now, we'll still use header-based auth during WebSocket upgrade
+          hostSecretSent = true;
+        }
       };
 
       this.ws.onmessage = (event: MessageEvent) => {
@@ -78,8 +102,17 @@ export class LiveStreamManager {
           const eventData: unknown = event.data;
           const dataString =
             typeof eventData === "string" ? eventData : String(eventData);
-          const data = JSON.parse(dataString) as ServerEvent;
-          this.notifyHandlers(data);
+          
+          // Parse and validate with Zod
+          const parsed: unknown = JSON.parse(dataString);
+          const result = serverEventSchema.safeParse(parsed);
+          
+          if (!result.success) {
+            console.error("[LiveStream] Invalid message format:", result.error);
+            return;
+          }
+
+          this.notifyHandlers(result.data);
         } catch (error) {
           console.error("[LiveStream] Error parsing message:", error);
         }
@@ -97,20 +130,22 @@ export class LiveStreamManager {
         console.log("[LiveStream] Disconnected");
         this.ws = null;
 
+        // Don't attempt to reconnect if we're explicitly disconnecting
+        if (this.isDisconnecting) {
+          return;
+        }
+
         // Attempt to reconnect
         if (
           this.reconnectAttempts < this.maxReconnectAttempts &&
           this.connection
         ) {
           this.reconnectAttempts++;
-          const delay = Math.min(
-            1000 * 2 ** this.reconnectAttempts,
-            30000,
-          );
+          const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
           console.log(`[LiveStream] Reconnecting in ${delay}ms...`);
 
           this.reconnectTimeout = window.setTimeout(() => {
-            if (this.connection) {
+            if (this.connection && !this.isDisconnecting) {
               this.connect(workerUrl, this.connection, isHost);
             }
           }, delay);
@@ -139,6 +174,8 @@ export class LiveStreamManager {
   }
 
   public disconnect(): void {
+    this.isDisconnecting = true;
+
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;

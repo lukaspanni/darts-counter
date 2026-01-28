@@ -5,9 +5,15 @@ import { LiveStreamManager } from "@/lib/live-stream-manager";
 import type {
   ServerEvent,
   LiveStreamGameMetadata,
+  ClientEvent,
 } from "@/lib/live-stream-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Radio } from "lucide-react";
+import {
+  getStatusColor,
+  getStatusText,
+  calculateAverage,
+} from "@/lib/live-stream-utils";
 
 const WORKER_URL =
   process.env.NEXT_PUBLIC_LIVE_STREAM_WORKER_URL ||
@@ -15,6 +21,71 @@ const WORKER_URL =
 
 interface LiveStreamViewerProps {
   gameId: string;
+}
+
+// Helper functions for metadata updates
+function updateScoreMetadata(
+  metadata: LiveStreamGameMetadata,
+  event: Extract<ClientEvent, { type: "score" }>,
+): LiveStreamGameMetadata {
+  return {
+    ...metadata,
+    players: metadata.players.map((p) =>
+      p.id === event.playerId
+        ? {
+            ...p,
+            score: event.newScore,
+            totalScore: p.totalScore + event.validatedScore,
+            dartsThrown: p.dartsThrown + 1,
+          }
+        : p,
+    ),
+  };
+}
+
+function undoScoreMetadata(
+  metadata: LiveStreamGameMetadata,
+  event: Extract<ClientEvent, { type: "undo" }>,
+): LiveStreamGameMetadata {
+  return {
+    ...metadata,
+    players: metadata.players.map((p) =>
+      p.id === event.playerId
+        ? {
+            ...p,
+            score: p.score + event.lastScore,
+            totalScore: p.totalScore - event.lastScore,
+            dartsThrown: p.dartsThrown - 1,
+          }
+        : p,
+    ),
+  };
+}
+
+function updateRoundFinishMetadata(
+  metadata: LiveStreamGameMetadata,
+  event: Extract<ClientEvent, { type: "roundFinish" }>,
+): LiveStreamGameMetadata {
+  if (!event.winnerId) return metadata;
+
+  return {
+    ...metadata,
+    players: metadata.players.map((p) =>
+      p.id === event.winnerId ? { ...p, roundsWon: p.roundsWon + 1 } : p,
+    ),
+    roundWinner: event.winnerId,
+  };
+}
+
+function updateGameFinishMetadata(
+  metadata: LiveStreamGameMetadata,
+  event: Extract<ClientEvent, { type: "gameFinish" }>,
+): LiveStreamGameMetadata {
+  return {
+    ...metadata,
+    gameWinner: event.winnerId,
+    gamePhase: "gameOver",
+  };
 }
 
 export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
@@ -37,81 +108,47 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
 
     // Subscribe to events
     const unsubscribe = manager.subscribe((event: ServerEvent) => {
-      if (event.type === "sync") {
-        setMetadata(event.metadata);
-        setStatus("connected");
-        setError(null);
-      } else if (event.type === "broadcast") {
-        // Handle different event types
-        const clientEvent = event.event;
-        
-        if (clientEvent.type === "gameUpdate") {
-          setMetadata(clientEvent.metadata);
-        } else if (clientEvent.type === "score") {
-          // Update the player's score
-          setMetadata((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              players: prev.players.map((p) =>
-                p.id === clientEvent.playerId
-                  ? {
-                      ...p,
-                      score: clientEvent.newScore,
-                      totalScore: p.totalScore + clientEvent.validatedScore,
-                      dartsThrown: p.dartsThrown + 1,
-                    }
-                  : p,
-              ),
-            };
-          });
-        } else if (clientEvent.type === "undo") {
-          // Handle undo
-          setMetadata((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              players: prev.players.map((p) =>
-                p.id === clientEvent.playerId
-                  ? {
-                      ...p,
-                      score: p.score + clientEvent.lastScore,
-                      totalScore: p.totalScore - clientEvent.lastScore,
-                      dartsThrown: p.dartsThrown - 1,
-                    }
-                  : p,
-              ),
-            };
-          });
-        } else if (clientEvent.type === "roundFinish") {
-          // Handle round finish
-          if (clientEvent.winnerId) {
-            setMetadata((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                players: prev.players.map((p) =>
-                  p.id === clientEvent.winnerId
-                    ? { ...p, roundsWon: p.roundsWon + 1 }
-                    : p,
-                ),
-                roundWinner: clientEvent.winnerId,
-              };
-            });
+      switch (event.type) {
+        case "sync":
+          // Initial state - sets all values absolutely
+          setMetadata(event.metadata);
+          setStatus("connected");
+          setError(null);
+          break;
+
+        case "broadcast": {
+          const clientEvent = event.event;
+
+          // Handle each event type with proper typing
+          switch (clientEvent.type) {
+            case "gameUpdate":
+              // Full game state update
+              setMetadata(clientEvent.metadata);
+              break;
+
+            case "score":
+              setMetadata((prev) => (prev ? updateScoreMetadata(prev, clientEvent) : prev));
+              break;
+
+            case "undo":
+              setMetadata((prev) => (prev ? undoScoreMetadata(prev, clientEvent) : prev));
+              break;
+
+            case "roundFinish":
+              setMetadata((prev) => (prev ? updateRoundFinishMetadata(prev, clientEvent) : prev));
+              break;
+
+            case "gameFinish":
+              setMetadata((prev) => (prev ? updateGameFinishMetadata(prev, clientEvent) : prev));
+              break;
           }
-        } else if (clientEvent.type === "gameFinish") {
-          setMetadata((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              gameWinner: clientEvent.winnerId,
-              gamePhase: "gameOver",
-            };
-          });
+          break;
         }
-      } else if (event.type === "error") {
-        setStatus("error");
-        setError(event.message);
+
+        case "error":
+          setStatus("error");
+          setError(event.message);
+          break;
       }
     });
 
@@ -119,33 +156,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
       unsubscribe();
       manager.disconnect();
     };
-  }, [gameId, manager]);
-
-  const getStatusColor = () => {
-    switch (status) {
-      case "connected":
-        return "text-green-500";
-      case "connecting":
-        return "text-yellow-500";
-      case "error":
-        return "text-red-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
-  const getStatusText = () => {
-    switch (status) {
-      case "connected":
-        return "Live";
-      case "connecting":
-        return "Connecting...";
-      case "error":
-        return error || "Error";
-      default:
-        return "Disconnected";
-    }
-  };
+  }, [gameId]);
 
   if (status === "error") {
     return (
@@ -187,8 +198,8 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
     <div className="flex min-h-screen flex-col p-4">
       {/* Status Bar */}
       <div className="mb-4 flex items-center justify-center gap-2 rounded-lg bg-card p-2">
-        <Radio className={`h-4 w-4 ${getStatusColor()}`} />
-        <span className="text-sm font-medium">{getStatusText()}</span>
+        <Radio className={`h-4 w-4 ${getStatusColor(status)}`} />
+        <span className="text-sm font-medium">{getStatusText(status, error)}</span>
         <span className="text-xs text-muted-foreground">
           · Viewing {metadata.players.map((p) => p.name).join(" vs ")}
         </span>
@@ -236,10 +247,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
             <CardContent>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>
-                  Average:{" "}
-                  {player.dartsThrown > 0
-                    ? (player.totalScore / player.dartsThrown).toFixed(2)
-                    : "0.00"}
+                  Average: {calculateAverage(player.totalScore, player.dartsThrown)}
                 </span>
                 <span>Darts: {player.dartsThrown}</span>
               </div>
