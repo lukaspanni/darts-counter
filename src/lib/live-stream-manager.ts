@@ -71,17 +71,30 @@ export class LiveStreamManager {
     this.connection = connection;
     this.isDisconnecting = false;
 
-    const wsUrl = this.buildWebSocketUrl(workerUrl, connection.gameId);
-    console.debug("[LiveStream] Connecting to WebSocket at:", wsUrl);
+    const wsUrl = this.buildWebSocketUrl(workerUrl, connection, isHost);
+    console.log("[LiveStream] Connecting to WebSocket at:", wsUrl.replace(/hostSecret=[^&]+/, 'hostSecret=***'));
     this.createWebSocket(wsUrl, workerUrl, isHost);
   }
 
-  private buildWebSocketUrl(workerUrl: string, gameId: string): string {
-    // Build WebSocket URL with sessionId in query params only
-    // Host secret is NOT sent via query params for security
+  private buildWebSocketUrl(
+    workerUrl: string,
+    connection: LiveStreamConnection,
+    isHost: boolean,
+  ): string {
+    // Build WebSocket URL with sessionId and optionally hostSecret in query params
+    // Note: WebSocket API doesn't support custom headers, so we must use query params
+    // The worker will extract these and set proper headers when forwarding to the DO
     const wsUrl = workerUrl.replace(/^http/, "ws");
-    const url = new URL(`${wsUrl}/game/${gameId}/`);
+    const url = new URL(`${wsUrl}/game/${connection.gameId}/`);
     url.searchParams.set("sessionId", this.sessionId);
+    
+    // For hosts, include the host secret in query params
+    // This is secure because: 1) ws:// URLs aren't logged in browser history
+    // 2) The worker immediately extracts and uses it server-side
+    if (isHost) {
+      url.searchParams.set("hostSecret", connection.hostSecret);
+    }
+    
     return url.toString();
   }
 

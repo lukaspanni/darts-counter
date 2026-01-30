@@ -92,10 +92,12 @@ const handleSubscribeGame = async (request: Request, env: Env, ctx: ExecutionCon
 	const upgradeHeader = request.headers.get('Upgrade');
 	if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') return new Response('Expected Upgrade: websocket', { status: 426 });
 
-	// Extract session ID from query params or headers, host secret only from headers
+	// Extract session ID and host secret from query params or headers
+	// Note: WebSocket connections from browsers cannot send custom headers,
+	// so we accept hostSecret from query params for WebSocket upgrade only
 	const url = new URL(request.url);
 	const sessionId = url.searchParams.get('sessionId') || request.headers.get('X-DO-Session-Id') || crypto.randomUUID();
-	const hostSecret = request.headers.get('X-DO-Host-Secret');
+	const hostSecret = url.searchParams.get('hostSecret') || request.headers.get('X-DO-Host-Secret');
 
 	// Create a new request with the extracted values as headers for the DO
 	const doRequest = new Request(request.url, request);
