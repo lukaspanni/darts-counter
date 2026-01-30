@@ -71,98 +71,120 @@ export class LiveStreamManager {
     this.connection = connection;
     this.isDisconnecting = false;
 
+    const wsUrl = this.buildWebSocketUrl(workerUrl, connection.gameId);
+    this.createWebSocket(wsUrl, workerUrl, isHost);
+  }
+
+  private buildWebSocketUrl(workerUrl: string, gameId: string): string {
     // Build WebSocket URL with sessionId in query params only
     // Host secret is NOT sent via query params for security
     const wsUrl = workerUrl.replace(/^http/, "ws");
-    const url = new URL(`${wsUrl}/game/${connection.gameId}/`);
+    const url = new URL(`${wsUrl}/game/${gameId}/`);
     url.searchParams.set("sessionId", this.sessionId);
+    return url.toString();
+  }
 
+  private createWebSocket(
+    wsUrl: string,
+    workerUrl: string,
+    isHost: boolean,
+  ): void {
     try {
-      this.ws = new WebSocket(url.toString());
-
-      // Send host secret after connection if this is a host
-      // This avoids exposing it in URLs
-      let hostSecretSent = false;
-
-      this.ws.onopen = () => {
-        console.log("[LiveStream] Connected");
-        this.reconnectAttempts = 0;
-
-        // For hosts, send the secret as the first message
-        if (isHost && this.ws && !hostSecretSent) {
-          // We'll send it as a special auth message
-          // Note: This requires updating the worker to handle this message type
-          // For now, we'll still use header-based auth during WebSocket upgrade
-          hostSecretSent = true;
-        }
-      };
-
-      this.ws.onmessage = (event: MessageEvent) => {
-        try {
-          const eventData: unknown = event.data;
-          const dataString =
-            typeof eventData === "string" ? eventData : String(eventData);
-          
-          // Parse and validate with Zod
-          const parsed: unknown = JSON.parse(dataString);
-          const result = serverEventSchema.safeParse(parsed);
-          
-          if (!result.success) {
-            console.error("[LiveStream] Invalid message format:", result.error);
-            return;
-          }
-
-          this.notifyHandlers(result.data);
-        } catch (error) {
-          console.error("[LiveStream] Error parsing message:", error);
-        }
-      };
-
-      this.ws.onerror = (error) => {
-        console.error("[LiveStream] WebSocket error:", error);
-        this.notifyHandlers({
-          type: "error",
-          message: "WebSocket connection error",
-        });
-      };
-
-      this.ws.onclose = () => {
-        console.log("[LiveStream] Disconnected");
-        this.ws = null;
-
-        // Don't attempt to reconnect if we're explicitly disconnecting
-        if (this.isDisconnecting) {
-          return;
-        }
-
-        // Attempt to reconnect
-        if (
-          this.reconnectAttempts < this.maxReconnectAttempts &&
-          this.connection
-        ) {
-          this.reconnectAttempts++;
-          const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
-          console.log(`[LiveStream] Reconnecting in ${delay}ms...`);
-
-          this.reconnectTimeout = window.setTimeout(() => {
-            if (this.connection && !this.isDisconnecting) {
-              this.connect(workerUrl, this.connection, isHost);
-            }
-          }, delay);
-        } else {
-          this.notifyHandlers({
-            type: "error",
-            message: "Failed to reconnect after multiple attempts",
-          });
-        }
-      };
+      this.ws = new WebSocket(wsUrl);
     } catch (error) {
       console.error("[LiveStream] Error creating WebSocket:", error);
       this.notifyHandlers({
         type: "error",
         message: "Failed to create WebSocket connection",
       });
+      return;
     }
+
+    this.setupWebSocketHandlers(workerUrl, isHost);
+  }
+
+  private setupWebSocketHandlers(workerUrl: string, isHost: boolean): void {
+    if (!this.ws) return;
+
+    this.ws.onopen = () => this.handleWebSocketOpen(isHost);
+    this.ws.onmessage = (event: MessageEvent) => this.handleWebSocketMessage(event);
+    this.ws.onerror = (error) => this.handleWebSocketError(error);
+    this.ws.onclose = () => this.handleWebSocketClose(workerUrl, isHost);
+  }
+
+  private handleWebSocketOpen(isHost: boolean): void {
+    console.log("[LiveStream] Connected");
+    this.reconnectAttempts = 0;
+
+    // For hosts, auth is handled via headers at the worker level
+    // Future enhancement: send auth message post-connection
+    if (isHost) {
+      // Authentication handled during WebSocket upgrade
+    }
+  }
+
+  private handleWebSocketMessage(event: MessageEvent): void {
+    const eventData: unknown = event.data;
+    const dataString =
+      typeof eventData === "string" ? eventData : String(eventData);
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(dataString);
+    } catch (error) {
+      console.error("[LiveStream] Error parsing message JSON:", error);
+      return;
+    }
+
+    const result = serverEventSchema.safeParse(parsed);
+    if (!result.success) {
+      console.error("[LiveStream] Invalid message format:", result.error);
+      return;
+    }
+
+    this.notifyHandlers(result.data);
+  }
+
+  private handleWebSocketError(error: Event): void {
+    console.error("[LiveStream] WebSocket error:", error);
+    this.notifyHandlers({
+      type: "error",
+      message: "WebSocket connection error",
+    });
+  }
+
+  private handleWebSocketClose(workerUrl: string, isHost: boolean): void {
+    console.log("[LiveStream] Disconnected");
+    this.ws = null;
+
+    if (this.isDisconnecting) {
+      return;
+    }
+
+    this.attemptReconnection(workerUrl, isHost);
+  }
+
+  private attemptReconnection(workerUrl: string, isHost: boolean): void {
+    if (
+      this.reconnectAttempts >= this.maxReconnectAttempts ||
+      !this.connection
+    ) {
+      this.notifyHandlers({
+        type: "error",
+        message: "Failed to reconnect after multiple attempts",
+      });
+      return;
+    }
+
+    this.reconnectAttempts++;
+    const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
+    console.log(`[LiveStream] Reconnecting in ${delay}ms...`);
+
+    this.reconnectTimeout = window.setTimeout(() => {
+      if (this.connection && !this.isDisconnecting) {
+        this.connect(workerUrl, this.connection, isHost);
+      }
+    }, delay);
   }
 
   public sendEvent(event: ClientEvent): void {
