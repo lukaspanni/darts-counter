@@ -1,6 +1,6 @@
 /**
  * Live Stream Worker - Entry Point
- * 
+ *
  * This worker handles WebSocket connections for live streaming dart games.
  * It routes requests to appropriate Durable Objects (Game or GameRegistry)
  * and manages the creation and subscription of game streams.
@@ -11,6 +11,29 @@ export { Game } from './game';
 
 const GAME_REGISTRY_DO_NAME = 'GameRegistry';
 const PATH_REGEX = /^\/game(\/([a-z0-9-]{36}))?\/?$/i;
+const ALLOWED_ORIGINS = new Set(['http://localhost:3000', 'https://darts.lukaspanni.de']);
+const CORS_HEADERS = {
+	'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+	'Access-Control-Allow-Headers': 'Content-Type, X-DO-Host-Secret, X-DO-Session-Id',
+	'Access-Control-Max-Age': '86400',
+};
+
+const getCorsOrigin = (request: Request): string | null => {
+	const origin = request.headers.get('Origin');
+	if (origin && ALLOWED_ORIGINS.has(origin)) return origin;
+	return null;
+};
+
+const withCors = (response: Response, request: Request): Response => {
+	const origin = getCorsOrigin(request);
+	if (!origin) return response;
+
+	const headers = new Headers(response.headers);
+	headers.set('Access-Control-Allow-Origin', origin);
+	headers.set('Vary', 'Origin');
+	Object.entries(CORS_HEADERS).forEach(([key, value]) => headers.set(key, value));
+	return new Response(response.body, { ...response, headers });
+};
 
 // PLAN
 // - Creating games is handled using POST requests to /game with a host-secret
@@ -97,18 +120,23 @@ export default {
 	 * @returns The response to be sent back to the client
 	 */
 	async fetch(request, env, ctx): Promise<Response> {
+		if (request.method === 'OPTIONS') {
+			return withCors(new Response(null, { status: 204, headers: { Allow: 'GET, POST, OPTIONS' } }), request);
+		}
+
 		// handle invalid methods and paths above
-		if (request.method !== 'GET' && request.method !== 'POST')
-			return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'GET, POST' } });
+		if (request.method !== 'GET' && request.method !== 'POST') {
+			return withCors(new Response('Method Not Allowed', { status: 405, headers: { Allow: 'GET, POST' } }), request);
+		}
 
 		const requestUrl = new URL(request.url);
 		const pathMatch = requestUrl.pathname.match(PATH_REGEX);
-		if (!pathMatch) return new Response('Not Found', { status: 404 });
+		if (!pathMatch) return withCors(new Response('Not Found', { status: 404 }), request);
 		const pathId = pathMatch[2];
 		console.log('[Worker] Received request:', request.method, request.url, 'Path ID:', pathId);
 
-		if (request.method === 'POST') return handleCreateGame(request, env, ctx);
-		if (request.method === 'GET' && pathId) return handleSubscribeGame(request, env, ctx, pathId);
-		return new Response('Bad Request', { status: 400 });
+		if (request.method === 'POST') return withCors(await handleCreateGame(request, env, ctx), request);
+		if (request.method === 'GET' && pathId) return withCors(await handleSubscribeGame(request, env, ctx, pathId), request);
+		return withCors(new Response('Bad Request', { status: 400 }), request);
 	},
 } satisfies ExportedHandler<Env>;

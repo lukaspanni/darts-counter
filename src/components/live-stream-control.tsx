@@ -36,7 +36,7 @@ export function LiveStreamControl() {
           Live Stream
         </CardTitle>
         <CardDescription>
-          Share your game in real-time with viewers
+          Share your game in real-time with others
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -60,7 +60,7 @@ export function LiveStreamControl() {
 
         {state.isActive && liveStreamUrl && (
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Share this URL with viewers:
             </p>
             <div className="flex gap-2">
@@ -68,7 +68,7 @@ export function LiveStreamControl() {
                 type="text"
                 value={liveStreamUrl}
                 readOnly
-                className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="border-input bg-background flex-1 rounded-md border px-3 py-2 text-sm"
               />
               <Button
                 onClick={handleCopyUrl}

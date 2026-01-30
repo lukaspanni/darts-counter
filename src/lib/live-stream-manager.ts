@@ -38,7 +38,7 @@ export class LiveStreamManager {
       }
 
       const data: unknown = await response.json();
-      
+
       // Validate response with Zod
       const result = createGameResponseSchema.safeParse(data);
       if (!result.success) {
@@ -72,6 +72,7 @@ export class LiveStreamManager {
     this.isDisconnecting = false;
 
     const wsUrl = this.buildWebSocketUrl(workerUrl, connection.gameId);
+    console.debug("[LiveStream] Connecting to WebSocket at:", wsUrl);
     this.createWebSocket(wsUrl, workerUrl, isHost);
   }
 
@@ -107,7 +108,8 @@ export class LiveStreamManager {
     if (!this.ws) return;
 
     this.ws.onopen = () => this.handleWebSocketOpen(isHost);
-    this.ws.onmessage = (event: MessageEvent) => this.handleWebSocketMessage(event);
+    this.ws.onmessage = (event: MessageEvent) =>
+      this.handleWebSocketMessage(event);
     this.ws.onerror = (error) => this.handleWebSocketError(error);
     this.ws.onclose = () => this.handleWebSocketClose(workerUrl, isHost);
   }

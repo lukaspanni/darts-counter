@@ -22,10 +22,6 @@ export function GameController() {
   const [isInitialRender, setIsInitialRender] = useState(true);
 
   useEffect(() => {
-    console.log(players);
-  }, [players]);
-
-  useEffect(() => {
     if (isInitialRender && gamePhase === "gameOver" && gameWinner !== null) {
       setIsInitialRender(false);
       const newGameHistory = {
