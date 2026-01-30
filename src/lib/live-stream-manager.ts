@@ -10,6 +10,8 @@ import {
 
 export type LiveStreamEventHandler = (event: ServerEvent) => void;
 
+type ConnectionState = "disconnected" | "connecting" | "connected" | "reconnecting" | "disconnecting";
+
 export class LiveStreamManager {
   private ws: WebSocket | null = null;
   private connection: LiveStreamConnection | null = null;
@@ -19,6 +21,9 @@ export class LiveStreamManager {
   private reconnectTimeout: number | null = null;
   private sessionId: string;
   private isDisconnecting = false;
+  private connectionState: ConnectionState = "disconnected";
+  private workerUrl: string | null = null;
+  private isHost = false;
 
   constructor() {
     this.sessionId = crypto.randomUUID();
@@ -63,17 +68,26 @@ export class LiveStreamManager {
     connection: LiveStreamConnection,
     isHost: boolean,
   ): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      console.warn("WebSocket already connected");
+    // Prevent connection if already connecting or connected
+    if (this.connectionState === "connecting" || this.connectionState === "connected") {
+      console.warn("[LiveStream] Already connecting or connected");
       return;
     }
 
     this.connection = connection;
     this.isDisconnecting = false;
+    this.workerUrl = workerUrl;
+    this.isHost = isHost;
+    this.connectionState = "connecting";
+
+    // Clean up existing WebSocket if any
+    if (this.ws) {
+      this.cleanupWebSocket();
+    }
 
     const wsUrl = this.buildWebSocketUrl(workerUrl, connection, isHost);
     console.log("[LiveStream] Connecting to WebSocket at:", wsUrl.replace(/hostSecret=[^&]+/, 'hostSecret=***'));
-    this.createWebSocket(wsUrl, workerUrl, isHost);
+    this.createWebSocket(wsUrl);
   }
 
   private buildWebSocketUrl(
@@ -98,42 +112,38 @@ export class LiveStreamManager {
     return url.toString();
   }
 
-  private createWebSocket(
-    wsUrl: string,
-    workerUrl: string,
-    isHost: boolean,
-  ): void {
+  private createWebSocket(wsUrl: string): void {
     try {
       this.ws = new WebSocket(wsUrl);
+      this.setupWebSocketHandlers();
     } catch (error) {
       console.error("[LiveStream] Error creating WebSocket:", error);
+      this.connectionState = "disconnected";
       this.notifyHandlers({
         type: "error",
         message: "Failed to create WebSocket connection",
       });
-      return;
     }
-
-    this.setupWebSocketHandlers(workerUrl, isHost);
   }
 
-  private setupWebSocketHandlers(workerUrl: string, isHost: boolean): void {
+  private setupWebSocketHandlers(): void {
     if (!this.ws) return;
 
-    this.ws.onopen = () => this.handleWebSocketOpen(isHost);
+    this.ws.onopen = () => this.handleWebSocketOpen();
     this.ws.onmessage = (event: MessageEvent) =>
       this.handleWebSocketMessage(event);
     this.ws.onerror = (error) => this.handleWebSocketError(error);
-    this.ws.onclose = () => this.handleWebSocketClose(workerUrl, isHost);
+    this.ws.onclose = () => this.handleWebSocketClose();
   }
 
-  private handleWebSocketOpen(isHost: boolean): void {
+  private handleWebSocketOpen(): void {
     console.log("[LiveStream] Connected");
+    this.connectionState = "connected";
     this.reconnectAttempts = 0;
 
     // For hosts, auth is handled via headers at the worker level
     // Future enhancement: send auth message post-connection
-    if (isHost) {
+    if (this.isHost) {
       // Authentication handled during WebSocket upgrade
     }
   }
@@ -162,27 +172,41 @@ export class LiveStreamManager {
 
   private handleWebSocketError(error: Event): void {
     console.error("[LiveStream] WebSocket error:", error);
+    this.connectionState = "disconnected";
     this.notifyHandlers({
       type: "error",
       message: "WebSocket connection error",
     });
   }
 
-  private handleWebSocketClose(workerUrl: string, isHost: boolean): void {
+  private handleWebSocketClose(): void {
     console.log("[LiveStream] Disconnected");
+    const previousState = this.connectionState;
+    this.connectionState = "disconnected";
     this.ws = null;
 
+    // Don't reconnect if we're explicitly disconnecting
     if (this.isDisconnecting) {
       return;
     }
 
-    this.attemptReconnection(workerUrl, isHost);
+    // Only attempt reconnection if we were connected or reconnecting
+    if (previousState === "connected" || previousState === "reconnecting") {
+      this.attemptReconnection();
+    }
   }
 
-  private attemptReconnection(workerUrl: string, isHost: boolean): void {
+  private attemptReconnection(): void {
+    // Guard against multiple concurrent reconnection attempts
+    if (this.reconnectTimeout !== null) {
+      console.log("[LiveStream] Reconnection already scheduled");
+      return;
+    }
+
     if (
       this.reconnectAttempts >= this.maxReconnectAttempts ||
-      !this.connection
+      !this.connection ||
+      !this.workerUrl
     ) {
       this.notifyHandlers({
         type: "error",
@@ -192,12 +216,14 @@ export class LiveStreamManager {
     }
 
     this.reconnectAttempts++;
+    this.connectionState = "reconnecting";
     const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
-    console.log(`[LiveStream] Reconnecting in ${delay}ms...`);
+    console.log(`[LiveStream] Reconnecting in ${delay}ms... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     this.reconnectTimeout = window.setTimeout(() => {
-      if (this.connection && !this.isDisconnecting) {
-        this.connect(workerUrl, this.connection, isHost);
+      this.reconnectTimeout = null;
+      if (this.connection && this.workerUrl && !this.isDisconnecting) {
+        this.connect(this.workerUrl, this.connection, this.isHost);
       }
     }, delay);
   }
@@ -212,19 +238,36 @@ export class LiveStreamManager {
 
   public disconnect(): void {
     this.isDisconnecting = true;
+    this.connectionState = "disconnecting";
 
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
 
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
+    this.cleanupWebSocket();
 
     this.connection = null;
     this.reconnectAttempts = 0;
+    this.workerUrl = null;
+    this.connectionState = "disconnected";
+  }
+
+  private cleanupWebSocket(): void {
+    if (this.ws) {
+      // Remove event handlers to prevent memory leaks
+      this.ws.onopen = null;
+      this.ws.onmessage = null;
+      this.ws.onerror = null;
+      this.ws.onclose = null;
+      
+      // Close the WebSocket if it's still open
+      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+        this.ws.close();
+      }
+      
+      this.ws = null;
+    }
   }
 
   public subscribe(handler: LiveStreamEventHandler): () => void {
@@ -249,6 +292,10 @@ export class LiveStreamManager {
   }
 
   public isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.connectionState === "connected" && this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  public getConnectionState(): ConnectionState {
+    return this.connectionState;
   }
 }

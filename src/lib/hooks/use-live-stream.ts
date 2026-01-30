@@ -24,6 +24,13 @@ export function useLiveStream() {
   // Initialize manager
   useEffect(() => {
     managerRef.current ??= new LiveStreamManager();
+    
+    // Cleanup on unmount or page unload
+    return () => {
+      if (managerRef.current) {
+        managerRef.current.disconnect();
+      }
+    };
   }, []);
 
   // Subscribe to events

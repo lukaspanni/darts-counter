@@ -108,10 +108,15 @@ export class Game extends DurableObject<Env> {
 			return;
 		}
 
-		// Update last activity
-		if (this.state) {
-			this.state.lastActivity = Date.now();
+		// Ensure state exists before processing
+		if (!this.state) {
+			console.error('[Game DO] State is null, cannot process message');
+			ws.send(JSON.stringify({ type: 'error', message: 'Game state not initialized' } satisfies ServerEvent));
+			return;
 		}
+
+		// Update last activity
+		this.state.lastActivity = Date.now();
 
 		try {
 			const parsed = JSON.parse(stringMessage);
@@ -128,10 +133,8 @@ export class Game extends DurableObject<Env> {
 
 			// Handle gameUpdate to store metadata
 			if (event.type === 'gameUpdate') {
-				if (this.state) {
-					this.state.metadata = event.metadata;
-					await this.ctx.storage.put('state', this.state);
-				}
+				this.state.metadata = event.metadata;
+				await this.ctx.storage.put('state', this.state);
 			}
 
 			// Broadcast to all viewers (and other host connections)

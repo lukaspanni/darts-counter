@@ -104,24 +104,29 @@ const handleSubscribeGame = async (request: Request, env: Env, ctx: ExecutionCon
 	const upgradeHeader = request.headers.get('Upgrade');
 	if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') return new Response('Expected Upgrade: websocket', { status: 426 });
 
-	// Extract session ID and host secret from query params or headers
-	// Note: WebSocket connections from browsers cannot send custom headers,
-	// so we accept hostSecret from query params for WebSocket upgrade only
-	const url = new URL(request.url);
-	const sessionId = url.searchParams.get('sessionId') || request.headers.get('X-DO-Session-Id') || crypto.randomUUID();
-	const hostSecret = url.searchParams.get('hostSecret') || request.headers.get('X-DO-Host-Secret');
+	try {
+		// Extract session ID and host secret from query params or headers
+		// Note: WebSocket connections from browsers cannot send custom headers,
+		// so we accept hostSecret from query params for WebSocket upgrade only
+		const url = new URL(request.url);
+		const sessionId = url.searchParams.get('sessionId') || request.headers.get('X-DO-Session-Id') || crypto.randomUUID();
+		const hostSecret = url.searchParams.get('hostSecret') || request.headers.get('X-DO-Host-Secret');
 
-	// Create a new request with the extracted values as headers for the DO
-	const doRequest = new Request(request.url, request);
-	doRequest.headers.set('X-DO-Session-Id', sessionId);
-	if (hostSecret) {
-		doRequest.headers.set('X-DO-Host-Secret', hostSecret);
+		// Create a new request with the extracted values as headers for the DO
+		const doRequest = new Request(request.url, request);
+		doRequest.headers.set('X-DO-Session-Id', sessionId);
+		if (hostSecret) {
+			doRequest.headers.set('X-DO-Host-Secret', hostSecret);
+		}
+
+		const id = env.GAME.idFromName(gameId);
+		const stub = env.GAME.get(id);
+
+		return await stub.fetch(doRequest);
+	} catch (error) {
+		console.error('[Worker] Error in handleSubscribeGame:', error);
+		return new Response('Internal Server Error', { status: 500 });
 	}
-
-	const id = env.GAME.idFromName(gameId);
-	const stub = env.GAME.get(id);
-
-	return stub.fetch(doRequest);
 };
 
 export default {
