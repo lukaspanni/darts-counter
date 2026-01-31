@@ -68,6 +68,11 @@ export const gameUpdateEventSchema = z.object({
   metadata: liveStreamGameMetadataSchema,
 });
 
+export const heartbeatEventSchema = z.object({
+  type: z.literal("heartbeat"),
+  timestamp: z.number(),
+});
+
 // Union of all client events
 export const clientEventSchema = z.discriminatedUnion("type", [
   scoreEventSchema,
@@ -75,6 +80,7 @@ export const clientEventSchema = z.discriminatedUnion("type", [
   roundFinishEventSchema,
   gameFinishEventSchema,
   gameUpdateEventSchema,
+  heartbeatEventSchema,
 ]);
 
 export type ClientEvent = z.infer<typeof clientEventSchema>;

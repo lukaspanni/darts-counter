@@ -10,12 +10,17 @@ import {
 } from "@/components/ui/card";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
 import { getStatusColor, getStatusText } from "@/lib/live-stream-utils";
-import { Copy, Check, Radio, RadioTower } from "lucide-react";
+import { Copy, Check, Radio, RadioTower, RefreshCw } from "lucide-react";
 import { useState } from "react";
 
 export function LiveStreamControl() {
-  const { state, startLiveStream, stopLiveStream, getLiveStreamUrl } =
-    useLiveStream();
+  const {
+    state,
+    startLiveStream,
+    stopLiveStream,
+    retryConnection,
+    getLiveStreamUrl,
+  } = useLiveStream();
   const [copied, setCopied] = useState(false);
 
   const liveStreamUrl = getLiveStreamUrl();
@@ -27,6 +32,13 @@ export function LiveStreamControl() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const handleRetry = () => {
+    retryConnection();
+  };
+
+  // Show retry button when there's an error but we still have connection details
+  const showRetryButton = state.status === "error" && state.isActive;
 
   return (
     <Card>
@@ -47,15 +59,23 @@ export function LiveStreamControl() {
               {getStatusText(state.status, state.error)}
             </span>
           </div>
-          {!state.isActive ? (
-            <Button onClick={startLiveStream} size="sm">
-              Start Stream
-            </Button>
-          ) : (
-            <Button onClick={stopLiveStream} variant="destructive" size="sm">
-              Stop Stream
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {showRetryButton && (
+              <Button onClick={handleRetry} size="sm" variant="outline">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
+              </Button>
+            )}
+            {!state.isActive ? (
+              <Button onClick={startLiveStream} size="sm">
+                Start Stream
+              </Button>
+            ) : (
+              <Button onClick={stopLiveStream} variant="destructive" size="sm">
+                Stop Stream
+              </Button>
+            )}
+          </div>
         </div>
 
         {state.isActive && liveStreamUrl && (

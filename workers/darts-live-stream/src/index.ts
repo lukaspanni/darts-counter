@@ -32,19 +32,23 @@ const withCors = (response: Response, request: Request): Response => {
 	headers.set('Access-Control-Allow-Origin', origin);
 	headers.set('Vary', 'Origin');
 	Object.entries(CORS_HEADERS).forEach(([key, value]) => headers.set(key, value));
-	
+
 	// For WebSocket upgrade responses, preserve the webSocket property
 	// Cloudflare Workers extend Response with webSocket for WebSocket upgrades
 	const responseWithSocket = response as Response & { webSocket?: unknown };
+	const init: ResponseInit = {
+		status: response.status,
+		statusText: response.statusText,
+		headers,
+	};
 	if (responseWithSocket.webSocket) {
-		return new Response(response.body, { 
-			...response, 
-			headers, 
-			webSocket: responseWithSocket.webSocket 
+		return new Response(null, {
+			...init,
+			webSocket: responseWithSocket.webSocket,
 		} as ResponseInit);
 	}
-	
-	return new Response(response.body, { ...response, headers });
+
+	return new Response(response.body, init);
 };
 
 // PLAN

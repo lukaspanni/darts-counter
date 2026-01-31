@@ -9,21 +9,30 @@ import {
 } from "./live-stream-types";
 
 export type LiveStreamEventHandler = (event: ServerEvent) => void;
+export type ConnectionStateHandler = (state: ConnectionState) => void;
 
-type ConnectionState = "disconnected" | "connecting" | "connected" | "reconnecting" | "disconnecting";
+export type ConnectionState =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "disconnecting";
 
 export class LiveStreamManager {
   private ws: WebSocket | null = null;
   private connection: LiveStreamConnection | null = null;
   private eventHandlers = new Set<LiveStreamEventHandler>();
+  private connectionStateHandlers = new Set<ConnectionStateHandler>();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
-  private reconnectTimeout: number | null = null;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private sessionId: string;
   private isDisconnecting = false;
   private connectionState: ConnectionState = "disconnected";
   private workerUrl: string | null = null;
   private isHost = false;
+  private connectionId = 0; // Tracks connection attempts to handle race conditions
+  private hasEverConnected = false;
 
   constructor() {
     this.sessionId = crypto.randomUUID();
@@ -68,26 +77,42 @@ export class LiveStreamManager {
     connection: LiveStreamConnection,
     isHost: boolean,
   ): void {
-    // Prevent connection if already connecting or connected
-    if (this.connectionState === "connecting" || this.connectionState === "connected") {
-      console.warn("[LiveStream] Already connecting or connected");
+    // Increment connection ID to invalidate any pending operations from previous attempts
+    this.connectionId++;
+    const currentConnectionId = this.connectionId;
+
+    // If already connected to the same game, don't reconnect
+    if (
+      this.connectionState === "connected" &&
+      this.connection?.gameId === connection.gameId
+    ) {
+      console.log("[LiveStream] Already connected to this game");
       return;
     }
 
-    this.connection = connection;
-    this.isDisconnecting = false;
-    this.workerUrl = workerUrl;
-    this.isHost = isHost;
-    this.connectionState = "connecting";
+    // Cancel any pending reconnection
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
 
     // Clean up existing WebSocket if any
     if (this.ws) {
       this.cleanupWebSocket();
     }
 
+    this.connection = connection;
+    this.isDisconnecting = false;
+    this.workerUrl = workerUrl;
+    this.isHost = isHost;
+    this.setConnectionState("connecting");
+
     const wsUrl = this.buildWebSocketUrl(workerUrl, connection, isHost);
-    console.log("[LiveStream] Connecting to WebSocket at:", wsUrl.replace(/hostSecret=[^&]+/, 'hostSecret=***'));
-    this.createWebSocket(wsUrl);
+    console.log(
+      "[LiveStream] Connecting to WebSocket at:",
+      wsUrl.replace(/hostSecret=[^&]+/, "hostSecret=***"),
+    );
+    this.createWebSocket(wsUrl, currentConnectionId);
   }
 
   private buildWebSocketUrl(
@@ -101,24 +126,24 @@ export class LiveStreamManager {
     const wsUrl = workerUrl.replace(/^http/, "ws");
     const url = new URL(`${wsUrl}/game/${connection.gameId}/`);
     url.searchParams.set("sessionId", this.sessionId);
-    
+
     // For hosts, include the host secret in query params
     // This is secure because: 1) ws:// URLs aren't logged in browser history
     // 2) The worker immediately extracts and uses it server-side
     if (isHost) {
       url.searchParams.set("hostSecret", connection.hostSecret);
     }
-    
+
     return url.toString();
   }
 
-  private createWebSocket(wsUrl: string): void {
+  private createWebSocket(wsUrl: string, connectionId: number): void {
     try {
       this.ws = new WebSocket(wsUrl);
-      this.setupWebSocketHandlers();
+      this.setupWebSocketHandlers(connectionId);
     } catch (error) {
       console.error("[LiveStream] Error creating WebSocket:", error);
-      this.connectionState = "disconnected";
+      this.setConnectionState("disconnected");
       this.notifyHandlers({
         type: "error",
         message: "Failed to create WebSocket connection",
@@ -126,26 +151,45 @@ export class LiveStreamManager {
     }
   }
 
-  private setupWebSocketHandlers(): void {
+  private setupWebSocketHandlers(connectionId: number): void {
     if (!this.ws) return;
 
-    this.ws.onopen = () => this.handleWebSocketOpen();
-    this.ws.onmessage = (event: MessageEvent) =>
+    this.ws.onopen = () => {
+      // Check if this connection attempt is still valid
+      if (connectionId !== this.connectionId) {
+        console.log("[LiveStream] Ignoring stale connection open");
+        return;
+      }
+      this.handleWebSocketOpen();
+    };
+
+    this.ws.onmessage = (event: MessageEvent) => {
+      if (connectionId !== this.connectionId) return;
       this.handleWebSocketMessage(event);
-    this.ws.onerror = (error) => this.handleWebSocketError(error);
-    this.ws.onclose = () => this.handleWebSocketClose();
+    };
+
+    this.ws.onerror = (error) => {
+      if (connectionId !== this.connectionId) {
+        console.log("[LiveStream] Ignoring stale connection error");
+        return;
+      }
+      this.handleWebSocketError(error);
+    };
+
+    this.ws.onclose = (event) => {
+      if (connectionId !== this.connectionId) {
+        console.log("[LiveStream] Ignoring stale connection close");
+        return;
+      }
+      this.handleWebSocketClose(event);
+    };
   }
 
   private handleWebSocketOpen(): void {
     console.log("[LiveStream] Connected");
-    this.connectionState = "connected";
+    this.setConnectionState("connected");
     this.reconnectAttempts = 0;
-
-    // For hosts, auth is handled via headers at the worker level
-    // Future enhancement: send auth message post-connection
-    if (this.isHost) {
-      // Authentication handled during WebSocket upgrade
-    }
+    this.hasEverConnected = true;
   }
 
   private handleWebSocketMessage(event: MessageEvent): void {
@@ -172,17 +216,15 @@ export class LiveStreamManager {
 
   private handleWebSocketError(error: Event): void {
     console.error("[LiveStream] WebSocket error:", error);
-    this.connectionState = "disconnected";
-    this.notifyHandlers({
-      type: "error",
-      message: "WebSocket connection error",
-    });
+    // Don't change state here - wait for onclose which always fires after onerror
   }
 
-  private handleWebSocketClose(): void {
-    console.log("[LiveStream] Disconnected");
+  private handleWebSocketClose(event: CloseEvent): void {
+    console.log(
+      `[LiveStream] Disconnected (code: ${event.code}, clean: ${event.wasClean})`,
+    );
     const previousState = this.connectionState;
-    this.connectionState = "disconnected";
+    this.setConnectionState("disconnected");
     this.ws = null;
 
     // Don't reconnect if we're explicitly disconnecting
@@ -191,7 +233,12 @@ export class LiveStreamManager {
     }
 
     // Only attempt reconnection if we were connected or reconnecting
-    if (previousState === "connected" || previousState === "reconnecting") {
+    // Also attempt reconnection if we were connecting (connection failed during handshake)
+    if (
+      previousState === "connected" ||
+      previousState === "reconnecting" ||
+      previousState === "connecting"
+    ) {
       this.attemptReconnection();
     }
   }
@@ -203,24 +250,31 @@ export class LiveStreamManager {
       return;
     }
 
-    if (
-      this.reconnectAttempts >= this.maxReconnectAttempts ||
-      !this.connection ||
-      !this.workerUrl
-    ) {
+    if (!this.connection || !this.workerUrl) {
       this.notifyHandlers({
         type: "error",
-        message: "Failed to reconnect after multiple attempts",
+        message: "Failed to reconnect: missing connection details",
       });
       return;
     }
 
-    this.reconnectAttempts++;
-    this.connectionState = "reconnecting";
-    const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
-    console.log(`[LiveStream] Reconnecting in ${delay}ms... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.notifyHandlers({
+        type: "error",
+        message: "Failed to reconnect after multiple attempts",
+      });
+      this.reconnectAttempts = 0;
+      return;
+    }
 
-    this.reconnectTimeout = window.setTimeout(() => {
+    this.reconnectAttempts++;
+    this.setConnectionState("reconnecting");
+    const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
+    console.log(
+      `[LiveStream] Reconnecting in ${delay}ms... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+    );
+
+    this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       if (this.connection && this.workerUrl && !this.isDisconnecting) {
         this.connect(this.workerUrl, this.connection, this.isHost);
@@ -238,7 +292,10 @@ export class LiveStreamManager {
 
   public disconnect(): void {
     this.isDisconnecting = true;
-    this.connectionState = "disconnecting";
+    this.setConnectionState("disconnecting");
+
+    // Increment connection ID to invalidate any pending callbacks
+    this.connectionId++;
 
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
@@ -250,7 +307,7 @@ export class LiveStreamManager {
     this.connection = null;
     this.reconnectAttempts = 0;
     this.workerUrl = null;
-    this.connectionState = "disconnected";
+    this.setConnectionState("disconnected");
   }
 
   private cleanupWebSocket(): void {
@@ -260,12 +317,15 @@ export class LiveStreamManager {
       this.ws.onmessage = null;
       this.ws.onerror = null;
       this.ws.onclose = null;
-      
+
       // Close the WebSocket if it's still open
-      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+      if (
+        this.ws.readyState === WebSocket.OPEN ||
+        this.ws.readyState === WebSocket.CONNECTING
+      ) {
         this.ws.close();
       }
-      
+
       this.ws = null;
     }
   }
@@ -274,6 +334,15 @@ export class LiveStreamManager {
     this.eventHandlers.add(handler);
     return () => {
       this.eventHandlers.delete(handler);
+    };
+  }
+
+  public subscribeToConnectionState(
+    handler: ConnectionStateHandler,
+  ): () => void {
+    this.connectionStateHandlers.add(handler);
+    return () => {
+      this.connectionStateHandlers.delete(handler);
     };
   }
 
@@ -287,15 +356,132 @@ export class LiveStreamManager {
     });
   }
 
+  private notifyConnectionStateHandlers(): void {
+    this.connectionStateHandlers.forEach((handler) => {
+      try {
+        handler(this.connectionState);
+      } catch (error) {
+        console.error("[LiveStream] Error in connection state handler:", error);
+      }
+    });
+  }
+
+  private setConnectionState(state: ConnectionState): void {
+    if (this.connectionState !== state) {
+      this.connectionState = state;
+      this.notifyConnectionStateHandlers();
+    }
+  }
+
   public getSessionId(): string {
     return this.sessionId;
   }
 
   public isConnected(): boolean {
-    return this.connectionState === "connected" && this.ws?.readyState === WebSocket.OPEN;
+    return (
+      this.connectionState === "connected" &&
+      this.ws?.readyState === WebSocket.OPEN
+    );
   }
 
   public getConnectionState(): ConnectionState {
     return this.connectionState;
+  }
+
+  public getConnection(): LiveStreamConnection | null {
+    return this.connection;
+  }
+
+  /**
+   * Manually retry the connection using the existing connection details.
+   * Useful when the host needs to reconnect after an unexpected disconnect.
+   */
+  public retryConnection(): boolean {
+    if (!this.connection || !this.workerUrl) {
+      console.warn(
+        "[LiveStream] Cannot retry: no connection details available",
+      );
+      return false;
+    }
+
+    if (
+      this.connectionState === "connecting" ||
+      this.connectionState === "connected"
+    ) {
+      console.warn(
+        "[LiveStream] Cannot retry: already connecting or connected",
+      );
+      return false;
+    }
+
+    console.log("[LiveStream] Manually retrying connection");
+    this.reconnectAttempts = 0; // Reset attempts for manual retry
+    this.isDisconnecting = false;
+    this.connect(this.workerUrl, this.connection, this.isHost);
+    return true;
+  }
+
+  public ensureConnected(): void {
+    if (!this.connection || !this.workerUrl || this.isDisconnecting) return;
+    if (
+      this.connectionState === "connecting" ||
+      this.connectionState === "connected" ||
+      this.connectionState === "reconnecting"
+    ) {
+      return;
+    }
+    if (this.hasEverConnected) {
+      this.reconnectAttempts = 0;
+    }
+    this.connect(this.workerUrl, this.connection, this.isHost);
+  }
+}
+
+// Singleton instances for host and viewer connections
+// This ensures React StrictMode remounts don't create duplicate connections
+let hostManager: LiveStreamManager | null = null;
+const viewerManagers = new Map<string, LiveStreamManager>();
+
+/**
+ * Gets or creates a singleton manager for hosting a live stream.
+ */
+export function getHostManager(): LiveStreamManager {
+  if (!hostManager) {
+    hostManager = new LiveStreamManager();
+  }
+  return hostManager;
+}
+
+/**
+ * Resets the host manager (for testing or explicit cleanup).
+ */
+export function resetHostManager(): void {
+  if (hostManager) {
+    hostManager.disconnect();
+    hostManager = null;
+  }
+}
+
+/**
+ * Gets or creates a singleton manager for viewing a specific game.
+ * Each gameId gets its own manager instance.
+ */
+export function getViewerManager(gameId: string): LiveStreamManager {
+  let manager = viewerManagers.get(gameId);
+  if (!manager) {
+    manager = new LiveStreamManager();
+    viewerManagers.set(gameId, manager);
+  }
+  return manager;
+}
+
+/**
+ * Removes a viewer manager for a specific game.
+ */
+export function removeViewerManager(gameId: string): void {
+  const manager = viewerManagers.get(gameId);
+  if (manager) {
+    manager.disconnect();
+    viewerManagers.delete(gameId);
   }
 }

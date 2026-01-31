@@ -1,16 +1,9 @@
 import { DurableObject } from 'cloudflare:workers';
-import {
-	type Session,
-	type GameState,
-	type ClientEvent,
-	type ServerEvent,
-	sessionSchema,
-	clientEventSchema,
-} from './types';
+import { type Session, type GameState, type ClientEvent, type ServerEvent, sessionSchema, clientEventSchema } from './types';
 
 /**
  * Game Durable Object
- * 
+ *
  * Manages the state and WebSocket connections for a single game stream.
  * - Stores game metadata and host secret
  * - Validates host authentication
@@ -24,7 +17,7 @@ export class Game extends DurableObject<Env> {
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
 		this.sessions = new Map();
-		
+
 		// Restore WebSocket sessions
 		this.ctx.getWebSockets().forEach((ws) => {
 			const meta = ws.deserializeAttachment();
@@ -121,7 +114,7 @@ export class Game extends DurableObject<Env> {
 		try {
 			const parsed = JSON.parse(stringMessage);
 			const result = clientEventSchema.safeParse(parsed);
-			
+
 			if (!result.success) {
 				console.error('[Game DO] Invalid message:', result.error);
 				ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' } satisfies ServerEvent));
@@ -134,6 +127,11 @@ export class Game extends DurableObject<Env> {
 			// Handle gameUpdate to store metadata
 			if (event.type === 'gameUpdate') {
 				this.state.metadata = event.metadata;
+				await this.ctx.storage.put('state', this.state);
+			}
+
+			if (event.type === 'heartbeat') {
+				this.state.lastActivity = Date.now();
 				await this.ctx.storage.put('state', this.state);
 			}
 
@@ -160,13 +158,13 @@ export class Game extends DurableObject<Env> {
 	override async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
 		const session = this.sessions.get(ws);
 		console.log('[Game DO] WebSocket closed:', session?.id, 'code:', code, 'clean:', wasClean);
-		
+
 		if (code === 1006) {
 			console.warn('[Game DO] WebSocket closed unexpectedly', reason);
 		}
-		
+
 		this.sessions.delete(ws);
-		
+
 		// If all connections are closed, we could optionally clean up
 		if (this.sessions.size === 0) {
 			console.log('[Game DO] All connections closed');

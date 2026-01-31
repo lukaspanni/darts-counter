@@ -33,6 +33,9 @@ export function getStatusText(
   }
 }
 
-export function calculateAverage(totalScore: number, dartsThrown: number): string {
-  return dartsThrown > 0 ? (totalScore / dartsThrown).toFixed(2) : "0.00";
+export function calculateAverage(
+  totalScore: number,
+  dartsThrown: number,
+): string {
+  return dartsThrown > 0 ? ((totalScore / dartsThrown) * 3).toFixed(2) : "0.00";
 }

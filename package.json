@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "worker:dev": "pnpm --filter darts-live-stream dev",
+    "dev:worker": "pnpm --filter darts-live-stream dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

@@ -32,7 +32,7 @@ export function GameController() {
           roundsWon: p.roundsWon,
           averageScore:
             p.dartsThrown > 0
-              ? Number((p.totalScore / p.dartsThrown).toFixed(2))
+              ? Number(((p.totalScore / p.dartsThrown) * 3).toFixed(2))
               : 0,
         })),
         winner: players.find((p) => p.id === gameWinner)?.name || "",

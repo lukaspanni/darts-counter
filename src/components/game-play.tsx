@@ -28,6 +28,7 @@ export function GamePlay() {
     players,
     activePlayerId,
     gameSettings,
+    gamePhase,
     finishRound,
     startNextRound,
     currentRound,
@@ -35,6 +36,7 @@ export function GamePlay() {
     handleUndoThrow,
     resetGame,
     roundWinner,
+    gameWinner,
   } = useGameStore((state) => state);
 
   const { state: liveStreamState, sendEvent } = useLiveStream();
@@ -107,7 +109,7 @@ export function GamePlay() {
       liveStreamState.status === "connected" &&
       players.length > 0
     ) {
-      // Send initial game update with current state
+      // Send game update with current state
       sendEvent({
         type: "gameUpdate",
         metadata: {
@@ -125,9 +127,9 @@ export function GamePlay() {
           })),
           currentRound,
           activePlayerId,
-          gamePhase: "playing",
+          gamePhase,
           roundWinner,
-          gameWinner: null,
+          gameWinner,
         },
       });
     }
@@ -140,6 +142,8 @@ export function GamePlay() {
     currentRound,
     activePlayerId,
     roundWinner,
+    gameWinner,
+    gamePhase,
     sendEvent,
   ]);
 
@@ -148,21 +152,6 @@ export function GamePlay() {
     modifier: ScoreModifier,
   ) => {
     const result = handleDartThrow(scoreAfterModifier, modifier);
-
-    // Send score event to live stream if active
-    if (liveStreamState.isActive && liveStreamState.status === "connected") {
-      sendEvent({
-        type: "score",
-        playerId: activePlayerId,
-        score: scoreAfterModifier,
-        modifier,
-        newScore: result.newScore,
-        validatedScore: result.validatedScore,
-        isRoundWin: result.isRoundWin,
-        isBust: result.isBust,
-        currentRoundTotal: result.currentRoundTotal,
-      });
-    }
 
     // Update local component state
     setDartsInRound((prev) => prev + 1);
@@ -202,15 +191,6 @@ export function GamePlay() {
   };
 
   const handleRoundComplete = () => {
-    // Send round finish event to live stream if active
-    if (liveStreamState.isActive && liveStreamState.status === "connected") {
-      sendEvent({
-        type: "roundFinish",
-        roundNumber: currentRound,
-        winnerId: roundWinner,
-      });
-    }
-
     setShowRoundWonModal(false);
     startNextRound();
     setDartsInRound(0);
@@ -222,16 +202,6 @@ export function GamePlay() {
     const result = handleUndoThrow();
 
     if (result.success) {
-      // Send undo event to live stream if active
-      if (liveStreamState.isActive && liveStreamState.status === "connected") {
-        sendEvent({
-          type: "undo",
-          playerId: activePlayerId,
-          lastScore: result.lastScore,
-          newRoundTotal: result.newRoundTotal,
-        });
-      }
-
       setLastThrowBust(false);
       setDartsInRound((prev) => prev - 1);
       setCurrentScore(result.newRoundTotal);

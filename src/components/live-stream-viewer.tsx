@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { LiveStreamManager } from "@/lib/live-stream-manager";
+import { useEffect, useState, useRef } from "react";
+import {
+  getViewerManager,
+  removeViewerManager,
+} from "@/lib/live-stream-manager";
 import type {
   ServerEvent,
   LiveStreamGameMetadata,
   ClientEvent,
 } from "@/lib/live-stream-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Radio } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Radio, RefreshCw } from "lucide-react";
 import {
   getStatusColor,
   getStatusText,
@@ -16,8 +20,7 @@ import {
 } from "@/lib/live-stream-utils";
 
 const WORKER_URL =
-  process.env.NEXT_PUBLIC_LIVE_STREAM_WORKER_URL ||
-  "http://localhost:8787";
+  process.env.NEXT_PUBLIC_LIVE_STREAM_WORKER_URL || "http://localhost:8787";
 
 interface LiveStreamViewerProps {
   gameId: string;
@@ -89,16 +92,48 @@ function updateGameFinishMetadata(
 }
 
 export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
-  const [manager] = useState(() => new LiveStreamManager());
-  const [metadata, setMetadata] = useState<LiveStreamGameMetadata | null>(
-    null,
-  );
+  const managerRef = useRef(getViewerManager(gameId));
+  const [metadata, setMetadata] = useState<LiveStreamGameMetadata | null>(null);
   const [status, setStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
   const [error, setError] = useState<string | null>(null);
+  const [isStale, setIsStale] = useState(false);
+  const lastEventAtRef = useRef<number>(Date.now());
+  const staleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Update manager ref if gameId changes
+  useEffect(() => {
+    managerRef.current = getViewerManager(gameId);
+  }, [gameId]);
+
+  const handleRetry = () => {
+    setStatus("connecting");
+    setError(null);
+    managerRef.current.retryConnection();
+  };
 
   useEffect(() => {
+    const manager = managerRef.current;
+
+    const clearStaleTimeout = () => {
+      if (staleTimeoutRef.current) {
+        clearTimeout(staleTimeoutRef.current);
+      }
+    };
+
+    const scheduleStaleCheck = () => {
+      clearStaleTimeout();
+      staleTimeoutRef.current = setTimeout(() => {
+        const elapsed = Date.now() - lastEventAtRef.current;
+        setIsStale(elapsed > 45000);
+      }, 45000);
+    };
+
+    lastEventAtRef.current = Date.now();
+    setIsStale(false);
+    scheduleStaleCheck();
+
     // Connect as viewer (no host secret)
     manager.connect(
       WORKER_URL,
@@ -106,8 +141,23 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
       false, // not host
     );
 
+    // Subscribe to connection state changes
+    const unsubscribeState = manager.subscribeToConnectionState((connState) => {
+      if (connState === "connected") {
+        setStatus("connected");
+      } else if (connState === "connecting" || connState === "reconnecting") {
+        setStatus("connecting");
+      } else if (connState === "disconnected") {
+        // Only set to disconnected if we weren't already connected
+        // (auto-reconnect will handle it)
+      }
+    });
+
     // Subscribe to events
     const unsubscribe = manager.subscribe((event: ServerEvent) => {
+      lastEventAtRef.current = Date.now();
+      setIsStale(false);
+      scheduleStaleCheck();
       switch (event.type) {
         case "sync":
           // Initial state - sets all values absolutely
@@ -127,19 +177,27 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
               break;
 
             case "score":
-              setMetadata((prev) => (prev ? updateScoreMetadata(prev, clientEvent) : prev));
+              setMetadata((prev) =>
+                prev ? updateScoreMetadata(prev, clientEvent) : prev,
+              );
               break;
 
             case "undo":
-              setMetadata((prev) => (prev ? undoScoreMetadata(prev, clientEvent) : prev));
+              setMetadata((prev) =>
+                prev ? undoScoreMetadata(prev, clientEvent) : prev,
+              );
               break;
 
             case "roundFinish":
-              setMetadata((prev) => (prev ? updateRoundFinishMetadata(prev, clientEvent) : prev));
+              setMetadata((prev) =>
+                prev ? updateRoundFinishMetadata(prev, clientEvent) : prev,
+              );
               break;
 
             case "gameFinish":
-              setMetadata((prev) => (prev ? updateGameFinishMetadata(prev, clientEvent) : prev));
+              setMetadata((prev) =>
+                prev ? updateGameFinishMetadata(prev, clientEvent) : prev,
+              );
               break;
           }
           break;
@@ -154,7 +212,10 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
 
     return () => {
       unsubscribe();
-      manager.disconnect();
+      unsubscribeState();
+      clearStaleTimeout();
+      // Don't disconnect on cleanup - the singleton handles this
+      // Only remove if navigating away from this game entirely
     };
   }, [gameId]);
 
@@ -167,10 +228,16 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
               Connection Error
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-center text-muted-foreground">
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground text-center">
               {error || "Failed to connect to live stream"}
             </p>
+            <div className="flex justify-center">
+              <Button onClick={handleRetry} variant="outline">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry Connection
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -197,12 +264,19 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
   return (
     <div className="flex min-h-screen flex-col p-4">
       {/* Status Bar */}
-      <div className="mb-4 flex items-center justify-center gap-2 rounded-lg bg-card p-2">
+      <div className="bg-card mb-4 flex items-center justify-center gap-2 rounded-lg p-2">
         <Radio className={`h-4 w-4 ${getStatusColor(status)}`} />
-        <span className="text-sm font-medium">{getStatusText(status, error)}</span>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-sm font-medium">
+          {getStatusText(status, error)}
+        </span>
+        <span className="text-muted-foreground text-xs">
           · Viewing {metadata.players.map((p) => p.name).join(" vs ")}
         </span>
+        {isStale && (
+          <span className="text-xs font-medium text-amber-600">
+            · Stream stale (no updates)
+          </span>
+        )}
       </div>
 
       {/* Score Display */}
@@ -211,7 +285,8 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-center">
-              Round {metadata.currentRound} · Best of {metadata.roundsToWin}
+              Round {Math.max(1, metadata.currentRound)} · Best of{" "}
+              {metadata.roundsToWin}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -231,23 +306,24 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
                 <div>
                   <h3 className="text-2xl font-bold">{player.name}</h3>
                   {player.id === metadata.activePlayerId && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Currently throwing
                     </p>
                   )}
                 </div>
                 <div className="text-right">
                   <div className="text-4xl font-bold">{player.score}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Rounds won: {player.roundsWon}
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between text-sm text-muted-foreground">
+              <div className="text-muted-foreground flex justify-between text-sm">
                 <span>
-                  Average: {calculateAverage(player.totalScore, player.dartsThrown)}
+                  Average:{" "}
+                  {calculateAverage(player.totalScore, player.dartsThrown)}
                 </span>
                 <span>Darts: {player.dartsThrown}</span>
               </div>
@@ -265,8 +341,10 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
             </CardHeader>
             <CardContent>
               <p className="text-center text-xl font-bold">
-                {metadata.players.find((p) => p.id === metadata.gameWinner)
-                  ?.name}{" "}
+                {
+                  metadata.players.find((p) => p.id === metadata.gameWinner)
+                    ?.name
+                }{" "}
                 wins!
               </p>
             </CardContent>

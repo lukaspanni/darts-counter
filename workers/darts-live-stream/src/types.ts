@@ -22,7 +22,7 @@ export const gameMetadataSchema = z.object({
 			roundsWon: z.number(),
 			dartsThrown: z.number(),
 			totalScore: z.number(),
-		})
+		}),
 	),
 	currentRound: z.number(),
 	activePlayerId: z.number(),
@@ -69,6 +69,11 @@ export const gameUpdateEventSchema = z.object({
 	metadata: gameMetadataSchema,
 });
 
+export const heartbeatEventSchema = z.object({
+	type: z.literal('heartbeat'),
+	timestamp: z.number(),
+});
+
 // Union of all client-to-DO events
 export const clientEventSchema = z.discriminatedUnion('type', [
 	scoreEventSchema,
@@ -76,6 +81,7 @@ export const clientEventSchema = z.discriminatedUnion('type', [
 	roundFinishEventSchema,
 	gameFinishEventSchema,
 	gameUpdateEventSchema,
+	heartbeatEventSchema,
 ]);
 
 export type ClientEvent = z.infer<typeof clientEventSchema>;
@@ -97,11 +103,7 @@ export const errorEventSchema = z.object({
 });
 
 // Union of all DO-to-client events
-export const serverEventSchema = z.discriminatedUnion('type', [
-	syncEventSchema,
-	broadcastEventSchema,
-	errorEventSchema,
-]);
+export const serverEventSchema = z.discriminatedUnion('type', [syncEventSchema, broadcastEventSchema, errorEventSchema]);
 
 export type ServerEvent = z.infer<typeof serverEventSchema>;
 
