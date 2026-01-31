@@ -142,51 +142,65 @@ sequenceDiagram
 
     Note over Host,Game: Stream Creation (HTTP)
     Host->>App: Click "Start Stream"
-    App->>Worker: POST /game (create game)
+    App->>Worker: POST /game
+    Worker->>Worker: Generate gameId, hostSecret
     Worker->>Game: game.init(hostSecret)
     Game->>Game: Store hostSecret in state
-    Worker->>Registry: registry.register(gameId)
-    Registry->>Registry: Add to active games
+    Worker->>Registry: registry.registerGame(gameId)
+    Registry->>Registry: Add to active games list
     Worker-->>App: {gameId, hostSecret}
     App-->>Host: Display stream URL
 
     Note over Host,Game: Host Connection (WebSocket)
-    Host->>Worker: WebSocket Upgrade<br/>ws://worker/game/{gameId}<br/>?hostSecret=xxx
-    Worker->>Worker: Extract hostSecret from query
-    Worker->>Game: fetch(game, {hostSecret in header})
+    Host->>App: Connect to stream
+    App->>Worker: WebSocket Upgrade<br/>GET /game/{gameId}<br/>?hostSecret=xxx&sessionId=yyy
+    Worker->>Worker: Extract hostSecret from query<br/>Add to X-DO-Host-Secret header
+    Worker->>Game: Forward WebSocket upgrade request
     Game->>Game: Verify hostSecret matches
-    Game->>Game: Create WebSocketPair
-    Game->>Game: Add to sessions (isHost=true)
-    Game-->>Worker: Response(101, {webSocket})
-    Worker->>Worker: Preserve webSocket in CORS
-    Worker-->>Host: WebSocket connection
-    Host->>Game: Send gameUpdate event
-    Game->>Game: Store metadata
+    Game->>Game: Create WebSocketPair<br/>(client, server)
+    Game->>Game: Add server to sessions (isHost=true)
+    Game-->>Worker: Response(101, {webSocket: client})
+    Worker->>Worker: Preserve webSocket in CORS wrapper
+    Worker-->>App: Return WebSocket client
+    App-->>Host: WebSocket connected to Game DO
+    Note right of Host: Direct WebSocket connection<br/>to Game DO established
+    Host->>Game: Send gameUpdate (via WebSocket)
+    Game->>Game: Store game metadata
 
     Note over Viewer,Game: Viewer Connection (WebSocket)
-    Viewer->>Worker: WebSocket Upgrade<br/>ws://worker/game/{gameId}
-    Worker->>Game: fetch(game, no hostSecret)
-    Game->>Game: Create WebSocketPair
-    Game->>Game: Add to sessions (isHost=false)
-    Game->>Viewer: Send sync event (current state)
-    Game-->>Worker: Response(101, {webSocket})
-    Worker-->>Viewer: WebSocket connection
+    Viewer->>Worker: WebSocket Upgrade<br/>GET /game/{gameId}<br/>?sessionId=zzz
+    Worker->>Worker: No hostSecret - viewer connection
+    Worker->>Game: Forward WebSocket upgrade request
+    Game->>Game: Create WebSocketPair<br/>(client, server)
+    Game->>Game: Add server to sessions (isHost=false)
+    Game->>Game: Send sync event (current state)
+    Game-->>Worker: Response(101, {webSocket: client})
+    Worker->>Worker: Preserve webSocket in CORS wrapper
+    Worker-->>Viewer: Return WebSocket client
+    Note right of Viewer: Direct WebSocket connection<br/>to Game DO established
 
     Note over Host,Viewer: Score Event Broadcasting
-    Host->>Game: score event (via WebSocket)
-    Game->>Game: Validate isHost=true
-    Game->>Game: Update lastActivity
+    Host->>Game: Send score event (via direct WebSocket)
+    Game->>Game: Validate sender isHost=true
+    Game->>Game: Update stored metadata
     Game->>Game: Broadcast to all sessions
-    Game->>Viewer: broadcast {score event}
-    Game->>Host: broadcast {score event}
+    Game->>Host: Broadcast event (direct WebSocket)
+    Game->>Viewer: Broadcast event (direct WebSocket)
 
     Note over Host,Viewer: Connection Lifecycle
-    Host->>Game: WebSocket close
-    Game->>Game: Remove from sessions
-    Game->>Game: Check if any sessions remain
-    Viewer->>Game: WebSocket close
-    Game->>Game: Remove from sessions
+    Host->>Game: WebSocket close (direct)
+    Game->>Game: Remove host from sessions
+    Viewer->>Game: WebSocket close (direct)
+    Game->>Game: Remove viewer from sessions
 ```
+
+**Key Points:**
+- **The Worker facilitates the WebSocket upgrade**: The Worker receives the initial WebSocket upgrade request, extracts authentication parameters, and forwards the request to the appropriate Game DO
+- **Game DO creates direct WebSocket connections**: The Game DO creates a WebSocketPair and returns one end to the client through the Worker. After the upgrade, clients have a **direct WebSocket connection to the Game DO**
+- **Messages flow directly between clients and Game DO**: Once the WebSocket is established, all messages (score events, broadcasts, etc.) flow directly between the client and the Game DO without going through the Worker
+- **The Worker's role is limited to the initial handshake**: After returning the WebSocket upgrade response, the Worker is no longer involved in the WebSocket communication
+
+This architecture provides optimal performance since messages don't need to be proxied through the Worker.
 
 #### Host Authentication Flow
 
