@@ -446,9 +446,7 @@ const viewerManagers = new Map<string, LiveStreamManager>();
  * Gets or creates a singleton manager for hosting a live stream.
  */
 export function getHostManager(): LiveStreamManager {
-  if (!hostManager) {
-    hostManager = new LiveStreamManager();
-  }
+  hostManager ??= new LiveStreamManager();
   return hostManager;
 }
 
