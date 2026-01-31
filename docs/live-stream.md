@@ -125,35 +125,303 @@ The live stream feature uses Cloudflare Durable Objects to provide:
 
 ## Technical Details
 
+### WebSocket Connection Setup
+
+The live stream feature uses WebSocket connections for real-time bidirectional communication between hosts/viewers and the Cloudflare Worker.
+
+#### Connection Flow
+
+```mermaid
+sequenceDiagram
+    participant Host as Host Browser
+    participant App as Next.js App
+    participant Worker as Cloudflare Worker
+    participant Registry as GameRegistry DO
+    participant Game as Game DO
+    participant Viewer as Viewer Browser
+
+    Note over Host,Game: Stream Creation (HTTP)
+    Host->>App: Click "Start Stream"
+    App->>Worker: POST /game (create game)
+    Worker->>Game: game.init(hostSecret)
+    Game->>Game: Store hostSecret in state
+    Worker->>Registry: registry.register(gameId)
+    Registry->>Registry: Add to active games
+    Worker-->>App: {gameId, hostSecret}
+    App-->>Host: Display stream URL
+
+    Note over Host,Game: Host Connection (WebSocket)
+    Host->>Worker: WebSocket Upgrade<br/>ws://worker/game/{gameId}<br/>?hostSecret=xxx
+    Worker->>Worker: Extract hostSecret from query
+    Worker->>Game: fetch(game, {hostSecret in header})
+    Game->>Game: Verify hostSecret matches
+    Game->>Game: Create WebSocketPair
+    Game->>Game: Add to sessions (isHost=true)
+    Game-->>Worker: Response(101, {webSocket})
+    Worker->>Worker: Preserve webSocket in CORS
+    Worker-->>Host: WebSocket connection
+    Host->>Game: Send gameUpdate event
+    Game->>Game: Store metadata
+
+    Note over Viewer,Game: Viewer Connection (WebSocket)
+    Viewer->>Worker: WebSocket Upgrade<br/>ws://worker/game/{gameId}
+    Worker->>Game: fetch(game, no hostSecret)
+    Game->>Game: Create WebSocketPair
+    Game->>Game: Add to sessions (isHost=false)
+    Game->>Viewer: Send sync event (current state)
+    Game-->>Worker: Response(101, {webSocket})
+    Worker-->>Viewer: WebSocket connection
+
+    Note over Host,Viewer: Score Event Broadcasting
+    Host->>Game: score event (via WebSocket)
+    Game->>Game: Validate isHost=true
+    Game->>Game: Update lastActivity
+    Game->>Game: Broadcast to all sessions
+    Game->>Viewer: broadcast {score event}
+    Game->>Host: broadcast {score event}
+
+    Note over Host,Viewer: Connection Lifecycle
+    Host->>Game: WebSocket close
+    Game->>Game: Remove from sessions
+    Game->>Game: Check if any sessions remain
+    Viewer->>Game: WebSocket close
+    Game->>Game: Remove from sessions
+```
+
+#### Host Authentication Flow
+
+Due to browser WebSocket API limitations (no custom headers support), host authentication uses a hybrid approach:
+
+1. **Query Parameter for WebSocket**: The `hostSecret` is sent as a query parameter in the WebSocket URL
+   - Example: `ws://worker/game/abc123?hostSecret=xyz789`
+   - This is secure for WebSockets as `ws://` URLs are not logged in browser history
+   - The secret only appears in the WebSocket upgrade request
+
+2. **Header Conversion at Worker**: The worker immediately extracts the secret from the query string and converts it to a header
+   ```typescript
+   const hostSecret = url.searchParams.get('hostSecret') || 
+                     request.headers.get('X-DO-Host-Secret');
+   ```
+
+3. **Durable Object Validation**: The Game DO receives the secret via header and validates it
+   ```typescript
+   const providedSecret = request.headers.get('X-DO-Host-Secret');
+   const isHost = providedSecret === this.state.hostSecret;
+   ```
+
+This approach ensures:
+- ✅ Browser compatibility (query params work with WebSocket API)
+- ✅ Security (secret not logged in browser history, immediately converted to header)
+- ✅ Server-side validation (DO never sees query param, only header)
+- ✅ Backward compatibility (HTTP endpoints still use headers only)
+
+#### Connection State Management
+
+The `LiveStreamManager` tracks connection state through a state machine:
+
+```
+disconnected --> connecting --> connected
+     ^              |               |
+     |              v               v
+     +-------- reconnecting <-------+
+                   |
+                   v
+            disconnecting --> disconnected
+```
+
+**States:**
+- `disconnected`: No active connection
+- `connecting`: WebSocket upgrade in progress
+- `connected`: Active WebSocket, can send/receive
+- `reconnecting`: Connection lost, attempting to restore
+- `disconnecting`: Explicit disconnect in progress
+
+**State Transitions:**
+- `connect()` called: disconnected → connecting
+- WebSocket opens: connecting → connected
+- WebSocket closes (unexpected): connected → reconnecting
+- Reconnect attempt: reconnecting → connecting
+- `disconnect()` called: * → disconnecting → disconnected
+
+#### Reconnection Strategy
+
+Automatic reconnection with exponential backoff:
+
+```typescript
+delay = Math.min(1000 * (2 ** attemptNumber), 30000)
+```
+
+| Attempt | Delay |
+|---------|-------|
+| 1 | 2s |
+| 2 | 4s |
+| 3 | 8s |
+| 4 | 16s |
+| 5+ | 30s (capped) |
+
+**Guards:**
+- Only one reconnection timer active at a time
+- No reconnection if explicitly disconnected
+- Cleanup on component unmount prevents orphaned connections
+
+#### Memory Management
+
+**WebSocket Cleanup:**
+```typescript
+cleanupWebSocket() {
+  if (this.ws) {
+    // Remove event handlers (prevents memory leaks)
+    this.ws.onopen = null;
+    this.ws.onmessage = null;
+    this.ws.onerror = null;
+    this.ws.onclose = null;
+    
+    // Close if still open
+    if (this.ws.readyState <= WebSocket.OPEN) {
+      this.ws.close();
+    }
+    
+    this.ws = null;
+  }
+}
+```
+
+**Component Unmount:**
+```typescript
+useEffect(() => {
+  managerRef.current ??= new LiveStreamManager();
+  return () => {
+    managerRef.current?.disconnect(); // Cleanup on unmount
+  };
+}, []);
+```
+
 ### Message Types
 
 #### Client to Server (Host Only)
 
+All messages are validated with Zod schemas before processing.
+
 - **score**: Score throw event with all details
+  ```typescript
+  {
+    type: "score",
+    playerId: number,
+    newScore: number,
+    validatedScore: number,
+    isRoundWin: boolean,
+    isGameWin: boolean,
+    dartsThrown: number
+  }
+  ```
+
 - **undo**: Undo last throw
+  ```typescript
+  {
+    type: "undo",
+    playerId: number,
+    newScore: number,
+    dartsThrown: number
+  }
+  ```
+
 - **roundFinish**: Round completed
+  ```typescript
+  {
+    type: "roundFinish",
+    roundNumber: number,
+    winnerId?: number
+  }
+  ```
+
 - **gameFinish**: Game completed
+  ```typescript
+  {
+    type: "gameFinish",
+    winnerId: number,
+    finalScores: Record<number, number>
+  }
+  ```
+
 - **gameUpdate**: Full game state update
+  ```typescript
+  {
+    type: "gameUpdate",
+    metadata: {
+      gameId: string,
+      settings: GameSettings,
+      players: Player[],
+      currentRound: number,
+      activePlayerId: number,
+      phase: "setup" | "playing" | "finished"
+    }
+  }
+  ```
 
 #### Server to Client
 
 - **sync**: Initial state sent to new connections
+  ```typescript
+  {
+    type: "sync",
+    metadata: GameMetadata
+  }
+  ```
+
 - **broadcast**: Forwarded game event to all viewers
+  ```typescript
+  {
+    type: "broadcast",
+    event: ClientEvent // One of the above events
+  }
+  ```
+
 - **error**: Error message
+  ```typescript
+  {
+    type: "error",
+    message: string
+  }
+  ```
 
 ### Security
 
-- Host authentication via secret token
-- Viewers cannot send events (read-only)
-- Game state validated on the server
-- Automatic cleanup of inactive games
+- **Host authentication via secret token**
+  - Secret generated server-side on game creation
+  - Validated on every WebSocket message from host
+  - Viewers cannot impersonate host (no access to secret)
+
+- **Viewers cannot send events (read-only)**
+  - Server ignores all messages from non-host connections
+  - Client-side UI doesn't expose controls to viewers
+
+- **Game state validated on the server**
+  - All events validated with Zod schemas
+  - Malformed messages rejected with error response
+
+- **Cleanup mechanism provided**
+  - `cleanupOldGames()` method in GameRegistry DO
+  - Requires periodic invocation (e.g., via Cloudflare Cron Triggers)
+  - Games older than 24 hours can be removed
 
 ### Performance
 
-- WebSocket for low-latency updates
-- Durable Objects for global state management
-- Automatic reconnection with exponential backoff
-- Efficient broadcast to multiple viewers
+- **WebSocket for low-latency updates**
+  - Typical latency: 50-200ms depending on geography
+  - Binary protocol considered for future optimization
+
+- **Durable Objects for global state management**
+  - Single DO per game (strong consistency)
+  - Automatic geographic distribution
+  - Scales to handle many concurrent viewers
+
+- **Automatic reconnection with exponential backoff**
+  - Prevents thundering herd on network issues
+  - Maximum 30s delay prevents indefinite waiting
+
+- **Efficient broadcast to multiple viewers**
+  - O(n) broadcast where n = number of sessions
+  - All viewers receive same message (shared payload)
 
 ## Limitations
 
