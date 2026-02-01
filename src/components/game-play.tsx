@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { findCheckout } from "@/lib/core/checkout";
 import { useUiSettings } from "@/lib/hooks/use-ui-settings";
+import { useLiveStream } from "@/lib/hooks/use-live-stream";
 import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ export function GamePlay() {
     players,
     activePlayerId,
     gameSettings,
+    gamePhase,
     finishRound,
     startNextRound,
     currentRound,
@@ -34,7 +36,10 @@ export function GamePlay() {
     handleUndoThrow,
     resetGame,
     roundWinner,
+    gameWinner,
   } = useGameStore((state) => state);
+
+  const { state: liveStreamState, sendEvent } = useLiveStream();
 
   const [showRoundWonModal, setShowRoundWonModal] = useState(false);
   const [show180, setShow180] = useState(false);
@@ -96,6 +101,51 @@ export function GamePlay() {
       return () => clearTimeout(timer);
     }
   }, [show180]);
+
+  // Send initial game state when live stream becomes active
+  useEffect(() => {
+    if (
+      liveStreamState.isActive &&
+      liveStreamState.status === "connected" &&
+      players.length > 0
+    ) {
+      // Send game update with current state
+      sendEvent({
+        type: "gameUpdate",
+        metadata: {
+          gameId: liveStreamState.connection?.gameId || "",
+          startingScore: gameSettings.startingScore,
+          outMode: gameSettings.outMode,
+          roundsToWin: gameSettings.roundsToWin,
+          players: players.map((p) => ({
+            id: p.id,
+            name: p.name,
+            score: p.score,
+            roundsWon: p.roundsWon,
+            dartsThrown: p.dartsThrown,
+            totalScore: p.totalScore,
+          })),
+          currentRound,
+          activePlayerId,
+          gamePhase,
+          roundWinner,
+          gameWinner,
+        },
+      });
+    }
+  }, [
+    liveStreamState.isActive,
+    liveStreamState.status,
+    liveStreamState.connection,
+    players,
+    gameSettings,
+    currentRound,
+    activePlayerId,
+    roundWinner,
+    gameWinner,
+    gamePhase,
+    sendEvent,
+  ]);
 
   const handleScoreEntry = (
     scoreAfterModifier: number,
