@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useContext, createContext, type ReactNode } from "react";
+import { useContext, createContext, type ReactNode, useEffect } from "react";
 
 // Global state to track debug mode (set by React components)
 let isDebugMode = false;
@@ -22,10 +22,10 @@ const DebugFlagContext = createContext<boolean>(false);
  * This should wrap components that need access to the debug flag
  */
 export function DebugFlagProvider({ value, children }: { value: boolean; children: ReactNode }) {
-  // Update global state
-  if (typeof window !== "undefined") {
+  // Update global state after render to avoid race conditions
+  useEffect(() => {
     isDebugMode = value;
-  }
+  }, [value]);
   
   return <DebugFlagContext.Provider value={value}>{children}</DebugFlagContext.Provider>;
 }

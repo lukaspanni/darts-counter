@@ -18,10 +18,7 @@ export const enableDebugLogs = flag<boolean>({
     { value: false, label: "Disabled" },
     { value: true, label: "Enabled" },
   ],
-  decide() {
-    // Return default value - can be overridden in Vercel dashboard
-    return false;
-  },
+  decide: () => false, // Can be overridden in Vercel dashboard
 });
 
 
