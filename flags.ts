@@ -7,13 +7,10 @@
  * See: https://vercel.com/docs/workflow-collaboration/feature-flags
  */
 
-import { flag } from "@vercel/flags/next";
+import { flag } from "flags/next";
 
 export const enableDebugLogs = flag<boolean>({
   key: "enableDebugLogs",
-  async decide() {
-    return false;
-  },
   defaultValue: false,
   description: "Enable detailed debug logs for live stream debugging, including event logging, timestamps, and debug UI",
   origin: "https://github.com/lukaspanni/darts-counter",
@@ -21,6 +18,10 @@ export const enableDebugLogs = flag<boolean>({
     { value: false, label: "Disabled" },
     { value: true, label: "Enabled" },
   ],
+  decide() {
+    // Return default value - can be overridden in Vercel dashboard
+    return false;
+  },
 });
 
-export const precompute = [enableDebugLogs];
+
