@@ -21,12 +21,13 @@ export default async function RootLayout({
 }>) {
   const flagValues = await evaluate([enableDebugLogs]);
   const precomputedFlags = await precompute([enableDebugLogs]);
-  const debugEnabled = (flagValues[0]! as boolean) ?? false;
+  const [debugEnabled] = flagValues;
+  const debugEnabledBool = (debugEnabled as boolean) ?? false;
   
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <DebugFlagProvider value={debugEnabled}>
+        <DebugFlagProvider value={debugEnabledBool}>
           <ThemeProvider
             defaultTheme="system"
             enableSystem
