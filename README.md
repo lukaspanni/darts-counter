@@ -112,9 +112,9 @@ For detailed setup and usage instructions, see [live-stream.md](./docs/live-stre
 
 ### Debugging Live Streams
 
-For developers and advanced users, debugging tools are available:
+For developers, debugging tools are available via Vercel feature flags:
 
-1. Enable debug mode by setting `NEXT_PUBLIC_ENABLE_DEBUG_LOGS=true` in `.env.local`
+1. Enable debug mode by toggling the `enableDebugLogs` flag in the Vercel dashboard
 2. Features include:
    - Last event timestamps in status indicators ("X s ago")
    - Console logging of all sent/received events
