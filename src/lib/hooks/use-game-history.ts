@@ -13,10 +13,9 @@ export function useGameHistory() {
       gameHistorySchema,
     );
     if (!ok) {
-      console.error("Failed to load game history from local storage:", error);
+      updateGameHistory([]);
       return;
     }
-
     setGameHistory(result);
   }, []);
 
