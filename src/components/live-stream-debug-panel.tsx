@@ -50,9 +50,14 @@ export function LiveStreamDebugPanel({
       score: JSON.stringify(
         {
           type: "score",
-          playerId: "player-1-id",
-          validatedScore: 60,
+          playerId: 1,
+          score: 60,
+          modifier: "single",
           newScore: 441,
+          validatedScore: 60,
+          isRoundWin: false,
+          isBust: false,
+          currentRoundTotal: 60,
         },
         null,
         2
@@ -60,8 +65,9 @@ export function LiveStreamDebugPanel({
       undo: JSON.stringify(
         {
           type: "undo",
-          playerId: "player-1-id",
+          playerId: 1,
           lastScore: 60,
+          newRoundTotal: 0,
         },
         null,
         2
