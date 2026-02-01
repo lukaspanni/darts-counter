@@ -17,7 +17,7 @@ import {
   getStatusText,
   calculateAverage,
 } from "@/lib/live-stream-utils";
-import { formatTimeAgo, isDebugEnabled } from "@/lib/debug-utils";
+import { formatTimeAgo, useDebugEnabled } from "@/lib/debug-utils";
 
 const WORKER_URL =
   process.env.NEXT_PUBLIC_LIVE_STREAM_WORKER_URL || "http://localhost:8787";
@@ -103,7 +103,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
   const lastEventAtRef = useRef<number>(Date.now());
   const staleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const debugEnabled = isDebugEnabled();
+  const debugEnabled = useDebugEnabled();
 
   // Update last event time every second when debug is enabled
   useEffect(() => {

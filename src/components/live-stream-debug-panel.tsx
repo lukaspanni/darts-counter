@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Bug, Send, WifiOff, RefreshCw } from "lucide-react";
 import type { ClientEvent } from "@/lib/live-stream-types";
-import { isDebugEnabled } from "@/lib/debug-utils";
+import { useDebugEnabled } from "@/lib/debug-utils";
 
 interface LiveStreamDebugPanelProps {
   onSendEvent: (event: ClientEvent) => void;
@@ -28,9 +28,10 @@ export function LiveStreamDebugPanel({
 }: LiveStreamDebugPanelProps) {
   const [eventJson, setEventJson] = useState<string>('{\n  "type": "heartbeat",\n  "timestamp": ' + Date.now() + '\n}');
   const [error, setError] = useState<string | null>(null);
+  const debugEnabled = useDebugEnabled();
 
   // Don't render if debug is not enabled
-  if (!isDebugEnabled()) {
+  if (!debugEnabled) {
     return null;
   }
 
