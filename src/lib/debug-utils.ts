@@ -7,6 +7,7 @@
 
 /**
  * Check if debug logging is enabled via environment variable
+ * Returns false if the environment variable is not set or not equal to "true"
  */
 export function isDebugEnabled(): boolean {
   return process.env.NEXT_PUBLIC_ENABLE_DEBUG_LOGS === "true";
