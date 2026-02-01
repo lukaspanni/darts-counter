@@ -18,6 +18,7 @@ import {
   getStatusText,
   calculateAverage,
 } from "@/lib/live-stream-utils";
+import { formatTimeAgo, isDebugEnabled } from "@/lib/debug-utils";
 
 const WORKER_URL =
   process.env.NEXT_PUBLIC_LIVE_STREAM_WORKER_URL || "http://localhost:8787";
@@ -99,8 +100,30 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
   >("connecting");
   const [error, setError] = useState<string | null>(null);
   const [isStale, setIsStale] = useState(false);
+  const [lastEventTime, setLastEventTime] = useState<string | null>(null);
   const lastEventAtRef = useRef<number>(Date.now());
   const staleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const debugEnabled = isDebugEnabled();
+
+  // Update last event time every second when debug is enabled
+  useEffect(() => {
+    if (!debugEnabled) return;
+
+    const updateLastEventTime = () => {
+      const lastReceived = managerRef.current.getLastEventReceivedAt();
+      if (lastReceived) {
+        setLastEventTime(formatTimeAgo(lastReceived));
+      } else {
+        setLastEventTime(null);
+      }
+    };
+
+    updateLastEventTime();
+    const interval = setInterval(updateLastEventTime, 1000);
+
+    return () => clearInterval(interval);
+  }, [debugEnabled]);
 
   // Update manager ref if gameId changes
   useEffect(() => {
@@ -272,6 +295,11 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
         <span className="text-muted-foreground text-xs">
           · Viewing {metadata.players.map((p) => p.name).join(" vs ")}
         </span>
+        {debugEnabled && lastEventTime && (
+          <span className="text-muted-foreground text-xs">
+            · Last event: {lastEventTime}
+          </span>
+        )}
         {isStale && (
           <span className="text-xs font-medium text-amber-600">
             · Stream stale (no updates)

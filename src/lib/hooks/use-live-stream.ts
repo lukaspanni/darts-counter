@@ -207,5 +207,6 @@ export function useLiveStream() {
     sendEvent,
     subscribeToEvents,
     getLiveStreamUrl,
+    manager: managerRef.current,
   };
 }
