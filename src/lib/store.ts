@@ -74,10 +74,14 @@ const initialState: GameStoreState = {
   gameWinner: null,
 };
 
-export const createGameStore = (initState: GameStoreState = initialState) =>
-  createStore<GameStore>()(
+export const createGameStore = (initState: GameStoreState = initialState) => {
+  const resolvedState = {
+    ...initialState,
+    ...initState,
+  };
+  return createStore<GameStore>()(
     immer((set, get) => ({
-      ...initState,
+      ...resolvedState,
 
       setPlayers(players) {
         set((state) => {
@@ -102,7 +106,7 @@ export const createGameStore = (initState: GameStoreState = initialState) =>
       },
 
       startGame() {
-        set({ gamePhase: "playing" });
+        set({ gamePhase: "playing", currentRound: 1 });
       },
 
       finishRound() {
@@ -212,3 +216,4 @@ export const createGameStore = (initState: GameStoreState = initialState) =>
       },
     })),
   );
+};

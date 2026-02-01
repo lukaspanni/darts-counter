@@ -28,7 +28,7 @@ export function ScoreDisplay({
   // Calculate average score - fixed formula with 2 decimal places
   const calculateAverage = (player: Player) => {
     if (player.dartsThrown === 0) return 0;
-    return ((player.totalScore / player.dartsThrown) * 3).toFixed(2);
+    return (player.totalScore / player.dartsThrown).toFixed(2);
   };
   return (
     <div className="mb-4 space-y-4">
@@ -96,11 +96,9 @@ export function ScoreDisplay({
             </div>
           )}
 
-          {/* Current round score */}
+          {/* Round score */}
           <div className="mt-3 text-center">
-            <span className="text-muted-foreground text-sm">
-              Current round:
-            </span>
+            <span className="text-muted-foreground text-sm">Round score:</span>
             <span className="ml-2 font-medium">{currentRoundScore}</span>
           </div>
 
