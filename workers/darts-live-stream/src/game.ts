@@ -103,8 +103,12 @@ export class Game extends DurableObject<Env> {
 
 		// Ensure state exists before processing
 		if (!this.state) {
-			console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'state_null', timestamp: Date.now() }));
-			ws.send(JSON.stringify({ type: 'error', message: 'Game state not initialized' } satisfies ServerEvent));
+			try {
+				ws.send(JSON.stringify({ type: 'error', message: 'Game state not initialized' } satisfies ServerEvent));
+				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'state_null', timestamp: Date.now() }));
+			} catch (sendError) {
+				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'state_null_send_failed', error: String(sendError), timestamp: Date.now() }));
+			}
 			return;
 		}
 
@@ -116,8 +120,12 @@ export class Game extends DurableObject<Env> {
 			const result = clientEventSchema.safeParse(parsed);
 
 			if (!result.success) {
-				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'invalid_format', error: result.error.message, timestamp: Date.now() }));
-				ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' } satisfies ServerEvent));
+				try {
+					ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' } satisfies ServerEvent));
+					console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'invalid_format', error: result.error.message, timestamp: Date.now() }));
+				} catch (sendError) {
+					console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'invalid_format_send_failed', error: String(sendError), timestamp: Date.now() }));
+				}
 				return;
 			}
 
@@ -134,8 +142,6 @@ export class Game extends DurableObject<Env> {
 				await this.ctx.storage.put('state', this.state);
 			}
 
-			console.log('[Game:EventReceived]', JSON.stringify({ sessionId: session.id, role: session.role, eventType: event.type, action: 'event_received', status: 'success', timestamp: Date.now(), broadcastToSessions: this.sessions.size - 1 }));
-
 			// Broadcast to all viewers (and other host connections)
 			const broadcastEvent: ServerEvent = {
 				type: 'broadcast',
@@ -143,33 +149,63 @@ export class Game extends DurableObject<Env> {
 			};
 			const broadcastMessage = JSON.stringify(broadcastEvent);
 
+			let broadcastSuccessCount = 0;
+			let broadcastFailCount = 0;
+			const broadcastErrors: string[] = [];
+
 			this.ctx.getWebSockets().forEach((client) => {
 				const clientSession = this.sessions.get(client);
 				// Don't send back to the sender
 				if (clientSession && clientSession.id !== session.id) {
-					client.send(broadcastMessage);
+					try {
+						client.send(broadcastMessage);
+						broadcastSuccessCount++;
+					} catch (sendError) {
+						broadcastFailCount++;
+						broadcastErrors.push(`${clientSession.id}:${String(sendError)}`);
+					}
 				}
 			});
+
+			console.log('[Game:EventReceived]', JSON.stringify({ 
+				sessionId: session.id, 
+				role: session.role, 
+				eventType: event.type, 
+				action: 'event_received', 
+				status: 'success', 
+				timestamp: Date.now(), 
+				broadcastToSessions: this.sessions.size - 1,
+				broadcastSuccessCount,
+				broadcastFailCount,
+				broadcastErrors: broadcastFailCount > 0 ? broadcastErrors : undefined
+			}));
 		} catch (error) {
-			console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'processing_failed', error: String(error), timestamp: Date.now() }));
-			ws.send(JSON.stringify({ type: 'error', message: 'Failed to process message' } satisfies ServerEvent));
+			try {
+				ws.send(JSON.stringify({ type: 'error', message: 'Failed to process message' } satisfies ServerEvent));
+				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'processing_failed', error: String(error), timestamp: Date.now() }));
+			} catch (sendError) {
+				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'processing_failed_send_failed', error: String(error), sendError: String(sendError), timestamp: Date.now() }));
+			}
 		}
 	}
 
 	override async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
 		const session = this.sessions.get(ws);
-
-		console.log('[Game:SessionClosed]', JSON.stringify({ sessionId: session?.id, role: session?.role, code, wasClean, action: 'session_closed', status: 'success', timestamp: Date.now(), remainingSessions: this.sessions.size - 1 }));
-
-		if (code === 1006) {
-			console.warn('[Game:UnexpectedClose]', JSON.stringify({ sessionId: session?.id, reason, code, action: 'unexpected_close', timestamp: Date.now() }));
-		}
-
 		this.sessions.delete(ws);
 
-		// If all connections are closed, we could optionally clean up
-		if (this.sessions.size === 0) {
-			console.log('[Game:AllConnectionsClosed]', JSON.stringify({ action: 'all_connections_closed', timestamp: Date.now() }));
-		}
+		// Single comprehensive log with all context
+		console.log('[Game:SessionClosed]', JSON.stringify({ 
+			sessionId: session?.id, 
+			role: session?.role, 
+			code, 
+			wasClean, 
+			isUnexpected: code === 1006,
+			reason: code === 1006 ? reason : undefined,
+			action: 'session_closed', 
+			status: 'success', 
+			timestamp: Date.now(), 
+			remainingSessions: this.sessions.size,
+			allConnectionsClosed: this.sessions.size === 0
+		}));
 	}
 }
