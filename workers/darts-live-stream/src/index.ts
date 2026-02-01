@@ -71,7 +71,6 @@ const handleCreateGame = async (request: Request, env: Env, ctx: ExecutionContex
 	const hostSecret = Array.from(crypto.getRandomValues(new Uint8Array(16)))
 		.map((b) => b.toString(16).padStart(2, '0'))
 		.join('');
-	console.log('[Worker] Creating game with ID:', gameId);
 
 	try {
 		// create the DO for the game and initialize it with the host secret
@@ -84,6 +83,8 @@ const handleCreateGame = async (request: Request, env: Env, ctx: ExecutionContex
 		const gameRegistryStub = env.GAME_REGISTRY.get(gameRegistryId);
 		await gameRegistryStub.registerGame(gameId);
 
+		console.log('[Worker:GameCreated]', JSON.stringify({ gameId, timestamp: Date.now(), action: 'create_game', status: 'success' }));
+
 		return new Response(JSON.stringify({ gameId, hostSecret }), {
 			status: 201,
 			headers: {
@@ -91,7 +92,7 @@ const handleCreateGame = async (request: Request, env: Env, ctx: ExecutionContex
 			},
 		});
 	} catch (error) {
-		console.error('[Worker] Error creating game:', error);
+		console.error('[Worker:GameCreateError]', JSON.stringify({ gameId, error: String(error), timestamp: Date.now(), action: 'create_game', status: 'error' }));
 		return new Response('Internal Server Error', { status: 500 });
 	}
 };
@@ -115,6 +116,7 @@ const handleSubscribeGame = async (request: Request, env: Env, ctx: ExecutionCon
 		const url = new URL(request.url);
 		const sessionId = url.searchParams.get('sessionId') || request.headers.get('X-DO-Session-Id') || crypto.randomUUID();
 		const hostSecret = url.searchParams.get('hostSecret') || request.headers.get('X-DO-Host-Secret');
+		const role = hostSecret ? 'host' : 'viewer';
 
 		// Create a new request with the extracted values as headers for the DO
 		const doRequest = new Request(request.url, request);
@@ -126,9 +128,11 @@ const handleSubscribeGame = async (request: Request, env: Env, ctx: ExecutionCon
 		const id = env.GAME.idFromName(gameId);
 		const stub = env.GAME.get(id);
 
+		console.log('[Worker:WebSocketUpgrade]', JSON.stringify({ gameId, sessionId, role, timestamp: Date.now(), action: 'websocket_upgrade', status: 'success' }));
+
 		return await stub.fetch(doRequest);
 	} catch (error) {
-		console.error('[Worker] Error in handleSubscribeGame:', error);
+		console.error('[Worker:WebSocketUpgradeError]', JSON.stringify({ gameId, error: String(error), timestamp: Date.now(), action: 'websocket_upgrade', status: 'error' }));
 		return new Response('Internal Server Error', { status: 500 });
 	}
 };
@@ -156,7 +160,6 @@ export default {
 		const pathMatch = requestUrl.pathname.match(PATH_REGEX);
 		if (!pathMatch) return withCors(new Response('Not Found', { status: 404 }), request);
 		const pathId = pathMatch[2];
-		console.log('[Worker] Received request:', request.method, request.url, 'Path ID:', pathId);
 
 		if (request.method === 'POST') return withCors(await handleCreateGame(request, env, ctx), request);
 		if (request.method === 'GET' && pathId) return withCors(await handleSubscribeGame(request, env, ctx, pathId), request);

@@ -32,11 +32,10 @@ export class Game extends DurableObject<Env> {
 		// Check if game is already initialized to prevent re-initialization
 		const existingState = await this.ctx.storage.get<GameState>('state');
 		if (existingState) {
-			console.warn('[Game DO] Game already initialized, refusing to re-initialize');
+			console.warn('[Game:InitError]', JSON.stringify({ action: 'init', status: 'error', reason: 'already_initialized', timestamp: Date.now() }));
 			throw new Error('Game already initialized');
 		}
 
-		console.log('[Game DO] Initializing game with host secret');
 		this.state = {
 			hostSecret,
 			metadata: null,
@@ -44,6 +43,7 @@ export class Game extends DurableObject<Env> {
 			lastActivity: Date.now(),
 		};
 		await this.ctx.storage.put('state', this.state);
+		console.log('[Game:Initialized]', JSON.stringify({ action: 'init', status: 'success', timestamp: this.state.createdAt }));
 	}
 
 	public override async fetch(request: Request): Promise<Response> {
@@ -64,8 +64,6 @@ export class Game extends DurableObject<Env> {
 		const isHost = hostSecret === this.state.hostSecret;
 		const role = isHost ? 'host' : 'viewer';
 
-		console.log('[Game DO] Processing request with session ID:', sessionId, 'role:', role);
-
 		const { 0: client, 1: server } = new WebSocketPair();
 
 		this.ctx.acceptWebSocket(server);
@@ -82,6 +80,8 @@ export class Game extends DurableObject<Env> {
 			};
 			server.send(JSON.stringify(syncEvent));
 		}
+
+		console.log('[Game:SessionConnected]', JSON.stringify({ sessionId, role, action: 'session_connected', status: 'success', timestamp: Date.now(), totalSessions: this.sessions.size }));
 
 		return new Response(null, {
 			status: 101,
@@ -103,7 +103,7 @@ export class Game extends DurableObject<Env> {
 
 		// Ensure state exists before processing
 		if (!this.state) {
-			console.error('[Game DO] State is null, cannot process message');
+			console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'state_null', timestamp: Date.now() }));
 			ws.send(JSON.stringify({ type: 'error', message: 'Game state not initialized' } satisfies ServerEvent));
 			return;
 		}
@@ -116,13 +116,12 @@ export class Game extends DurableObject<Env> {
 			const result = clientEventSchema.safeParse(parsed);
 
 			if (!result.success) {
-				console.error('[Game DO] Invalid message:', result.error);
+				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'invalid_format', error: result.error.message, timestamp: Date.now() }));
 				ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' } satisfies ServerEvent));
 				return;
 			}
 
 			const event = result.data;
-			console.log('[Game DO] Received event:', event.type);
 
 			// Handle gameUpdate to store metadata
 			if (event.type === 'gameUpdate') {
@@ -134,6 +133,8 @@ export class Game extends DurableObject<Env> {
 				this.state.lastActivity = Date.now();
 				await this.ctx.storage.put('state', this.state);
 			}
+
+			console.log('[Game:EventReceived]', JSON.stringify({ sessionId: session.id, role: session.role, eventType: event.type, action: 'event_received', status: 'success', timestamp: Date.now(), broadcastToSessions: this.sessions.size - 1 }));
 
 			// Broadcast to all viewers (and other host connections)
 			const broadcastEvent: ServerEvent = {
@@ -150,24 +151,25 @@ export class Game extends DurableObject<Env> {
 				}
 			});
 		} catch (error) {
-			console.error('[Game DO] Error processing message:', error);
+			console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'processing_failed', error: String(error), timestamp: Date.now() }));
 			ws.send(JSON.stringify({ type: 'error', message: 'Failed to process message' } satisfies ServerEvent));
 		}
 	}
 
 	override async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
 		const session = this.sessions.get(ws);
-		console.log('[Game DO] WebSocket closed:', session?.id, 'code:', code, 'clean:', wasClean);
+		
+		console.log('[Game:SessionClosed]', JSON.stringify({ sessionId: session?.id, role: session?.role, code, wasClean, action: 'session_closed', status: 'success', timestamp: Date.now(), remainingSessions: this.sessions.size - 1 }));
 
 		if (code === 1006) {
-			console.warn('[Game DO] WebSocket closed unexpectedly', reason);
+			console.warn('[Game:UnexpectedClose]', JSON.stringify({ sessionId: session?.id, reason, code, action: 'unexpected_close', timestamp: Date.now() }));
 		}
 
 		this.sessions.delete(ws);
 
 		// If all connections are closed, we could optionally clean up
 		if (this.sessions.size === 0) {
-			console.log('[Game DO] All connections closed');
+			console.log('[Game:AllConnectionsClosed]', JSON.stringify({ action: 'all_connections_closed', timestamp: Date.now() }));
 		}
 	}
 }
