@@ -9,7 +9,7 @@
 
 /**
  * Check if debug logging is enabled via Vercel flags
- * Returns false if the feature flag is not enabled
+ * Returns false if the feature flag is not enabled or Vercel flags are unavailable
  * 
  * To enable:
  * 1. Set up feature flag "enableDebugLogs" in Vercel dashboard
