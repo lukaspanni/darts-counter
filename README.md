@@ -110,6 +110,18 @@ Share your games in real-time with viewers around the world!
 
 For detailed setup and usage instructions, see [live-stream.md](./docs/live-stream.md).
 
+### Debugging Live Streams
+
+For developers and advanced users, debugging tools are available:
+
+1. Enable debug mode by setting `NEXT_PUBLIC_ENABLE_DEBUG_LOGS=true` in `.env.local`
+2. Features include:
+   - Last event timestamps in status indicators ("X s ago")
+   - Console logging of all sent/received events
+   - Debug panel for host with manual event crafting
+   - WebSocket reconnect and close controls
+3. Worker logs are now event-based with structured JSON output
+
 ## Project Structure
 
 ```

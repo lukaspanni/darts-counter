@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import {
   getViewerManager,
-  removeViewerManager,
 } from "@/lib/live-stream-manager";
 import type {
   ServerEvent,
