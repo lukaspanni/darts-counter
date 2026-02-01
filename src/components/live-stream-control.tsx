@@ -45,7 +45,7 @@ export function LiveStreamControl() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <RadioTower className="h-5 w-5" />
-          Live Stream
+          Live Stream (experimental)
         </CardTitle>
         <CardDescription>
           Share your game in real-time with others
