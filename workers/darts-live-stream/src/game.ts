@@ -158,7 +158,7 @@ export class Game extends DurableObject<Env> {
 
 	override async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
 		const session = this.sessions.get(ws);
-		
+
 		console.log('[Game:SessionClosed]', JSON.stringify({ sessionId: session?.id, role: session?.role, code, wasClean, action: 'session_closed', status: 'success', timestamp: Date.now(), remainingSessions: this.sessions.size - 1 }));
 
 		if (code === 1006) {
