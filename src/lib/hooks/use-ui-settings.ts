@@ -34,7 +34,6 @@ export function useUiSettings() {
       if (ok) {
         setSettings(result);
       } else {
-        console.error("Failed to load UI settings from local storage:", error);
         saveToLocalStorage(STORAGE_KEY, defaultSettings);
         setSettings(defaultSettings);
       }
