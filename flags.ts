@@ -12,8 +12,7 @@ import { flag } from "@vercel/flags/next";
 export const enableDebugLogs = flag<boolean>({
   key: "enableDebugLogs",
   async decide() {
-    // Default to environment variable if flag not set
-    return process.env.NEXT_PUBLIC_ENABLE_DEBUG_LOGS === "true";
+    return false;
   },
   defaultValue: false,
   description: "Enable detailed debug logs for live stream debugging, including event logging, timestamps, and debug UI",

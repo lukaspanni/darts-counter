@@ -2,26 +2,20 @@
  * Debug utilities for live stream debugging
  *
  * Provides conditional logging and debugging features based on the
- * enableDebugLogs feature flag.
+ * enableDebugLogs feature flag controlled via Vercel feature flags.
  * 
- * This can be controlled via:
- * 1. Vercel feature flags (runtime toggle) - requires setup in Vercel dashboard
- * 2. NEXT_PUBLIC_ENABLE_DEBUG_LOGS environment variable (build-time default)
+ * This can be toggled at runtime in the Vercel dashboard without redeployment.
  */
 
 /**
- * Check if debug logging is enabled via environment variable or Vercel flags
- * Returns false if the feature is not enabled
+ * Check if debug logging is enabled via Vercel flags
+ * Returns false if the feature flag is not enabled
  * 
- * To enable via Vercel flags:
+ * To enable:
  * 1. Set up feature flag "enableDebugLogs" in Vercel dashboard
- * 2. Access via window.vercelFlags?.enableDebugLogs
- * 
- * To enable via environment variable:
- * Set NEXT_PUBLIC_ENABLE_DEBUG_LOGS=true
+ * 2. Flag is accessed via window.vercelFlags?.enableDebugLogs
  */
 export function isDebugEnabled(): boolean {
-  // Check Vercel flags first (if available in browser)
   if (typeof window !== "undefined" && "vercelFlags" in window) {
     const flags = window as Window & { vercelFlags?: { enableDebugLogs?: boolean } };
     if (typeof flags.vercelFlags?.enableDebugLogs === "boolean") {
@@ -29,8 +23,7 @@ export function isDebugEnabled(): boolean {
     }
   }
   
-  // Fall back to environment variable
-  return process.env.NEXT_PUBLIC_ENABLE_DEBUG_LOGS === "true";
+  return false;
 }
 
 /**
