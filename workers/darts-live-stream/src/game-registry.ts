@@ -15,13 +15,15 @@ interface GameRegistryEntry {
  */
 export class GameRegistry extends DurableObject<Env> {
 	async registerGame(gameId: string): Promise<void> {
-		console.log(`[GameRegistry] Registering game with ID: ${gameId}`);
+		const timestamp = Date.now();
 		
 		const games = (await this.ctx.storage.get<GameRegistryEntry[]>('games')) || [];
-		games.push({ gameId, createdAt: Date.now() });
+		games.push({ gameId, createdAt: timestamp });
 		
 		// Store the updated list
 		await this.ctx.storage.put('games', games);
+		
+		console.log('[GameRegistry:GameRegistered]', JSON.stringify({ gameId, action: 'register_game', status: 'success', timestamp, totalGames: games.length }));
 	}
 
 	/**
@@ -34,8 +36,9 @@ export class GameRegistry extends DurableObject<Env> {
 		const activeGames = games.filter(g => g.createdAt > cutoffTime);
 		
 		if (activeGames.length !== games.length) {
-			console.log(`[GameRegistry] Cleaned up ${games.length - activeGames.length} old games`);
+			const removedCount = games.length - activeGames.length;
 			await this.ctx.storage.put('games', activeGames);
+			console.log('[GameRegistry:CleanupComplete]', JSON.stringify({ action: 'cleanup_old_games', status: 'success', removedCount, remainingGames: activeGames.length, timestamp: Date.now() }));
 		}
 	}
 

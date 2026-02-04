@@ -110,6 +110,18 @@ Share your games in real-time with viewers around the world!
 
 For detailed setup and usage instructions, see [live-stream.md](./docs/live-stream.md).
 
+### Debugging Live Streams
+
+For developers, debugging tools are available via Vercel feature flags:
+
+1. Enable debug mode by toggling the `enableDebugLogs` flag in the Vercel dashboard
+2. Features include:
+   - Last event timestamps in status indicators ("X s ago")
+   - Console logging of all sent/received events
+   - Debug panel for host with manual event crafting
+   - WebSocket reconnect and close controls
+3. Worker logs are now event-based with structured JSON output
+
 ## Project Structure
 
 ```
