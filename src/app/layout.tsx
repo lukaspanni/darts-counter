@@ -5,8 +5,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { GameStoreProvider } from "@/lib/store-provider";
 import { enableDebugLogs } from "../../flags";
-import { FlagValues } from "flags/react";
-import { precompute, evaluate } from "flags/next";
+import { evaluate } from "flags/next";
 import { DebugFlagWrapper } from "@/components/debug-flag-wrapper";
 
 export const metadata: Metadata = {
@@ -20,7 +19,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const flagValues = await evaluate([enableDebugLogs]);
-  const precomputedFlags = await precompute([enableDebugLogs]);
   const [debugEnabled] = flagValues;
   
   return (
@@ -42,7 +40,6 @@ export default async function RootLayout({
             </GameStoreProvider>
           </ThemeProvider>
         </DebugFlagWrapper>
-        <FlagValues values={precomputedFlags} />
       </body>
     </html>
   );
