@@ -112,15 +112,42 @@ For detailed setup and usage instructions, see [live-stream.md](./docs/live-stre
 
 ### Debugging Live Streams
 
-For developers, debugging tools are available via Vercel feature flags:
+For developers, debugging tools are available via PostHog feature flags:
 
-1. Enable debug mode by toggling the `enableDebugLogs` flag in the Vercel dashboard
-2. Features include:
+1. Set up PostHog (see [PostHog Setup](#posthog-setup) below)
+2. Enable debug mode by toggling the `enableDebugLogs` flag in the PostHog dashboard
+3. Features include:
    - Last event timestamps in status indicators ("X s ago")
    - Console logging of all sent/received events
    - Debug panel for host with manual event crafting
    - WebSocket reconnect and close controls
-3. Worker logs are now event-based with structured JSON output
+4. Worker logs are now event-based with structured JSON output
+
+## PostHog Setup
+
+This project uses PostHog for feature flags and analytics. To set up:
+
+1. **Create a PostHog account** at [https://posthog.com](https://posthog.com) (or use self-hosted)
+2. **Get your Project API Key:**
+   - Go to Settings > Project > Project Variables
+   - Copy the "Project API Key" (starts with `phc_`)
+3. **Get your Personal API Key** (for server-side flags):
+   - Go to Settings > User > Personal API Keys
+   - Create a new key with "Read" permissions
+4. **Configure environment variables:**
+   - Copy `.env.local.example` to `.env.local`
+   - Add your keys:
+     ```
+     NEXT_PUBLIC_POSTHOG_KEY=phc_your_project_api_key_here
+     NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+     POSTHOG_PERSONAL_API_KEY=your_personal_api_key_here
+     ```
+5. **Create feature flags in PostHog:**
+   - Go to Feature Flags in PostHog dashboard
+   - Create a new boolean flag called `enableDebugLogs`
+   - Toggle on/off as needed
+
+**Note:** The app will work without PostHog configured, but feature flags will default to disabled.
 
 ## Project Structure
 

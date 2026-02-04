@@ -2,14 +2,15 @@
  * Debug utilities for live stream debugging
  *
  * Provides conditional logging and debugging features based on the
- * enableDebugLogs feature flag controlled via Vercel feature flags.
+ * enableDebugLogs feature flag controlled via PostHog.
  * 
- * This can be toggled at runtime in the Vercel dashboard without redeployment.
+ * This can be toggled at runtime in the PostHog dashboard without redeployment.
  */
 
 "use client";
 
-import { useContext, createContext, type ReactNode, useEffect } from "react";
+import { useContext, createContext, type ReactNode, useEffect, useState } from "react";
+import { getPostHog } from "./posthog-provider";
 
 // Global state to track debug mode (set by React components)
 let isDebugMode = false;
@@ -31,15 +32,35 @@ export function DebugFlagProvider({ value, children }: { value: boolean; childre
 }
 
 /**
- * Hook to check if debug logging is enabled via Vercel flags
+ * Hook to check if debug logging is enabled via PostHog feature flags
  * Returns false if the feature flag is not enabled
  * 
  * To enable:
- * 1. Set up feature flag "enableDebugLogs" in Vercel dashboard
- * 2. Flag is automatically provided via FlagValues context and passed to DebugFlagProvider
+ * 1. Set up feature flag "enableDebugLogs" in PostHog dashboard
+ * 2. The flag is automatically evaluated on page load
+ * 3. Changes take effect on next page load or when flag is reloaded
  */
 export function useDebugEnabled(): boolean {
-  return useContext(DebugFlagContext);
+  const contextValue = useContext(DebugFlagContext);
+  const [flagValue, setFlagValue] = useState(contextValue);
+
+  useEffect(() => {
+    // Update from context
+    setFlagValue(contextValue);
+
+    // Also check PostHog client-side for dynamic updates
+    const posthog = getPostHog();
+    if (posthog) {
+      posthog.onFeatureFlags(() => {
+        const enabled = posthog.isFeatureEnabled('enableDebugLogs');
+        if (enabled !== undefined) {
+          setFlagValue(!!enabled);
+        }
+      });
+    }
+  }, [contextValue]);
+
+  return flagValue;
 }
 
 /**
