@@ -23,10 +23,6 @@ export function PostHogProvider({ children }: { children: ReactNode }) {
         },
       });
     }
-
-    return () => {
-      // Cleanup is optional, PostHog handles this internally
-    };
   }, []);
 
   return <>{children}</>;
