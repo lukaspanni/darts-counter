@@ -7,7 +7,7 @@ import { GameStoreProvider } from "@/lib/store-provider";
 import { enableDebugLogs } from "../../flags";
 import { FlagValues } from "flags/react";
 import { precompute, evaluate } from "flags/next";
-import { DebugFlagProvider } from "@/lib/debug-utils";
+import { DebugFlagWrapper } from "@/components/debug-flag-wrapper";
 
 export const metadata: Metadata = {
   title: "Darts Scorer",
@@ -22,12 +22,11 @@ export default async function RootLayout({
   const flagValues = await evaluate([enableDebugLogs]);
   const precomputedFlags = await precompute([enableDebugLogs]);
   const [debugEnabled] = flagValues;
-  const debugEnabledBool = (debugEnabled as boolean) ?? false;
   
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <DebugFlagProvider value={debugEnabledBool}>
+        <DebugFlagWrapper debugEnabled={!!debugEnabled}>
           <ThemeProvider
             defaultTheme="system"
             enableSystem
@@ -42,7 +41,7 @@ export default async function RootLayout({
               </div>
             </GameStoreProvider>
           </ThemeProvider>
-        </DebugFlagProvider>
+        </DebugFlagWrapper>
         <FlagValues values={precomputedFlags} />
       </body>
     </html>
