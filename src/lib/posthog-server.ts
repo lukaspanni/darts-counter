@@ -28,27 +28,25 @@ export function getPostHogClient(): PostHog | null {
     return null;
   }
 
-  if (!posthogClient) {
-    posthogClient = new PostHog(
-      process.env.NEXT_PUBLIC_POSTHOG_KEY,
-      {
-        host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
-        personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY,
-      }
-    );
-  }
+  posthogClient ??= new PostHog(
+    process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    {
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+      personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY,
+    }
+  );
 
   return posthogClient;
 }
 
 /**
- * Evaluate a feature flag for the current session
+ * Evaluate a feature flag for a given user or identifier
  * Returns the default value if PostHog is not configured
  */
 export async function evaluateFeatureFlag(
   flagKey: string,
-  distinctId: string = 'anonymous',
-  defaultValue: boolean = false
+  distinctId = 'anonymous',
+  defaultValue = false
 ): Promise<boolean> {
   const client = getPostHogClient();
   

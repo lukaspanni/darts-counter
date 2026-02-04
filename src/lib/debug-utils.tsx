@@ -51,12 +51,19 @@ export function useDebugEnabled(): boolean {
     // Also check PostHog client-side for dynamic updates
     const posthog = getPostHog();
     if (posthog) {
-      posthog.onFeatureFlags(() => {
+      const unsubscribe = posthog.onFeatureFlags(() => {
         const enabled = posthog.isFeatureEnabled('enableDebugLogs');
         if (enabled !== undefined) {
           setFlagValue(!!enabled);
         }
       });
+
+      // Cleanup listener on unmount
+      return () => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      };
     }
   }, [contextValue]);
 
