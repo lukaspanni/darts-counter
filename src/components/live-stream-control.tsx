@@ -10,10 +10,11 @@ import {
 } from "@/components/ui/card";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
 import { getStatusColor, getStatusText } from "@/lib/live-stream-utils";
-import { formatTimeAgo, useDebugEnabled } from "@/lib/debug-utils";
+import { formatTimeAgo } from "@/lib/debug-utils";
 import { Copy, Check, Radio, RadioTower, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LiveStreamDebugPanel } from "./live-stream-debug-panel";
+import { useFeatureFlagEnabled } from "@posthog/react";
 
 export function LiveStreamControl() {
   const {
@@ -29,7 +30,7 @@ export function LiveStreamControl() {
   const [lastEventTime, setLastEventTime] = useState<string | null>(null);
 
   const liveStreamUrl = getLiveStreamUrl();
-  const debugEnabled = useDebugEnabled();
+  const debugEnabled = useFeatureFlagEnabled("enableDebugLogs");
 
   // Update last event time every second when debug is enabled
   useEffect(() => {
@@ -38,7 +39,7 @@ export function LiveStreamControl() {
     const updateLastEventTime = () => {
       const lastSent = manager.getLastEventSentAt();
       const lastReceived = manager.getLastEventReceivedAt();
-      
+
       if (lastSent || lastReceived) {
         const mostRecent = Math.max(lastSent || 0, lastReceived || 0);
         setLastEventTime(formatTimeAgo(mostRecent));

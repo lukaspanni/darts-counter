@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import {
-  getViewerManager,
-} from "@/lib/live-stream-manager";
+import { getViewerManager } from "@/lib/live-stream-manager";
 import type {
   ServerEvent,
   LiveStreamGameMetadata,
@@ -17,7 +15,8 @@ import {
   getStatusText,
   calculateAverage,
 } from "@/lib/live-stream-utils";
-import { formatTimeAgo, useDebugEnabled } from "@/lib/debug-utils";
+import { formatTimeAgo } from "@/lib/debug-utils";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 
 const WORKER_URL =
   process.env.NEXT_PUBLIC_LIVE_STREAM_WORKER_URL || "http://localhost:8787";
@@ -103,7 +102,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
   const lastEventAtRef = useRef<number>(Date.now());
   const staleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const debugEnabled = useDebugEnabled();
+  const debugEnabled = useFeatureFlagEnabled("enableDebugLogs");
 
   // Update last event time every second when debug is enabled
   useEffect(() => {

@@ -10,14 +10,14 @@ export function HomeContent() {
 
   if (liveStreamId) {
     return (
-      <main className="flex-grow flex-col">
+      <main className="grow flex-col">
         <LiveStreamViewer gameId={liveStreamId} />
       </main>
     );
   }
 
   return (
-    <main className="flex-grow flex-col p-4">
+    <main className="grow flex-col p-4">
       <GameController />
     </main>
   );

@@ -7,7 +7,6 @@ import {
   createGameResponseSchema,
   serverEventSchema,
 } from "./live-stream-types";
-import { debugLog } from "./debug-utils";
 
 export type LiveStreamEventHandler = (event: ServerEvent) => void;
 export type ConnectionStateHandler = (state: ConnectionState) => void;
@@ -190,7 +189,7 @@ export class LiveStreamManager {
 
   private handleWebSocketOpen(): void {
     console.log("[LiveStream] Connected");
-    debugLog("LiveStream", "WebSocket connection opened", {
+    console.debug("LiveStream", "WebSocket connection opened", {
       sessionId: this.sessionId,
       isHost: this.isHost,
       gameId: this.connection?.gameId,
@@ -202,7 +201,7 @@ export class LiveStreamManager {
 
   private handleWebSocketMessage(event: MessageEvent): void {
     this.lastEventReceivedAt = Date.now();
-    
+
     const eventData: unknown = event.data;
     const dataString =
       typeof eventData === "string" ? eventData : String(eventData);
@@ -221,7 +220,7 @@ export class LiveStreamManager {
       return;
     }
 
-    debugLog("LiveStream", "Event received", {
+    console.debug("LiveStream", "Event received", {
       eventType: result.data.type,
       timestamp: this.lastEventReceivedAt,
       event: result.data,
@@ -302,7 +301,7 @@ export class LiveStreamManager {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.lastEventSentAt = Date.now();
       const message = JSON.stringify(event);
-      debugLog("LiveStream", "Event sent", {
+      console.debug("LiveStream", "Event sent", {
         eventType: event.type,
         timestamp: this.lastEventSentAt,
         event,
@@ -433,7 +432,7 @@ export class LiveStreamManager {
    * Manually close the WebSocket without reconnection (for debug UI)
    */
   public forceClose(): void {
-    debugLog("LiveStream", "Forcing WebSocket close");
+    console.debug("LiveStream", "Forcing WebSocket close");
     this.disconnect();
   }
 
