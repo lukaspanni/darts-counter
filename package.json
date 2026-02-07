@@ -63,6 +63,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "core-js",
+      "protobufjs",
       "sharp"
     ]
   }
