@@ -27,7 +27,7 @@ export function useUiSettings() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const syncSettings = () => {
-      const { ok, result, error } = loadFromLocalStorage(
+      const { ok, result } = loadFromLocalStorage(
         STORAGE_KEY,
         uiSettingsSchema,
       );

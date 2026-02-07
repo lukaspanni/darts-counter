@@ -1,9 +1,9 @@
 /**
  * PostHog server-side integration for feature flags
- * 
+ *
  * This file provides server-side PostHog client initialization
  * for evaluating feature flags in server components.
- * 
+ *
  * Setup Instructions:
  * 1. Create a PostHog account at https://posthog.com
  * 2. Get your Project API Key from PostHog Settings > Project > Project Variables
@@ -15,7 +15,7 @@
  *    (Get from PostHog Settings > User > Personal API Keys)
  */
 
-import { PostHog } from 'posthog-node';
+import { PostHog } from "posthog-node";
 
 let posthogClient: PostHog | null = null;
 
@@ -24,17 +24,14 @@ let posthogClient: PostHog | null = null;
  */
 export function getPostHogClient(): PostHog | null {
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    console.warn('NEXT_PUBLIC_POSTHOG_KEY not set - feature flags disabled');
+    console.warn("NEXT_PUBLIC_POSTHOG_KEY not set - feature flags disabled");
     return null;
   }
 
-  posthogClient ??= new PostHog(
-    process.env.NEXT_PUBLIC_POSTHOG_KEY,
-    {
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
-      personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY,
-    }
-  );
+  posthogClient ??= new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+    host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+    personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY,
+  });
 
   return posthogClient;
 }
@@ -45,11 +42,11 @@ export function getPostHogClient(): PostHog | null {
  */
 export async function evaluateFeatureFlag(
   flagKey: string,
-  distinctId = 'anonymous',
-  defaultValue = false
+  distinctId = "anonymous",
+  defaultValue = false,
 ): Promise<boolean> {
   const client = getPostHogClient();
-  
+
   if (!client) {
     return defaultValue;
   }
@@ -58,7 +55,7 @@ export async function evaluateFeatureFlag(
     const result = await client.isFeatureEnabled(flagKey, distinctId);
     return result ?? defaultValue;
   } catch (error) {
-    console.error('Error evaluating feature flag:', error);
+    console.error("Error evaluating feature flag:", error);
     return defaultValue;
   }
 }
