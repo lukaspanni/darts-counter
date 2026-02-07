@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Bug, Send, WifiOff, RefreshCw } from "lucide-react";
 import type { ClientEvent } from "@/lib/live-stream-types";
-import { useDebugEnabled } from "@/lib/debug-utils";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 
 interface LiveStreamDebugPanelProps {
   onSendEvent: (event: ClientEvent) => void;
@@ -26,9 +26,11 @@ export function LiveStreamDebugPanel({
   onClose,
   isConnected,
 }: LiveStreamDebugPanelProps) {
-  const [eventJson, setEventJson] = useState<string>('{\n  "type": "heartbeat",\n  "timestamp": ' + Date.now() + '\n}');
+  const [eventJson, setEventJson] = useState<string>(
+    '{\n  "type": "heartbeat",\n  "timestamp": ' + Date.now() + "\n}",
+  );
   const [error, setError] = useState<string | null>(null);
-  const debugEnabled = useDebugEnabled();
+  const debugEnabled = useFeatureFlagEnabled("enableDebugLogs");
 
   // Don't render if debug is not enabled
   if (!debugEnabled) {
@@ -47,7 +49,11 @@ export function LiveStreamDebugPanel({
 
   const loadTemplate = (template: string) => {
     const templates: Record<string, string> = {
-      heartbeat: JSON.stringify({ type: "heartbeat", timestamp: Date.now() }, null, 2),
+      heartbeat: JSON.stringify(
+        { type: "heartbeat", timestamp: Date.now() },
+        null,
+        2,
+      ),
       score: JSON.stringify(
         {
           type: "score",
@@ -61,7 +67,7 @@ export function LiveStreamDebugPanel({
           currentRoundTotal: 60,
         },
         null,
-        2
+        2,
       ),
       undo: JSON.stringify(
         {
@@ -71,7 +77,7 @@ export function LiveStreamDebugPanel({
           newRoundTotal: 0,
         },
         null,
-        2
+        2,
       ),
     };
     setEventJson(templates[template] || "{}");
@@ -150,12 +156,10 @@ export function LiveStreamDebugPanel({
               setEventJson(e.target.value);
               setError(null);
             }}
-            className="border-input bg-background font-mono min-h-[200px] w-full rounded-md border p-3 text-sm"
+            className="border-input bg-background min-h-[200px] w-full rounded-md border p-3 font-mono text-sm"
             placeholder="Enter JSON event..."
           />
-          {error && (
-            <p className="text-sm text-red-500">Error: {error}</p>
-          )}
+          {error && <p className="text-sm text-red-500">Error: {error}</p>}
         </div>
 
         {/* Send Button */}
