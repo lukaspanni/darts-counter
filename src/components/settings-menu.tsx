@@ -10,9 +10,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { useUiSettings } from "@/lib/hooks/use-ui-settings";
 import { Settings } from "lucide-react";
+import posthog from "posthog-js";
 
 export const SettingsMenu = () => {
   const { settings, updateSettings } = useUiSettings();
+
+  const handleEnhancedViewChange = (checked: boolean) => {
+    posthog.capture("settings_changed", {
+      setting: "enhanced_view",
+      value: checked,
+    });
+    updateSettings({ enhancedView: checked });
+  };
+
+  const handleNoBullshitModeChange = (checked: boolean) => {
+    posthog.capture("settings_changed", {
+      setting: "no_bullshit_mode",
+      value: checked,
+    });
+    updateSettings({ noBullshitMode: checked });
+  };
 
   return (
     <DropdownMenu>
@@ -26,13 +43,13 @@ export const SettingsMenu = () => {
         <DropdownMenuLabel>Settings</DropdownMenuLabel>
         <DropdownMenuCheckboxItem
           checked={settings.enhancedView}
-          onCheckedChange={(checked) => updateSettings({ enhancedView: checked })}
+          onCheckedChange={handleEnhancedViewChange}
         >
           Darts Board Entry
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
           checked={settings.noBullshitMode}
-          onCheckedChange={(checked) => updateSettings({ noBullshitMode: checked })}
+          onCheckedChange={handleNoBullshitModeChange}
         >
           No-bullshit mode
         </DropdownMenuCheckboxItem>

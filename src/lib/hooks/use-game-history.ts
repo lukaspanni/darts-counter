@@ -8,10 +8,7 @@ export function useGameHistory() {
   const [gameHistory, setGameHistory] = useState<GameHistory[]>([]);
 
   useEffect(() => {
-    const { ok, result, error } = loadFromLocalStorage(
-      STORAGE_KEY,
-      gameHistorySchema,
-    );
+    const { ok, result } = loadFromLocalStorage(STORAGE_KEY, gameHistorySchema);
     if (!ok) {
       updateGameHistory([]);
       return;

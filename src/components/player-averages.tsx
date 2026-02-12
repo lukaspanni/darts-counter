@@ -116,7 +116,9 @@ export function PlayerAverages({
               <TableRow
                 key={player.name}
                 onClick={() => handlePlayerClick(player)}
-                className={onPlayerSelect ? "cursor-pointer hover:bg-muted" : ""}
+                className={
+                  onPlayerSelect ? "hover:bg-muted cursor-pointer" : ""
+                }
               >
                 <TableCell className="font-medium">{player.name}</TableCell>
                 <TableCell>{player.gamesPlayed}</TableCell>

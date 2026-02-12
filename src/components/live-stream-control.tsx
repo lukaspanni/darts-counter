@@ -10,8 +10,12 @@ import {
 } from "@/components/ui/card";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
 import { getStatusColor, getStatusText } from "@/lib/live-stream-utils";
+import { formatTimeAgo } from "@/lib/debug-utils";
 import { Copy, Check, Radio, RadioTower, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { LiveStreamDebugPanel } from "./live-stream-debug-panel";
+import { useFeatureFlagEnabled } from "@posthog/react";
+import posthog from "posthog-js";
 
 export function LiveStreamControl() {
   const {
@@ -20,21 +24,64 @@ export function LiveStreamControl() {
     stopLiveStream,
     retryConnection,
     getLiveStreamUrl,
+    manager,
+    sendEvent,
   } = useLiveStream();
   const [copied, setCopied] = useState(false);
+  const [lastEventTime, setLastEventTime] = useState<string | null>(null);
 
   const liveStreamUrl = getLiveStreamUrl();
+  const debugEnabled = useFeatureFlagEnabled("enableDebugLogs");
+
+  // Update last event time every second when debug is enabled
+  useEffect(() => {
+    if (!debugEnabled || !manager) return;
+
+    const updateLastEventTime = () => {
+      const lastSent = manager.getLastEventSentAt();
+      const lastReceived = manager.getLastEventReceivedAt();
+
+      if (lastSent || lastReceived) {
+        const mostRecent = Math.max(lastSent || 0, lastReceived || 0);
+        setLastEventTime(formatTimeAgo(mostRecent));
+      } else {
+        setLastEventTime(null);
+      }
+    };
+
+    updateLastEventTime();
+    const interval = setInterval(updateLastEventTime, 1000);
+
+    return () => clearInterval(interval);
+  }, [debugEnabled, manager]);
 
   const handleCopyUrl = async () => {
     if (liveStreamUrl) {
+      posthog.capture("live_stream_url_copied");
       await navigator.clipboard.writeText(liveStreamUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
+  const handleStartStream = async () => {
+    posthog.capture("live_stream_started");
+    await startLiveStream();
+  };
+
+  const handleStopStream = () => {
+    posthog.capture("live_stream_stopped");
+    stopLiveStream();
+  };
+
   const handleRetry = () => {
     retryConnection();
+  };
+
+  const handleCloseSocket = () => {
+    if (manager) {
+      manager.forceClose();
+    }
   };
 
   // Show retry button when there's an error but we still have connection details
@@ -58,6 +105,11 @@ export function LiveStreamControl() {
             <span className="text-sm font-medium">
               {getStatusText(state.status, state.error)}
             </span>
+            {debugEnabled && lastEventTime && (
+              <span className="text-muted-foreground text-xs">
+                · Last event: {lastEventTime}
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             {showRetryButton && (
@@ -67,11 +119,15 @@ export function LiveStreamControl() {
               </Button>
             )}
             {!state.isActive ? (
-              <Button onClick={startLiveStream} size="sm">
+              <Button onClick={handleStartStream} size="sm">
                 Start Stream
               </Button>
             ) : (
-              <Button onClick={stopLiveStream} variant="destructive" size="sm">
+              <Button
+                onClick={handleStopStream}
+                variant="destructive"
+                size="sm"
+              >
                 Stop Stream
               </Button>
             )}
@@ -110,6 +166,16 @@ export function LiveStreamControl() {
               </Button>
             </div>
           </div>
+        )}
+
+        {/* Debug Panel */}
+        {debugEnabled && state.isActive && (
+          <LiveStreamDebugPanel
+            onSendEvent={sendEvent}
+            onReconnect={handleRetry}
+            onClose={handleCloseSocket}
+            isConnected={state.status === "connected"}
+          />
         )}
       </CardContent>
     </Card>

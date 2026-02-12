@@ -22,6 +22,7 @@ import { gameSettingsSchema } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import posthog from "posthog-js";
 import { z } from "zod";
 
 const gameSetupSchema = gameSettingsSchema.extend({
@@ -54,6 +55,16 @@ export function GameSetup() {
   });
 
   const onSubmit = (data: GameSetupFormValues) => {
+    const playerCount = data.player2 && data.player2.trim() !== "" ? 2 : 1;
+
+    posthog.capture("game_setup_completed", {
+      starting_score: Number.parseInt(data.startingScore),
+      out_mode: data.outMode,
+      rounds_to_win: Number.parseInt(data.roundsToWin),
+      checkout_assist: data.checkoutAssist,
+      player_count: playerCount,
+    });
+
     setGameSettings({
       startingScore: Number.parseInt(data.startingScore),
       outMode: data.outMode,

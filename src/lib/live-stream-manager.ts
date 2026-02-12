@@ -33,6 +33,8 @@ export class LiveStreamManager {
   private isHost = false;
   private connectionId = 0; // Tracks connection attempts to handle race conditions
   private hasEverConnected = false;
+  private lastEventSentAt: number | null = null;
+  private lastEventReceivedAt: number | null = null;
 
   constructor() {
     this.sessionId = crypto.randomUUID();
@@ -187,12 +189,19 @@ export class LiveStreamManager {
 
   private handleWebSocketOpen(): void {
     console.log("[LiveStream] Connected");
+    console.debug("LiveStream", "WebSocket connection opened", {
+      sessionId: this.sessionId,
+      isHost: this.isHost,
+      gameId: this.connection?.gameId,
+    });
     this.setConnectionState("connected");
     this.reconnectAttempts = 0;
     this.hasEverConnected = true;
   }
 
   private handleWebSocketMessage(event: MessageEvent): void {
+    this.lastEventReceivedAt = Date.now();
+
     const eventData: unknown = event.data;
     const dataString =
       typeof eventData === "string" ? eventData : String(eventData);
@@ -210,6 +219,12 @@ export class LiveStreamManager {
       console.error("[LiveStream] Invalid message format:", result.error);
       return;
     }
+
+    console.debug("LiveStream", "Event received", {
+      eventType: result.data.type,
+      timestamp: this.lastEventReceivedAt,
+      event: result.data,
+    });
 
     this.notifyHandlers(result.data);
   }
@@ -284,7 +299,14 @@ export class LiveStreamManager {
 
   public sendEvent(event: ClientEvent): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(event));
+      this.lastEventSentAt = Date.now();
+      const message = JSON.stringify(event);
+      console.debug("LiveStream", "Event sent", {
+        eventType: event.type,
+        timestamp: this.lastEventSentAt,
+        event,
+      });
+      this.ws.send(message);
     } else {
       console.warn("[LiveStream] Cannot send event, not connected");
     }
@@ -390,6 +412,28 @@ export class LiveStreamManager {
 
   public getConnection(): LiveStreamConnection | null {
     return this.connection;
+  }
+
+  /**
+   * Get the timestamp of the last event sent (for debug UI)
+   */
+  public getLastEventSentAt(): number | null {
+    return this.lastEventSentAt;
+  }
+
+  /**
+   * Get the timestamp of the last event received (for debug UI)
+   */
+  public getLastEventReceivedAt(): number | null {
+    return this.lastEventReceivedAt;
+  }
+
+  /**
+   * Manually close the WebSocket without reconnection (for debug UI)
+   */
+  public forceClose(): void {
+    console.debug("LiveStream", "Forcing WebSocket close");
+    this.disconnect();
   }
 
   /**
