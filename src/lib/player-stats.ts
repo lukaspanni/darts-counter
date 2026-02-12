@@ -50,21 +50,19 @@ export function calculatePlayerStats(
   });
 
   // Calculate final averages
-  const stats: PlayerStats[] = Array.from(playerMap.values()).map(
-    (player) => {
-      const avgScore =
-        player.gamesPlayed > 0
-          ? player.totalAverageScore / player.gamesPlayed
-          : 0;
-      return {
-        name: player.name,
-        gamesPlayed: player.gamesPlayed,
-        gamesWon: player.gamesWon,
-        averageScore: Number(avgScore.toFixed(2)),
-        averagePerRound: Number((avgScore * 3).toFixed(2)),
-      };
-    },
-  );
+  const stats: PlayerStats[] = Array.from(playerMap.values()).map((player) => {
+    const avgScore =
+      player.gamesPlayed > 0
+        ? player.totalAverageScore / player.gamesPlayed
+        : 0;
+    return {
+      name: player.name,
+      gamesPlayed: player.gamesPlayed,
+      gamesWon: player.gamesWon,
+      averageScore: Number(avgScore.toFixed(2)),
+      averagePerRound: Number((avgScore * 3).toFixed(2)),
+    };
+  });
 
   // Sort by games played descending
   return stats.sort((a, b) => b.gamesPlayed - a.gamesPlayed);

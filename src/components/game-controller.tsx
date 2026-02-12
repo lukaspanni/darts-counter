@@ -5,6 +5,7 @@ import { PreGameStart } from "@/components/pre-game-start";
 import { GamePlay } from "@/components/game-play";
 import { GameOver } from "@/components/game-over";
 import { useGameHistory } from "@/lib/hooks/use-game-history";
+import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/lib/store-provider";
 
@@ -24,6 +25,26 @@ export function GameController() {
   useEffect(() => {
     if (isInitialRender && gamePhase === "gameOver" && gameWinner !== null) {
       setIsInitialRender(false);
+
+      const winnerPlayer = players.find((p) => p.id === gameWinner);
+      const winnerAverage =
+        winnerPlayer && winnerPlayer.dartsThrown > 0
+          ? Number(
+              (
+                (winnerPlayer.totalScore / winnerPlayer.dartsThrown) *
+                3
+              ).toFixed(2),
+            )
+          : 0;
+
+      posthog.capture("game_completed", {
+        player_count: players.length,
+        rounds_played: currentRound,
+        starting_score: gameSettings.startingScore,
+        out_mode: gameSettings.outMode,
+        winner_average: winnerAverage,
+      });
+
       const newGameHistory = {
         id: crypto.randomUUID(),
         date: new Date().toISOString(),
@@ -35,7 +56,7 @@ export function GameController() {
               ? Number(((p.totalScore / p.dartsThrown) * 3).toFixed(2))
               : 0,
         })),
-        winner: players.find((p) => p.id === gameWinner)?.name || "",
+        winner: winnerPlayer?.name || "",
         gameMode: `${gameSettings.startingScore} ${gameSettings.outMode} out`,
         roundsPlayed: currentRound,
       };
