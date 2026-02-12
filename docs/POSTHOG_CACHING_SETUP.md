@@ -146,7 +146,12 @@ import { revalidateTag } from 'next/cache';
 revalidateTag('feature-flags');
 ```
 
-**Note**: The current implementation uses a global `feature-flags` tag for simplicity. If you need per-user or per-flag cache invalidation, you can modify the tags in `src/lib/get-feature-flags.ts` to include user/flag-specific tags.
+**Note on Cache Keys**: The implementation uses Next.js `unstable_cache` which automatically includes function parameters in the cache key. This means:
+- Each user's flags are cached separately (differentiated by `distinctId`)
+- Each flag is cached separately (differentiated by `flagKey` and `distinctId`)
+- Cache tags are kept simple ('feature-flags') for easy bulk invalidation
+
+If you need more granular cache invalidation per user or per flag, you can modify the `tags` array in `src/lib/get-feature-flags.ts` to include user/flag-specific tags.
 
 ## Monitoring and Debugging
 

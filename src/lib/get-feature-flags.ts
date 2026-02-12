@@ -9,7 +9,7 @@ import PostHogClient from "./posthog-server";
  * - Flags are cached per distinctId for 60 seconds
  * - Uses Next.js cache which works on Vercel without additional setup
  * - PostHog client also maintains local evaluation cache of flag definitions
- * - unstable_cache automatically uses function parameters to differentiate cache entries
+ * - Next.js automatically appends function parameters to cache key for differentiation
  * 
  * @param distinctId User identifier (empty string for anonymous users)
  * @returns Object with feature flag keys and values
@@ -20,7 +20,7 @@ export const getFeatureFlags = unstable_cache(
     if (!posthog) return {};
     return await posthog.getAllFlags(distinctId);
   },
-  ["feature-flags"],
+  ["feature-flags", "distinctId"], // Base key + parameter name for clarity
   {
     revalidate: 60, // Cache for 60 seconds
     tags: ["feature-flags"],
@@ -32,7 +32,7 @@ export const getFeatureFlags = unstable_cache(
  * 
  * Caching strategy:
  * - Flags are cached per flagKey and distinctId for 60 seconds
- * - unstable_cache automatically uses function parameters to differentiate cache entries
+ * - Next.js automatically appends function parameters to cache key for differentiation
  * 
  * @param flagKey Feature flag key
  * @param distinctId User identifier (empty string for anonymous users)
@@ -44,7 +44,7 @@ export const getFeatureFlag = unstable_cache(
     if (!posthog) return false;
     return await posthog.getFeatureFlag(flagKey, distinctId);
   },
-  ["feature-flag"],
+  ["feature-flag", "flagKey", "distinctId"], // Base key + parameter names for clarity
   {
     revalidate: 60, // Cache for 60 seconds
     tags: ["feature-flags"],
