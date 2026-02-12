@@ -1,6 +1,17 @@
 import posthog from "posthog-js";
 
-console.log(`Initializing Frontend PostHog client, bootstapping with ...`);
+const featureFlagsElement =
+  typeof window === "undefined"
+    ? null
+    : document.getElementById("posthog-feature-flags");
+
+const featureFlags = featureFlagsElement?.textContent
+  ? JSON.parse(featureFlagsElement.textContent)
+  : {};
+
+console.log(
+  `Initializing Frontend PostHog client, bootstrapping with ${JSON.stringify(featureFlags)} `,
+);
 
 posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
   api_host: "/ph",
@@ -9,8 +20,6 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
   capture_exceptions: true,
   debug: process.env.NODE_ENV === "development",
   bootstrap: {
-    featureFlags: {
-      // TODO
-    },
+    featureFlags,
   },
 });

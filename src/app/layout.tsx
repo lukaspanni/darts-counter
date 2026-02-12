@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { GameStoreProvider } from "@/lib/store-provider";
+import { getFeatureFlags } from "@/lib/get-feature-flags";
 
 export const metadata: Metadata = {
   title: "Darts Scorer",
@@ -15,6 +16,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const featureFlags = await getFeatureFlags();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
@@ -27,6 +30,9 @@ export default async function RootLayout({
           <GameStoreProvider>
             <div className="flex min-h-screen flex-col divide-y">
               <Header />
+              <div id="posthog-feature-flags" hidden>
+                {JSON.stringify(featureFlags)}
+              </div>
               {children}
               <Footer />
             </div>
