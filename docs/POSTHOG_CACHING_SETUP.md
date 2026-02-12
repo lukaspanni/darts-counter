@@ -142,15 +142,11 @@ If you need to force-refresh flags immediately:
 ```typescript
 import { revalidateTag } from 'next/cache';
 
-// Invalidate all flags for a specific user
-revalidateTag(`user-${distinctId}`);
-
-// Invalidate a specific flag
-revalidateTag(`feature-flag-${flagKey}`);
-
-// Invalidate all flags
+// Invalidate all feature flags cache
 revalidateTag('feature-flags');
 ```
+
+**Note**: The current implementation uses a global `feature-flags` tag for simplicity. If you need per-user or per-flag cache invalidation, you can modify the tags in `src/lib/get-feature-flags.ts` to include user/flag-specific tags.
 
 ## Monitoring and Debugging
 

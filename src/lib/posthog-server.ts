@@ -32,7 +32,7 @@ export default function PostHogClient() {
     // Enable local evaluation for feature flags
     // This fetches and caches all flag definitions locally
     enableLocalEvaluation: true,
-    // Poll for flag updates every 5 minutes (default is 5 minutes)
+    // Poll for flag updates every 5 minutes
     featureFlagsPollingInterval: 300000,
   });
   
