@@ -12,19 +12,31 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { LiveStreamControl } from "@/components/live-stream-control";
 import { useGameStore } from "@/lib/store-provider";
+import posthog from "posthog-js";
 
 export function PreGameStart() {
-  const { players, setActivePlayer, setGamePhase, startGame } = useGameStore(
-    (state) => state,
-  );
+  const { players, setActivePlayer, setGamePhase, startGame, gameSettings } =
+    useGameStore((state) => state);
   const [startingPlayerId, setStartingPlayerId] = useState<number>(
     players[0]?.id || 1,
   );
 
   const handleStartGame = useCallback(() => {
+    posthog.capture("game_started", {
+      player_count: players.length,
+      starting_score: gameSettings.startingScore,
+      out_mode: gameSettings.outMode,
+      rounds_to_win: gameSettings.roundsToWin,
+    });
     setActivePlayer(startingPlayerId);
     startGame();
-  }, [startingPlayerId, setActivePlayer, startGame]);
+  }, [
+    startingPlayerId,
+    setActivePlayer,
+    startGame,
+    players.length,
+    gameSettings,
+  ]);
 
   const handleBack = useCallback(() => {
     setGamePhase("setup");
@@ -37,7 +49,7 @@ export function PreGameStart() {
   }, [handleStartGame, players.length]);
 
   return (
-    <div className="flex flex-col gap-4 w-full lg:mx-auto lg:w-xl">
+    <div className="flex w-full flex-col gap-4 lg:mx-auto lg:w-xl">
       <Card>
         <CardHeader>
           <CardTitle className="text-center">Who starts?</CardTitle>
@@ -45,7 +57,9 @@ export function PreGameStart() {
         <CardContent>
           <RadioGroup
             defaultValue={startingPlayerId.toString()}
-            onValueChange={(value) => setStartingPlayerId(Number.parseInt(value))}
+            onValueChange={(value) =>
+              setStartingPlayerId(Number.parseInt(value))
+            }
             className="space-y-4"
           >
             {players.map((player) => (

@@ -95,9 +95,7 @@ export function AverageChart({
   if (chartData.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center rounded-md border">
-        <p className="text-muted-foreground">
-          No data available for the chart
-        </p>
+        <p className="text-muted-foreground">No data available for the chart</p>
       </div>
     );
   }

@@ -15,6 +15,7 @@ import { Copy, Check, Radio, RadioTower, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LiveStreamDebugPanel } from "./live-stream-debug-panel";
 import { useFeatureFlagEnabled } from "@posthog/react";
+import posthog from "posthog-js";
 
 export function LiveStreamControl() {
   const {
@@ -56,10 +57,21 @@ export function LiveStreamControl() {
 
   const handleCopyUrl = async () => {
     if (liveStreamUrl) {
+      posthog.capture("live_stream_url_copied");
       await navigator.clipboard.writeText(liveStreamUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleStartStream = async () => {
+    posthog.capture("live_stream_started");
+    await startLiveStream();
+  };
+
+  const handleStopStream = () => {
+    posthog.capture("live_stream_stopped");
+    stopLiveStream();
   };
 
   const handleRetry = () => {
@@ -107,11 +119,15 @@ export function LiveStreamControl() {
               </Button>
             )}
             {!state.isActive ? (
-              <Button onClick={startLiveStream} size="sm">
+              <Button onClick={handleStartStream} size="sm">
                 Start Stream
               </Button>
             ) : (
-              <Button onClick={stopLiveStream} variant="destructive" size="sm">
+              <Button
+                onClick={handleStopStream}
+                variant="destructive"
+                size="sm"
+              >
                 Stop Stream
               </Button>
             )}

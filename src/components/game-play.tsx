@@ -19,6 +19,7 @@ import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
+import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 
 const MAX_DARTS_PER_ROUND = 3;
@@ -159,6 +160,10 @@ export function GamePlay() {
     setLastThrowBust(result.isBust);
 
     if (result.isRoundWin) {
+      posthog.capture("round_won", {
+        round_number: currentRound,
+        player_count: players.length,
+      });
       setShowRoundWonModal(true);
       if (!settings.noBullshitMode) {
         void confetti({
@@ -171,6 +176,9 @@ export function GamePlay() {
     }
 
     if (result.currentRoundTotal === 180) {
+      posthog.capture("180_scored", {
+        round_number: currentRound,
+      });
       setShow180(true);
       if (!settings.noBullshitMode) {
         void confetti({
@@ -321,6 +329,10 @@ export function GamePlay() {
         isOpen={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}
         onConfirm={() => {
+          posthog.capture("game_reset", {
+            round_number: currentRound,
+            player_count: players.length,
+          });
           resetGame();
         }}
         title="Reset Game"

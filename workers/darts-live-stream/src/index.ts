@@ -92,7 +92,10 @@ const handleCreateGame = async (request: Request, env: Env, ctx: ExecutionContex
 			},
 		});
 	} catch (error) {
-		console.error('[Worker:GameCreateError]', JSON.stringify({ gameId, error: String(error), timestamp: Date.now(), action: 'create_game', status: 'error' }));
+		console.error(
+			'[Worker:GameCreateError]',
+			JSON.stringify({ gameId, error: String(error), timestamp: Date.now(), action: 'create_game', status: 'error' }),
+		);
 		return new Response('Internal Server Error', { status: 500 });
 	}
 };
@@ -128,11 +131,17 @@ const handleSubscribeGame = async (request: Request, env: Env, ctx: ExecutionCon
 		const id = env.GAME.idFromName(gameId);
 		const stub = env.GAME.get(id);
 
-		console.log('[Worker:WebSocketUpgrade]', JSON.stringify({ gameId, sessionId, role, timestamp: Date.now(), action: 'websocket_upgrade', status: 'success' }));
+		console.log(
+			'[Worker:WebSocketUpgrade]',
+			JSON.stringify({ gameId, sessionId, role, timestamp: Date.now(), action: 'websocket_upgrade', status: 'success' }),
+		);
 
 		return await stub.fetch(doRequest);
 	} catch (error) {
-		console.error('[Worker:WebSocketUpgradeError]', JSON.stringify({ gameId, error: String(error), timestamp: Date.now(), action: 'websocket_upgrade', status: 'error' }));
+		console.error(
+			'[Worker:WebSocketUpgradeError]',
+			JSON.stringify({ gameId, error: String(error), timestamp: Date.now(), action: 'websocket_upgrade', status: 'error' }),
+		);
 		return new Response('Internal Server Error', { status: 500 });
 	}
 };

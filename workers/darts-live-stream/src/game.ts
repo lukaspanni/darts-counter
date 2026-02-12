@@ -32,7 +32,10 @@ export class Game extends DurableObject<Env> {
 		// Check if game is already initialized to prevent re-initialization
 		const existingState = await this.ctx.storage.get<GameState>('state');
 		if (existingState) {
-			console.warn('[Game:InitError]', JSON.stringify({ action: 'init', status: 'error', reason: 'already_initialized', timestamp: Date.now() }));
+			console.warn(
+				'[Game:InitError]',
+				JSON.stringify({ action: 'init', status: 'error', reason: 'already_initialized', timestamp: Date.now() }),
+			);
 			throw new Error('Game already initialized');
 		}
 
@@ -81,7 +84,17 @@ export class Game extends DurableObject<Env> {
 			server.send(JSON.stringify(syncEvent));
 		}
 
-		console.log('[Game:SessionConnected]', JSON.stringify({ sessionId, role, action: 'session_connected', status: 'success', timestamp: Date.now(), totalSessions: this.sessions.size }));
+		console.log(
+			'[Game:SessionConnected]',
+			JSON.stringify({
+				sessionId,
+				role,
+				action: 'session_connected',
+				status: 'success',
+				timestamp: Date.now(),
+				totalSessions: this.sessions.size,
+			}),
+		);
 
 		return new Response(null, {
 			status: 101,
@@ -105,9 +118,30 @@ export class Game extends DurableObject<Env> {
 		if (!this.state) {
 			try {
 				ws.send(JSON.stringify({ type: 'error', message: 'Game state not initialized' } satisfies ServerEvent));
-				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'state_null', timestamp: Date.now() }));
+				console.error(
+					'[Game:MessageError]',
+					JSON.stringify({
+						sessionId: session.id,
+						role: session.role,
+						action: 'message',
+						status: 'error',
+						reason: 'state_null',
+						timestamp: Date.now(),
+					}),
+				);
 			} catch (sendError) {
-				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'state_null_send_failed', error: String(sendError), timestamp: Date.now() }));
+				console.error(
+					'[Game:MessageError]',
+					JSON.stringify({
+						sessionId: session.id,
+						role: session.role,
+						action: 'message',
+						status: 'error',
+						reason: 'state_null_send_failed',
+						error: String(sendError),
+						timestamp: Date.now(),
+					}),
+				);
 			}
 			return;
 		}
@@ -122,9 +156,31 @@ export class Game extends DurableObject<Env> {
 			if (!result.success) {
 				try {
 					ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' } satisfies ServerEvent));
-					console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'invalid_format', error: result.error.message, timestamp: Date.now() }));
+					console.error(
+						'[Game:MessageError]',
+						JSON.stringify({
+							sessionId: session.id,
+							role: session.role,
+							action: 'message',
+							status: 'error',
+							reason: 'invalid_format',
+							error: result.error.message,
+							timestamp: Date.now(),
+						}),
+					);
 				} catch (sendError) {
-					console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'invalid_format_send_failed', error: String(sendError), timestamp: Date.now() }));
+					console.error(
+						'[Game:MessageError]',
+						JSON.stringify({
+							sessionId: session.id,
+							role: session.role,
+							action: 'message',
+							status: 'error',
+							reason: 'invalid_format_send_failed',
+							error: String(sendError),
+							timestamp: Date.now(),
+						}),
+					);
 				}
 				return;
 			}
@@ -167,24 +223,50 @@ export class Game extends DurableObject<Env> {
 				}
 			});
 
-			console.log('[Game:EventReceived]', JSON.stringify({ 
-				sessionId: session.id, 
-				role: session.role, 
-				eventType: event.type, 
-				action: 'event_received', 
-				status: 'success', 
-				timestamp: Date.now(), 
-				broadcastToSessions: this.sessions.size - 1,
-				broadcastSuccessCount,
-				broadcastFailCount,
-				broadcastErrors: broadcastFailCount > 0 ? broadcastErrors : undefined
-			}));
+			console.log(
+				'[Game:EventReceived]',
+				JSON.stringify({
+					sessionId: session.id,
+					role: session.role,
+					eventType: event.type,
+					action: 'event_received',
+					status: 'success',
+					timestamp: Date.now(),
+					broadcastToSessions: this.sessions.size - 1,
+					broadcastSuccessCount,
+					broadcastFailCount,
+					broadcastErrors: broadcastFailCount > 0 ? broadcastErrors : undefined,
+				}),
+			);
 		} catch (error) {
 			try {
 				ws.send(JSON.stringify({ type: 'error', message: 'Failed to process message' } satisfies ServerEvent));
-				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'processing_failed', error: String(error), timestamp: Date.now() }));
+				console.error(
+					'[Game:MessageError]',
+					JSON.stringify({
+						sessionId: session.id,
+						role: session.role,
+						action: 'message',
+						status: 'error',
+						reason: 'processing_failed',
+						error: String(error),
+						timestamp: Date.now(),
+					}),
+				);
 			} catch (sendError) {
-				console.error('[Game:MessageError]', JSON.stringify({ sessionId: session.id, role: session.role, action: 'message', status: 'error', reason: 'processing_failed_send_failed', error: String(error), sendError: String(sendError), timestamp: Date.now() }));
+				console.error(
+					'[Game:MessageError]',
+					JSON.stringify({
+						sessionId: session.id,
+						role: session.role,
+						action: 'message',
+						status: 'error',
+						reason: 'processing_failed_send_failed',
+						error: String(error),
+						sendError: String(sendError),
+						timestamp: Date.now(),
+					}),
+				);
 			}
 		}
 	}
@@ -194,18 +276,21 @@ export class Game extends DurableObject<Env> {
 		this.sessions.delete(ws);
 
 		// Single comprehensive log with all context
-		console.log('[Game:SessionClosed]', JSON.stringify({ 
-			sessionId: session?.id, 
-			role: session?.role, 
-			code, 
-			wasClean, 
-			isUnexpected: code === 1006,
-			reason: code === 1006 ? reason : undefined,
-			action: 'session_closed', 
-			status: 'success', 
-			timestamp: Date.now(), 
-			remainingSessions: this.sessions.size,
-			allConnectionsClosed: this.sessions.size === 0
-		}));
+		console.log(
+			'[Game:SessionClosed]',
+			JSON.stringify({
+				sessionId: session?.id,
+				role: session?.role,
+				code,
+				wasClean,
+				isUnexpected: code === 1006,
+				reason: code === 1006 ? reason : undefined,
+				action: 'session_closed',
+				status: 'success',
+				timestamp: Date.now(),
+				remainingSessions: this.sessions.size,
+				allConnectionsClosed: this.sessions.size === 0,
+			}),
+		);
 	}
 }
