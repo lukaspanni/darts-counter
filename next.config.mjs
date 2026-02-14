@@ -13,9 +13,9 @@ const nextConfig = {
   cacheLife: {
     // Default cache profile (applied to all "use cache" directives)
     default: {
-      stale: 60, // Consider cache stale after 60 seconds
-      revalidate: 60, // Revalidate every 60 seconds
-      expire: 3600, // Expire after 1 hour
+      stale: 60, // Mark cache as stale after 60 seconds
+      revalidate: 60, // Trigger revalidation after 60 seconds
+      expire: 3600, // Hard expiration after 1 hour
     },
   },
   experimental: {
