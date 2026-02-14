@@ -22,12 +22,6 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes to match PostHog polling
  * or another shared cache backend (see documentation).
  */
 export class NextJSFlagCacheProvider implements FlagDefinitionCacheProvider {
-  private projectKey: string;
-  
-  constructor(projectKey: string) {
-    this.projectKey = projectKey;
-  }
-
   /**
    * Retrieve cached flag definitions.
    * Returns cached data if within TTL, undefined otherwise.
@@ -65,4 +59,3 @@ export class NextJSFlagCacheProvider implements FlagDefinitionCacheProvider {
     lastFetchTime = 0;
   }
 }
-

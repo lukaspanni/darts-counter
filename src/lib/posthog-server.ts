@@ -40,7 +40,7 @@ export default function PostHogClient() {
   }
   
   // Create new instance with local evaluation and custom cache provider
-  const cacheProvider = new NextJSFlagCacheProvider(process.env.NEXT_PUBLIC_POSTHOG_KEY);
+  const cacheProvider = new NextJSFlagCacheProvider();
   
   posthogInstance = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
