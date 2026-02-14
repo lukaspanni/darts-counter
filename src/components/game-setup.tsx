@@ -27,7 +27,8 @@ import { z } from "zod";
 
 const gameSetupSchema = gameSettingsSchema.extend({
   startingScore: z.enum(["301", "501"]),
-  roundsToWin: z.enum(["1", "3", "5", "7"]),
+  gameMode: z.enum(["bestOf", "firstTo"]),
+  legsToWin: z.enum(["3", "5", "7", "9", "6", "8"]),
   player1: z.string().min(1, "Player 1 name is required"),
   player2: z.string().optional(),
   // Override checkoutAssist from parent schema to ensure it's always boolean (not optional)
@@ -47,7 +48,8 @@ export function GameSetup() {
     defaultValues: {
       startingScore: "501",
       outMode: "single",
-      roundsToWin: "3",
+      gameMode: "bestOf",
+      legsToWin: "3",
       player1: "",
       player2: "",
       checkoutAssist: false,
@@ -60,7 +62,8 @@ export function GameSetup() {
     posthog.capture("game_setup_completed", {
       starting_score: Number.parseInt(data.startingScore),
       out_mode: data.outMode,
-      rounds_to_win: Number.parseInt(data.roundsToWin),
+      game_mode: data.gameMode,
+      legs_to_win: Number.parseInt(data.legsToWin),
       checkout_assist: data.checkoutAssist,
       player_count: playerCount,
     });
@@ -68,7 +71,8 @@ export function GameSetup() {
     setGameSettings({
       startingScore: Number.parseInt(data.startingScore),
       outMode: data.outMode,
-      roundsToWin: Number.parseInt(data.roundsToWin),
+      gameMode: data.gameMode,
+      legsToWin: Number.parseInt(data.legsToWin),
       checkoutAssist: data.checkoutAssist,
     });
 
@@ -142,24 +146,51 @@ export function GameSetup() {
 
             <FormField
               control={form.control}
-              name="roundsToWin"
+              name="gameMode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rounds to Win</FormLabel>
+                  <FormLabel>Match Format</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select rounds to win" />
+                        <SelectValue placeholder="Select match format" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="1">1 Round</SelectItem>
-                      <SelectItem value="3">3 Rounds</SelectItem>
-                      <SelectItem value="5">5 Rounds</SelectItem>
-                      <SelectItem value="7">7 Rounds</SelectItem>
+                      <SelectItem value="bestOf">Best of X legs</SelectItem>
+                      <SelectItem value="firstTo">First to X legs</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="legsToWin"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Number of Legs</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select number of legs" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="6">6</SelectItem>
+                      <SelectItem value="7">7</SelectItem>
+                      <SelectItem value="8">8</SelectItem>
+                      <SelectItem value="9">9</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

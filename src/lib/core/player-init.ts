@@ -8,7 +8,7 @@ export const createPlayers = (
     id: i + 1,
     name: p.name || `Player ${i + 1}`,
     score: startingScore,
-    roundsWon: 0,
+    legsWon: 0,
     dartsThrown: 0,
     totalScore: 0,
     scoreHistory: [[]],

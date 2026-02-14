@@ -49,7 +49,7 @@ export function ScoreDisplay({
                 {activePlayer.score}
               </span>
               <span className="text-muted-foreground text-xs">
-                Rounds won: {activePlayer.roundsWon}
+                Legs won: {activePlayer.legsWon}
               </span>
             </div>
           ) : (
@@ -71,7 +71,7 @@ export function ScoreDisplay({
                     {player.score}
                   </span>
                   <span className="text-muted-foreground text-xs">
-                    Rounds won: {player.roundsWon}
+                    Legs won: {player.legsWon}
                   </span>
                 </div>
               ))}

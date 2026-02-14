@@ -117,12 +117,13 @@ export function GamePlay() {
           gameId: liveStreamState.connection?.gameId || "",
           startingScore: gameSettings.startingScore,
           outMode: gameSettings.outMode,
-          roundsToWin: gameSettings.roundsToWin,
+          gameMode: gameSettings.gameMode,
+          legsToWin: gameSettings.legsToWin,
           players: players.map((p) => ({
             id: p.id,
             name: p.name,
             score: p.score,
-            roundsWon: p.roundsWon,
+            legsWon: p.legsWon,
             dartsThrown: p.dartsThrown,
             totalScore: p.totalScore,
           })),
@@ -313,7 +314,7 @@ export function GamePlay() {
                 {players.map((player) => (
                   <div key={player.id} className="flex justify-between gap-8">
                     <span>{player.name}:</span>
-                    <span>{player.roundsWon} rounds</span>
+                    <span>{player.legsWon} legs</span>
                   </div>
                 ))}
               </div>

@@ -5,6 +5,16 @@ import type { Player, GameSettings, ScoreModifier } from "@/lib/schemas";
 import { computeDartThrow } from "./core/darts-score";
 import { createPlayers } from "./core/player-init";
 
+// Helper function to calculate required legs to win based on game mode
+function calculateRequiredLegsToWin(settings: GameSettings): number {
+  if (settings.gameMode === "firstTo") {
+    return settings.legsToWin;
+  }
+  // For "bestOf", calculate the first to X where X = (total + 1) / 2
+  // e.g., best of 7 means first to 4, best of 5 means first to 3
+  return Math.ceil(settings.legsToWin / 2);
+}
+
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
 export type GameStoreState = {
@@ -59,7 +69,8 @@ export type GameStore = GameStoreState & GameStoreActions;
 const initialSettings: GameSettings = {
   startingScore: 501,
   outMode: "single",
-  roundsToWin: 3,
+  gameMode: "bestOf",
+  legsToWin: 3,
   checkoutAssist: false,
 };
 
@@ -168,10 +179,11 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.currentRoundScores.push(validatedScore);
 
           if (isRoundWin) {
-            p.roundsWon += 1;
+            p.legsWon += 1;
             state.roundWinner = p.id;
 
-            if (p.roundsWon >= state.gameSettings.roundsToWin) {
+            const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
+            if (p.legsWon >= requiredLegs) {
               state.gameWinner = p.id;
               state.gamePhase = "gameOver";
             }
