@@ -28,7 +28,7 @@ import { z } from "zod";
 const gameSetupSchema = gameSettingsSchema.extend({
   startingScore: z.enum(["301", "501"]),
   gameMode: z.enum(["bestOf", "firstTo"]),
-  legsToWin: z.enum(["3", "5", "7", "9", "6", "8"]),
+  legsToWin: z.enum(["3", "5", "6", "7", "8", "9"]),
   player1: z.string().min(1, "Player 1 name is required"),
   player2: z.string().optional(),
   // Override checkoutAssist from parent schema to ensure it's always boolean (not optional)
