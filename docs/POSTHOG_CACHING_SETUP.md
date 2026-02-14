@@ -19,9 +19,11 @@ The implementation uses a **two-tier caching approach**:
 
 #### 1. PostHog Client Instance Caching (Local Evaluation)
 - A singleton PostHog client instance is maintained across requests
+- Uses custom `FlagDefinitionCacheProvider` to cache flag definitions per serverless instance
 - The client automatically fetches and caches all feature flag definitions
-- PostHog SDK refreshes flag definitions in the background
+- PostHog SDK refreshes flag definitions in the background every 5 minutes
 - No network request needed for flag evaluation once cached
+- Cache persists for the lifetime of the serverless function instance
 
 #### 2. Next.js Distributed Cache ("use cache" directive)
 - Feature flag evaluation results are cached using Next.js 16 "use cache" directive
@@ -29,6 +31,7 @@ The implementation uses a **two-tier caching approach**:
 - **Distributed caching**: Cache persists across serverless function invocations in production
 - In development, cache is request-scoped only
 - On Vercel, automatically uses distributed cache infrastructure (no additional setup required)
+- **Runtime**: Requires Vercel Node.js/serverless runtime (Edge Runtime is not supported due to `posthog-node` dependency)
 
 ### Benefits
 

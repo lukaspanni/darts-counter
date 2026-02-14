@@ -1,5 +1,6 @@
 import "server-only";
 import { PostHog } from "posthog-node";
+import { NextJSFlagCacheProvider } from "./posthog-cache-provider";
 
 // Singleton instance for local evaluation with caching
 let posthogInstance: PostHog | undefined;
@@ -23,7 +24,24 @@ export default function PostHogClient() {
     return posthogInstance;
   }
   
-  // Create new instance with local evaluation
+  // Local evaluation requires personal API key
+  if (!process.env.POSTHOG_PERSONAL_API_KEY) {
+    console.warn(
+      "PostHog: POSTHOG_PERSONAL_API_KEY is not set. " +
+      "Local evaluation is disabled. Set the personal API key to enable local flag evaluation and caching."
+    );
+    // Create instance without local evaluation
+    posthogInstance = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+      flushAt: 1,
+      flushInterval: 0,
+    });
+    return posthogInstance;
+  }
+  
+  // Create new instance with local evaluation and custom cache provider
+  const cacheProvider = new NextJSFlagCacheProvider(process.env.NEXT_PUBLIC_POSTHOG_KEY);
+  
   posthogInstance = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     flushAt: 1,
@@ -34,7 +52,10 @@ export default function PostHogClient() {
     enableLocalEvaluation: true,
     // Poll for flag updates every 5 minutes
     featureFlagsPollingInterval: 300000,
+    // Custom cache provider for distributed serverless environment
+    flagDefinitionCacheProvider: cacheProvider,
   });
   
   return posthogInstance;
 }
+
