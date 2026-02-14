@@ -5,11 +5,34 @@ const featureFlagsElement =
     ? null
     : document.getElementById("posthog-feature-flags");
 
-const featureFlags = featureFlagsElement?.textContent
-  ? JSON.parse(featureFlagsElement.textContent)
-  : {};
+const parseFeatureFlags = (
+  rawValue: string | null,
+): Record<string, string | boolean> => {
+  if (!rawValue) {
+    return {};
+  }
 
-console.log(
+  try {
+    const parsed: unknown = JSON.parse(rawValue);
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+
+    const entries = Object.entries(parsed as Record<string, unknown>).filter(
+      ([, value]) => typeof value === "string" || typeof value === "boolean",
+    );
+
+    return Object.fromEntries(entries) as Record<string, string | boolean>;
+  } catch {
+    return {};
+  }
+};
+
+const featureFlags = parseFeatureFlags(
+  featureFlagsElement?.textContent ?? null,
+);
+
+console.debug(
   `Initializing Frontend PostHog client, bootstrapping with ${JSON.stringify(featureFlags)} `,
 );
 
