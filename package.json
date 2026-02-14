@@ -54,7 +54,7 @@
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.24.0",
-    "eslint-config-next": "^15.2.4",
+    "eslint-config-next": "^16.1.6",
     "globals": "^16.5.0",
     "postcss": "^8.5.6",
     "prettier": "^3.5.3",
