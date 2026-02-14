@@ -126,7 +126,7 @@ export function AverageChart({
             />
             <YAxis
               label={{
-                value: "Average (per round)",
+                value: "Average (per visit)",
                 angle: -90,
                 position: "insideLeft",
               }}

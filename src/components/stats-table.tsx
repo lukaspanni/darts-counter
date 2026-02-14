@@ -103,7 +103,7 @@ export function StatsTable() {
             {filteredAndSortedGames.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} className="text-center">
-                  No games found
+                  No matches found
                 </TableCell>
               </TableRow>
             )}
@@ -130,7 +130,7 @@ export function StatsTable() {
                     </span>
                   ))}
                   <br />
-                  {game.players.map((player) => player.roundsWon).join(" : ")}
+                  {game.players.map((player) => player.legsWon).join(" : ")}
                 </TableCell>
                 <TableCell>
                   <Button
