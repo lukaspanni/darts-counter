@@ -9,6 +9,7 @@ The application uses PostHog for feature flags with an optimized caching strateg
 - Improves response times for feature flag evaluations
 - Works seamlessly on Vercel without additional infrastructure
 - Automatically refreshes cached data to ensure flags stay up-to-date
+- Uses Next.js 16 "use cache" directive for distributed caching
 
 ## Implementation Details
 
@@ -22,21 +23,43 @@ The implementation uses a **two-tier caching approach**:
 - PostHog SDK refreshes flag definitions in the background
 - No network request needed for flag evaluation once cached
 
-#### 2. Next.js Data Cache
-- Feature flag evaluation results are cached using Next.js `unstable_cache` API
-- Cache duration: 60 seconds per user/flag combination
-- Works on Vercel Edge Runtime without additional configuration
-- Supports cache invalidation via tags
+#### 2. Next.js Distributed Cache ("use cache" directive)
+- Feature flag evaluation results are cached using Next.js 16 "use cache" directive
+- Cache duration: 60 seconds (stale) / 1 hour (expire) per user/flag combination
+- **Distributed caching**: Cache persists across serverless function invocations in production
+- In development, cache is request-scoped only
+- On Vercel, automatically uses distributed cache infrastructure (no additional setup required)
 
 ### Benefits
 
 ✅ **Performance**: Flag evaluations are served from cache (sub-millisecond response time)  
 ✅ **Reduced API Calls**: Significantly fewer requests to PostHog API  
 ✅ **Cost Effective**: No additional infrastructure required (no Redis/KV store needed)  
-✅ **Vercel Optimized**: Uses Vercel's built-in caching mechanism  
+✅ **Vercel Optimized**: Uses Vercel's built-in distributed caching mechanism  
+✅ **Production-Ready**: Cache persists across requests in production (unlike in-memory caching)  
 ✅ **Zero Configuration**: Works out-of-the-box on Vercel deployment  
 
 ## Configuration
+
+### Required Next.js Configuration
+
+The application uses Next.js 16's "use cache" directive, which requires these settings in `next.config.mjs`:
+
+```javascript
+{
+  // Enable "use cache" directive support
+  cacheComponents: true,
+  
+  // Configure cache lifetime
+  cacheLife: {
+    default: {
+      stale: 60,      // Consider cache stale after 60 seconds
+      revalidate: 60, // Revalidate every 60 seconds
+      expire: 3600,   // Expire after 1 hour
+    },
+  },
+}
+```
 
 ### Required Environment Variables
 
@@ -128,30 +151,30 @@ If you need more advanced caching (e.g., shared cache across serverless function
    - `KV_REST_API_TOKEN`
    - `KV_REST_API_READ_ONLY_TOKEN`
 
-> **Note**: Current implementation uses Next.js cache which is sufficient for most use cases. Vercel KV is optional and only needed for advanced scenarios.
+> **Note**: Current implementation uses Next.js 16 "use cache" directive with distributed caching, which is sufficient for most use cases. Vercel KV is optional and only needed for advanced scenarios with very high traffic or specific caching requirements.
 
 ## Cache Invalidation
 
 ### Automatic Invalidation
-- Feature flag cache automatically expires after 60 seconds
-- PostHog client refreshes flag definitions in the background
+- Feature flag cache automatically revalidates after 60 seconds (stale time)
+- Cache entries expire after 1 hour
+- PostHog client refreshes flag definitions in the background every 5 minutes
 
 ### Manual Invalidation (if needed)
-If you need to force-refresh flags immediately:
+With Next.js 16 "use cache" directive, cache invalidation can be done using the `revalidatePath` or `revalidateTag` APIs:
 
 ```typescript
-import { revalidateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 
-// Invalidate all feature flags cache
+// Invalidate cache for specific path
+revalidatePath('/');
+
+// Or use tags if you add cacheTag() in your cached functions
+import { revalidateTag } from 'next/cache';
 revalidateTag('feature-flags');
 ```
 
-**Note on Cache Keys**: The implementation uses Next.js `unstable_cache` which automatically includes function parameters in the cache key. This means:
-- Each user's flags are cached separately (differentiated by `distinctId`)
-- Each flag is cached separately (differentiated by `flagKey` and `distinctId`)
-- Cache tags are kept simple ('feature-flags') for easy bulk invalidation
-
-If you need more granular cache invalidation per user or per flag, you can modify the `tags` array in `src/lib/get-feature-flags.ts` to include user/flag-specific tags.
+**Note**: The current implementation relies on automatic time-based revalidation (60 seconds). Manual invalidation is rarely needed but available if immediate flag updates are required.
 
 ## Monitoring and Debugging
 
@@ -173,28 +196,32 @@ If you need more granular cache invalidation per user or per flag, you can modif
 ### Common Issues
 
 **Issue**: Feature flags not updating immediately  
-**Solution**: This is expected behavior (60s cache). Adjust `revalidate` value in `get-feature-flags.ts` if needed.
+**Solution**: This is expected behavior (60s stale time, 1h expire). Adjust `cacheLife` values in `next.config.mjs` if needed.
+
+**Issue**: Cache not persisting across requests in development  
+**Solution**: This is expected - "use cache" uses request-scoped caching in development mode. Deploy to Vercel to test distributed caching.
 
 **Issue**: Different flag values on different serverless function instances  
-**Solution**: This is normal due to distributed caching. Values converge within cache TTL (60s).
+**Solution**: With Next.js 16 "use cache" and Vercel, cache is distributed automatically. All instances share the same cache.
 
 ## Performance Considerations
 
 ### Cache Duration
-- **Current**: 60 seconds
-- **Adjust**: Change `revalidate` value in `src/lib/get-feature-flags.ts`
+- **Current**: 60 seconds stale time, 1 hour expiration
+- **Adjust**: Change `cacheLife` values in `next.config.mjs`
 - **Trade-off**: Longer cache = fewer API calls but slower flag updates
 
 ### Memory Usage
 - PostHog client instance: ~1-5 MB (flag definitions)
-- Per-user flag cache: ~1 KB per user
+- Distributed cache: Managed by Vercel infrastructure
 - Total impact: Negligible for typical Vercel function limits
 
 ## References
 
 - [PostHog Local Evaluation Guide](https://posthog.com/docs/feature-flags/local-evaluation)
 - [PostHog Distributed Environments](https://posthog.com/docs/feature-flags/local-evaluation/distributed-environments)
-- [Next.js Data Cache](https://nextjs.org/docs/app/building-your-application/caching)
+- [Next.js "use cache" Directive](https://nextjs.org/docs/app/api-reference/directives/use-cache)
+- [Next.js Caching](https://nextjs.org/docs/app/building-your-application/caching)
 - [Vercel KV Documentation](https://vercel.com/docs/storage/vercel-kv)
 
 ## Support

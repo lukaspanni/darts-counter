@@ -7,6 +7,17 @@ const nextConfig = {
     unoptimized: true,
   },
   reactCompiler: true,
+  // Enable "use cache" directive support
+  cacheComponents: true,
+  // Configure cache lifetime for "use cache" directive
+  cacheLife: {
+    // Default cache profile (applied to all "use cache" directives)
+    default: {
+      stale: 60, // Consider cache stale after 60 seconds
+      revalidate: 60, // Revalidate every 60 seconds
+      expire: 3600, // Expire after 1 hour
+    },
+  },
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
