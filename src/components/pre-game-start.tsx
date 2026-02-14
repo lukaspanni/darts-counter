@@ -26,7 +26,8 @@ export function PreGameStart() {
       player_count: players.length,
       starting_score: gameSettings.startingScore,
       out_mode: gameSettings.outMode,
-      rounds_to_win: gameSettings.roundsToWin,
+      game_mode: gameSettings.gameMode,
+      legs_to_win: gameSettings.legsToWin,
     });
     setActivePlayer(startingPlayerId);
     startGame();

@@ -10,7 +10,7 @@ export const liveStreamPlayerSchema = playerSchema.pick({
   id: true,
   name: true,
   score: true,
-  roundsWon: true,
+  legsWon: true,
   dartsThrown: true,
   totalScore: true,
 });
@@ -19,7 +19,8 @@ export const liveStreamGameMetadataSchema = z.object({
   gameId: z.string().uuid(),
   startingScore: z.number(),
   outMode: gameSettingsSchema.shape.outMode,
-  roundsToWin: z.number(),
+  gameMode: gameSettingsSchema.shape.gameMode,
+  legsToWin: z.number(),
   players: z.array(liveStreamPlayerSchema),
   currentRound: z.number(),
   activePlayerId: z.number(),

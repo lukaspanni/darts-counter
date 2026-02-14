@@ -59,7 +59,7 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
           <div className="text-center">
             <h2 className="text-xl font-semibold">Winner</h2>
             <p className="mt-2 text-3xl font-bold">{winner.name}</p>
-            <p className="mt-1 text-lg">Rounds won: {winner.roundsWon}</p>
+            <p className="mt-1 text-lg">Legs won: {winner.legsWon}</p>
           </div>
 
           <div className="bg-muted rounded-lg p-4">

@@ -73,7 +73,7 @@ function updateRoundFinishMetadata(
   return {
     ...metadata,
     players: metadata.players.map((p) =>
-      p.id === event.winnerId ? { ...p, roundsWon: p.roundsWon + 1 } : p,
+      p.id === event.winnerId ? { ...p, legsWon: p.legsWon + 1 } : p,
     ),
     roundWinner: event.winnerId,
   };
@@ -311,8 +311,9 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-center">
-              Round {Math.max(1, metadata.currentRound)} · Best of{" "}
-              {metadata.roundsToWin}
+              Round {Math.max(1, metadata.currentRound)} ·{" "}
+              {metadata.gameMode === "bestOf" ? "Best of" : "First to"}{" "}
+              {metadata.legsToWin}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -340,7 +341,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
                 <div className="text-right">
                   <div className="text-4xl font-bold">{player.score}</div>
                   <div className="text-muted-foreground text-sm">
-                    Rounds won: {player.roundsWon}
+                    Legs won: {player.legsWon}
                   </div>
                 </div>
               </div>

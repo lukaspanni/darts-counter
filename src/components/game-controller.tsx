@@ -50,7 +50,7 @@ export function GameController() {
         date: new Date().toISOString(),
         players: players.map((p) => ({
           name: p.name,
-          roundsWon: p.roundsWon,
+          legsWon: p.legsWon,
           averageScore:
             p.dartsThrown > 0
               ? Number(((p.totalScore / p.dartsThrown) * 3).toFixed(2))
