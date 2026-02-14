@@ -42,6 +42,12 @@ export default tseslint.config(
       "@typescript-eslint/unbound-method": "warn", //ignore for zustand store access
     },
   },
+  {
+    files: ["workers/**/*.d.ts"],
+    linterOptions: {
+      reportUnusedDisableDirectives: false,
+    },
+  },
 
   {
     linterOptions: {
