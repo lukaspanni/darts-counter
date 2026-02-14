@@ -9,7 +9,7 @@ const featureFlags = featureFlagsElement?.textContent
   ? JSON.parse(featureFlagsElement.textContent)
   : {};
 
-console.log(
+console.debug(
   `Initializing Frontend PostHog client, bootstrapping with ${JSON.stringify(featureFlags)} `,
 );
 

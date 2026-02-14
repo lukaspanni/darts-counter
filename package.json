@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "redis": "^4.7.1",
     "@hookform/resolvers": "^5.2.2",
     "@posthog/react": "^1.7.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
