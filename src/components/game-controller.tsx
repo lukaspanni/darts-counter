@@ -58,6 +58,11 @@ export function GameController() {
               p.dartsThrown > 0
                 ? Number(((p.totalScore / p.dartsThrown) * 3).toFixed(2))
                 : 0,
+            // Store raw score data for future extensibility
+            scoreHistory: p.scoreHistory,
+            dartsThrown: p.dartsThrown,
+            totalScore: p.totalScore,
+            // Pre-computed statistics for convenience
             first9Average: enhancedStats.first9Average,
             highestScore: enhancedStats.highestScore,
             count180s: enhancedStats.count180s,

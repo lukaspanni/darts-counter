@@ -12,7 +12,16 @@ export interface EnhancedPlayerStats {
 }
 
 /**
- * Calculate enhanced statistics from a player's game data
+ * Calculate enhanced statistics from a player's score history
+ * 
+ * This function processes raw score data to compute various statistics.
+ * By storing raw scoreHistory data in game history, we enable:
+ * - Future addition of new statistics without losing historical data
+ * - Recalculation of statistics with improved algorithms
+ * - Features like match continuation or replay
+ * 
+ * @param player - Player object containing scoreHistory array
+ * @returns EnhancedPlayerStats with computed metrics
  */
 export function calculateEnhancedStats(player: Player): EnhancedPlayerStats {
   const stats: EnhancedPlayerStats = {
@@ -111,4 +120,31 @@ export function calculateVisits(scoreHistory: number[][]): number[][] {
  */
 export function visitTotal(visit: number[]): number {
   return visit.reduce((sum, score) => sum + score, 0);
+}
+
+/**
+ * Recalculate enhanced statistics from stored game history data
+ * 
+ * This function enables recalculation of statistics from raw score history,
+ * allowing new statistics to be computed from historical games even after
+ * the statistic wasn't originally tracked.
+ * 
+ * @param scoreHistory - Array of leg score histories (each leg is an array of dart scores)
+ * @param dartsThrown - Total number of darts thrown
+ * @param legsWon - Number of legs won by the player
+ * @returns EnhancedPlayerStats computed from raw data
+ */
+export function recalculateEnhancedStats(
+  scoreHistory: number[][],
+  dartsThrown: number,
+  legsWon: number,
+): EnhancedPlayerStats {
+  // Create a temporary Player-like object for calculation
+  const playerData = {
+    scoreHistory,
+    dartsThrown,
+    legsWon,
+  } as Player;
+
+  return calculateEnhancedStats(playerData);
 }
