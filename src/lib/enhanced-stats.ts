@@ -29,11 +29,14 @@ export function calculateEnhancedStats(player: Player): EnhancedPlayerStats {
   // Process each leg's score history
   let first9DartsTotal = 0;
   let first9DartsCount = 0;
+  let totalLegsPlayed = 0;
 
   player.scoreHistory.forEach((legScores) => {
     if (legScores.length === 0) return;
 
-    // Calculate first 9 darts average (first 3 visits)
+    totalLegsPlayed++;
+
+    // Calculate first 9 darts average (first 9 individual dart scores)
     const first9Darts = legScores.slice(0, 9);
     first9DartsTotal += first9Darts.reduce((sum, score) => sum + score, 0);
     first9DartsCount += first9Darts.length;
@@ -58,33 +61,26 @@ export function calculateEnhancedStats(player: Player): EnhancedPlayerStats {
         stats.count100Plus++;
       }
     }
-
-    // Detect checkout attempts and success
-    // A checkout attempt is when the player finishes with score reaching 0
-    // or when they have a score that could be finished in remaining darts
-    const lastScore = legScores[legScores.length - 1];
-    if (lastScore === 0) {
-      // This was the winning throw, but we need to check if it was a checkout attempt
-      // Look at the pattern - if we finished, it was a successful checkout
-      stats.checkoutSuccess++;
-      stats.checkoutAttempts++;
-    }
-    // Note: Detecting failed checkout attempts is complex without additional data
-    // We would need to track when player had a finishable score but didn't finish
   });
 
-  // Calculate first 9 average
+  // Calculate first 9 darts average (per-dart average)
   if (first9DartsCount > 0) {
-    stats.first9Average = Number(
-      ((first9DartsTotal / first9DartsCount) * 3).toFixed(2),
-    );
+    const perDartAverage = first9DartsTotal / first9DartsCount;
+    // Convert to per-visit average (multiply by 3)
+    stats.first9Average = Number((perDartAverage * 3).toFixed(2));
   }
 
-  // Calculate average darts per leg
-  const legsCompleted = player.legsWon;
-  if (legsCompleted > 0) {
+  // Estimate checkout statistics based on legs won
+  // Each leg won requires a successful checkout
+  stats.checkoutSuccess = player.legsWon;
+  // Estimate attempts: we count each leg played as having at least one checkout attempt
+  // This is a conservative estimate since we don't track failed attempts
+  stats.checkoutAttempts = totalLegsPlayed;
+
+  // Calculate average darts per leg won
+  if (player.legsWon > 0) {
     stats.averageDartsPerLeg = Number(
-      (player.dartsThrown / legsCompleted).toFixed(2),
+      (player.dartsThrown / player.legsWon).toFixed(2),
     );
   }
 

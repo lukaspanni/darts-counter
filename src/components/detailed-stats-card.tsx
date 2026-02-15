@@ -109,7 +109,7 @@ export function DetailedStatsCard({ stats }: DetailedStatsCardProps) {
                         <StatItem
                           label="First 9 Average"
                           value={player.first9Average}
-                          description="Average of first 9 darts"
+                          description="Average of first 9 darts (3 visits)"
                         />
                       )}
                       {player.highestScore > 0 && (
