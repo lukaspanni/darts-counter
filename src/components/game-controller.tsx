@@ -5,6 +5,7 @@ import { PreGameStart } from "@/components/pre-game-start";
 import { GamePlay } from "@/components/game-play";
 import { GameOver } from "@/components/game-over";
 import { useGameHistory } from "@/lib/hooks/use-game-history";
+import { calculateEnhancedStats } from "@/lib/enhanced-stats";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/lib/store-provider";
@@ -48,14 +49,25 @@ export function GameController() {
       const newGameHistory = {
         id: crypto.randomUUID(),
         date: new Date().toISOString(),
-        players: players.map((p) => ({
-          name: p.name,
-          legsWon: p.legsWon,
-          averageScore:
-            p.dartsThrown > 0
-              ? Number(((p.totalScore / p.dartsThrown) * 3).toFixed(2))
-              : 0,
-        })),
+        players: players.map((p) => {
+          const enhancedStats = calculateEnhancedStats(p);
+          return {
+            name: p.name,
+            legsWon: p.legsWon,
+            averageScore:
+              p.dartsThrown > 0
+                ? Number(((p.totalScore / p.dartsThrown) * 3).toFixed(2))
+                : 0,
+            first9Average: enhancedStats.first9Average,
+            highestScore: enhancedStats.highestScore,
+            count180s: enhancedStats.count180s,
+            count100Plus: enhancedStats.count100Plus,
+            checkoutAttempts: enhancedStats.checkoutAttempts,
+            checkoutSuccess: enhancedStats.checkoutSuccess,
+            averageDartsPerLeg: enhancedStats.averageDartsPerLeg,
+            totalDarts: enhancedStats.totalDarts,
+          };
+        }),
         winner: winnerPlayer?.name || "",
         gameMode: `${gameSettings.startingScore} ${gameSettings.outMode} out`,
         legsPlayed: currentLeg,
