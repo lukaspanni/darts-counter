@@ -13,7 +13,7 @@ import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import { calculatePlayerStats, type PlayerStats } from "@/lib/player-stats";
 import type { GameHistory } from "@/lib/schemas";
 
-type SortField = "name" | "gamesPlayed" | "gamesWon" | "averagePerRound";
+type SortField = "name" | "matchesPlayed" | "matchesWon" | "averagePerVisit";
 
 interface PlayerAveragesProps {
   gameHistory: GameHistory[];
@@ -24,7 +24,7 @@ export function PlayerAverages({
   gameHistory,
   onPlayerSelect,
 }: PlayerAveragesProps) {
-  const [sortField, setSortField] = useState<SortField>("gamesPlayed");
+  const [sortField, setSortField] = useState<SortField>("matchesPlayed");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const playerStats = calculatePlayerStats(gameHistory);
@@ -53,12 +53,12 @@ export function PlayerAverages({
     switch (sortField) {
       case "name":
         return a.name.localeCompare(b.name) * multiplier;
-      case "gamesPlayed":
-        return (a.gamesPlayed - b.gamesPlayed) * multiplier;
-      case "gamesWon":
-        return (a.gamesWon - b.gamesWon) * multiplier;
-      case "averagePerRound":
-        return (a.averagePerRound - b.averagePerRound) * multiplier;
+      case "matchesPlayed":
+        return (a.matchesPlayed - b.matchesPlayed) * multiplier;
+      case "matchesWon":
+        return (a.matchesWon - b.matchesWon) * multiplier;
+      case "averagePerVisit":
+        return (a.averagePerVisit - b.averagePerVisit) * multiplier;
       default:
         return 0;
     }
@@ -84,22 +84,22 @@ export function PlayerAverages({
                 Player {getSortIcon("name")}
               </TableHead>
               <TableHead
-                onClick={() => handleSort("gamesPlayed")}
+                onClick={() => handleSort("matchesPlayed")}
                 className="cursor-pointer"
               >
-                Games {getSortIcon("gamesPlayed")}
+                Matches {getSortIcon("matchesPlayed")}
               </TableHead>
               <TableHead
-                onClick={() => handleSort("gamesWon")}
+                onClick={() => handleSort("matchesWon")}
                 className="cursor-pointer"
               >
-                Wins {getSortIcon("gamesWon")}
+                Wins {getSortIcon("matchesWon")}
               </TableHead>
               <TableHead
-                onClick={() => handleSort("averagePerRound")}
+                onClick={() => handleSort("averagePerVisit")}
                 className="cursor-pointer"
               >
-                Avg/Round {getSortIcon("averagePerRound")}
+                Avg/Visit {getSortIcon("averagePerVisit")}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -121,10 +121,10 @@ export function PlayerAverages({
                 }
               >
                 <TableCell className="font-medium">{player.name}</TableCell>
-                <TableCell>{player.gamesPlayed}</TableCell>
-                <TableCell>{player.gamesWon}</TableCell>
+                <TableCell>{player.matchesPlayed}</TableCell>
+                <TableCell>{player.matchesWon}</TableCell>
                 <TableCell className="font-semibold">
-                  {player.averagePerRound}
+                  {player.averagePerVisit}
                 </TableCell>
               </TableRow>
             ))}

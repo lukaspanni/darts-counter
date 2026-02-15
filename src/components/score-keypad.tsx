@@ -8,16 +8,16 @@ import { useState } from "react";
 interface ScoreKeypadProps {
   onScoreEntry: (scoreAfterModifier: number, modifier: ScoreModifier) => void;
   onUndo: () => void;
-  onFinishRound: () => void;
-  dartsInRound: number;
+  onFinishVisit: () => void;
+  dartsInVisit: number;
   canThrowMoreDarts: boolean;
 }
 
 export function ScoreKeypad({
   onScoreEntry,
   onUndo,
-  onFinishRound,
-  dartsInRound,
+  onFinishVisit,
+  dartsInVisit,
   canThrowMoreDarts,
 }: ScoreKeypadProps) {
   const [modifier, setModifier] = useState<ScoreModifier>("single");
@@ -122,19 +122,19 @@ export function ScoreKeypad({
           <Button
             variant="outline"
             onClick={onUndo}
-            disabled={dartsInRound === 0}
+            disabled={dartsInVisit === 0}
             className="h-12"
           >
             <RotateCcw className="mr-2 h-4 w-4" /> Undo
           </Button>
           <Button
-            onClick={onFinishRound}
-            disabled={dartsInRound === 0}
+            onClick={onFinishVisit}
+            disabled={dartsInVisit === 0}
             className="h-12"
             variant={!canThrowMoreDarts ? "default" : "outline"}
           >
             <Check className="mr-2 h-4 w-4" />
-            {!canThrowMoreDarts ? "Confirm Round" : "Finish Round"}
+            {!canThrowMoreDarts ? "Confirm Visit" : "Finish Visit"}
           </Button>
         </div>
       </CardContent>

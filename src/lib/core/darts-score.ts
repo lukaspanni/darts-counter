@@ -4,7 +4,7 @@ export type DartThrowOutcome = {
   newScore: number;
   validatedScore: number;
   isBust: boolean;
-  isRoundWin: boolean;
+  isLegWin: boolean;
 };
 
 export const computeDartThrow = (
@@ -16,7 +16,7 @@ export const computeDartThrow = (
   let newScore = player.score - score;
   let validatedScore = score;
   let isBust = false;
-  let isRoundWin = false;
+  let isLegWin = false;
 
   if (newScore < 0 || (settings.outMode === "double" && newScore === 1)) {
     newScore = player.score;
@@ -25,7 +25,7 @@ export const computeDartThrow = (
   } else if (newScore === 0) {
     const validOut = settings.outMode === "single" || modifier === "double";
     if (validOut) {
-      isRoundWin = true;
+      isLegWin = true;
     } else {
       newScore = player.score;
       validatedScore = 0;
@@ -33,5 +33,5 @@ export const computeDartThrow = (
     }
   }
 
-  return { newScore, validatedScore, isBust, isRoundWin };
+  return { newScore, validatedScore, isBust, isLegWin };
 };

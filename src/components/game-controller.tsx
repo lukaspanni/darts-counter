@@ -12,10 +12,10 @@ import { useGameStore } from "@/lib/store-provider";
 export function GameController() {
   const {
     gameSettings,
-    currentRound,
+    currentLeg,
     gamePhase,
     players,
-    gameWinner,
+    matchWinner,
     resetGame,
   } = useGameStore((state) => state);
 
@@ -23,10 +23,10 @@ export function GameController() {
   const [isInitialRender, setIsInitialRender] = useState(true);
 
   useEffect(() => {
-    if (isInitialRender && gamePhase === "gameOver" && gameWinner !== null) {
+    if (isInitialRender && gamePhase === "gameOver" && matchWinner !== null) {
       setIsInitialRender(false);
 
-      const winnerPlayer = players.find((p) => p.id === gameWinner);
+      const winnerPlayer = players.find((p) => p.id === matchWinner);
       const winnerAverage =
         winnerPlayer && winnerPlayer.dartsThrown > 0
           ? Number(
@@ -37,9 +37,9 @@ export function GameController() {
             )
           : 0;
 
-      posthog.capture("game_completed", {
+      posthog.capture("match_completed", {
         player_count: players.length,
-        rounds_played: currentRound,
+        legs_played: currentLeg,
         starting_score: gameSettings.startingScore,
         out_mode: gameSettings.outMode,
         winner_average: winnerAverage,
@@ -50,7 +50,7 @@ export function GameController() {
         date: new Date().toISOString(),
         players: players.map((p) => ({
           name: p.name,
-          roundsWon: p.roundsWon,
+          legsWon: p.legsWon,
           averageScore:
             p.dartsThrown > 0
               ? Number(((p.totalScore / p.dartsThrown) * 3).toFixed(2))
@@ -58,16 +58,16 @@ export function GameController() {
         })),
         winner: winnerPlayer?.name || "",
         gameMode: `${gameSettings.startingScore} ${gameSettings.outMode} out`,
-        roundsPlayed: currentRound,
+        legsPlayed: currentLeg,
       };
       addGame(newGameHistory);
     }
   }, [
     gamePhase,
-    gameWinner,
+    matchWinner,
     players,
     gameSettings,
-    currentRound,
+    currentLeg,
     addGame,
     isInitialRender,
   ]);
@@ -81,10 +81,10 @@ export function GameController() {
     case "playing":
       return <GamePlay />;
     case "gameOver":
-      if (gameWinner) {
+      if (matchWinner) {
         return (
           <GameOver
-            winner={players.find((p) => p.id === gameWinner)!}
+            winner={players.find((p) => p.id === matchWinner)!}
             gameHistory={gameHistory}
             onNewGame={resetGame}
           />

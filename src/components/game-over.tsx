@@ -16,8 +16,8 @@ interface GameOverProps {
 
 export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
   const winnerStats = {
-    gamesPlayed: 0,
-    gamesWon: 0,
+    matchesPlayed: 0,
+    matchesWon: 0,
     averageScore: 0,
   };
 
@@ -27,17 +27,17 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
     .filter((game) => game.players.find((p) => p.name === winner.name))
     .filter(Boolean)
     .forEach((game) => {
-      winnerStats.gamesPlayed++;
+      winnerStats.matchesPlayed++;
       winnerStats.averageScore +=
         game.players.find((p) => p.name === winner.name)?.averageScore || 0;
       if (game.winner === winner.name) {
-        winnerStats.gamesWon++;
+        winnerStats.matchesWon++;
       }
     });
 
-  if (winnerStats.gamesPlayed > 0) {
+  if (winnerStats.matchesPlayed > 0) {
     winnerStats.averageScore = Number(
-      (winnerStats.averageScore / winnerStats.gamesPlayed).toFixed(2),
+      (winnerStats.averageScore / winnerStats.matchesPlayed).toFixed(2),
     );
   }
 
@@ -47,19 +47,19 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
       : 0;
 
   const isAboveAverage =
-    currentAverage > winnerStats.averageScore && winnerStats.gamesPlayed > 0;
+    currentAverage > winnerStats.averageScore && winnerStats.matchesPlayed > 0;
 
   return (
     <div>
       <Card className="mx-auto w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-center text-2xl">Game Over!</CardTitle>
+          <CardTitle className="text-center text-2xl">Match Over!</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center">
             <h2 className="text-xl font-semibold">Winner</h2>
             <p className="mt-2 text-3xl font-bold">{winner.name}</p>
-            <p className="mt-1 text-lg">Rounds won: {winner.roundsWon}</p>
+            <p className="mt-1 text-lg">Legs won: {winner.legsWon}</p>
           </div>
 
           <div className="bg-muted rounded-lg p-4">
@@ -70,7 +70,7 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
                 <span className="font-medium">{currentAverage}</span>
               </div>
 
-              {winnerStats.gamesPlayed > 0 && (
+              {winnerStats.matchesPlayed > 0 && (
                 <>
                   <div className="flex justify-between">
                     <span>Historical Average:</span>
