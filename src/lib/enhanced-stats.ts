@@ -12,6 +12,15 @@ export interface EnhancedPlayerStats {
 }
 
 /**
+ * Minimal player data required for statistics calculation
+ */
+export interface PlayerStatsData {
+  scoreHistory: number[][];
+  dartsThrown: number;
+  legsWon: number;
+}
+
+/**
  * Calculate enhanced statistics from a player's score history
  * 
  * This function processes raw score data to compute various statistics.
@@ -23,7 +32,9 @@ export interface EnhancedPlayerStats {
  * @param player - Player object containing scoreHistory array
  * @returns EnhancedPlayerStats with computed metrics
  */
-export function calculateEnhancedStats(player: Player): EnhancedPlayerStats {
+export function calculateEnhancedStats(
+  player: Player | PlayerStatsData,
+): EnhancedPlayerStats {
   const stats: EnhancedPlayerStats = {
     first9Average: 0,
     highestScore: 0,
@@ -129,8 +140,8 @@ export function visitTotal(visit: number[]): number {
  * allowing new statistics to be computed from historical games even after
  * the statistic wasn't originally tracked.
  * 
- * @param scoreHistory - Array of leg score histories (each leg is an array of dart scores)
- * @param dartsThrown - Total number of darts thrown
+ * @param scoreHistory - Array of leg score histories, where each leg is an array of individual dart scores
+ * @param dartsThrown - Total number of darts thrown across all legs
  * @param legsWon - Number of legs won by the player
  * @returns EnhancedPlayerStats computed from raw data
  */
@@ -139,12 +150,11 @@ export function recalculateEnhancedStats(
   dartsThrown: number,
   legsWon: number,
 ): EnhancedPlayerStats {
-  // Create a temporary Player-like object for calculation
-  const playerData = {
+  const playerData: PlayerStatsData = {
     scoreHistory,
     dartsThrown,
     legsWon,
-  } as Player;
+  };
 
   return calculateEnhancedStats(playerData);
 }
