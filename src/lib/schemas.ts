@@ -25,6 +25,19 @@ export const gameHistoryPlayerSchema = z.object({
   name: z.string(),
   legsWon: z.number(),
   averageScore: z.number(),
+  // Raw score data for future extensibility and features like match continuation
+  scoreHistory: z.array(z.array(z.number())).optional(),
+  dartsThrown: z.number().optional(),
+  totalScore: z.number().optional(),
+  // Enhanced statistics - optional for backward compatibility
+  first9Average: z.number().optional(),
+  highestScore: z.number().optional(),
+  count180s: z.number().optional(),
+  count100Plus: z.number().optional(),
+  checkoutAttempts: z.number().optional(),
+  checkoutSuccess: z.number().optional(),
+  averageDartsPerLeg: z.number().optional(),
+  totalDarts: z.number().optional(),
 });
 
 export const gameHistorySchema = z.array(
