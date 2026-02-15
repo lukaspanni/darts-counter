@@ -73,9 +73,9 @@ function updateRoundFinishMetadata(
   return {
     ...metadata,
     players: metadata.players.map((p) =>
-      p.id === event.winnerId ? { ...p, roundsWon: p.roundsWon + 1 } : p,
+      p.id === event.winnerId ? { ...p, legsWon: p.legsWon + 1 } : p,
     ),
-    roundWinner: event.winnerId,
+    legWinner: event.winnerId,
   };
 }
 
@@ -85,7 +85,7 @@ function updateGameFinishMetadata(
 ): LiveStreamGameMetadata {
   return {
     ...metadata,
-    gameWinner: event.winnerId,
+    matchWinner: event.winnerId,
     gamePhase: "gameOver",
   };
 }
@@ -311,8 +311,8 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-center">
-              Round {Math.max(1, metadata.currentRound)} · Best of{" "}
-              {metadata.roundsToWin}
+              Leg {Math.max(1, metadata.currentLeg)} · Best of{" "}
+              {metadata.legsToWin}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -340,7 +340,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
                 <div className="text-right">
                   <div className="text-4xl font-bold">{player.score}</div>
                   <div className="text-muted-foreground text-sm">
-                    Rounds won: {player.roundsWon}
+                    Legs won: {player.legsWon}
                   </div>
                 </div>
               </div>
@@ -357,18 +357,18 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
           </Card>
         ))}
 
-        {/* Game Over */}
-        {metadata.gamePhase === "gameOver" && metadata.gameWinner && (
+        {/* Match Over */}
+        {metadata.gamePhase === "gameOver" && metadata.matchWinner && (
           <Card className="border-primary bg-primary/5">
             <CardHeader>
               <CardTitle className="text-center text-2xl">
-                🎯 Game Over! 🎯
+                🎯 Match Over! 🎯
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-center text-xl font-bold">
                 {
-                  metadata.players.find((p) => p.id === metadata.gameWinner)
+                  metadata.players.find((p) => p.id === metadata.matchWinner)
                     ?.name
                 }{" "}
                 wins!

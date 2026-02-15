@@ -7,9 +7,9 @@ import type { Player } from "@/lib/schemas";
 interface ScoreDisplayProps {
   players: Player[];
   activePlayerId: number;
-  currentRound: number;
-  dartsInRound: number;
-  currentRoundScore: number;
+  currentLeg: number;
+  dartsInVisit: number;
+  currentVisitScore: number;
   checkoutSuggestion: string | null;
   bust: boolean;
 }
@@ -17,9 +17,9 @@ interface ScoreDisplayProps {
 export function ScoreDisplay({
   players,
   activePlayerId,
-  currentRound,
-  dartsInRound,
-  currentRoundScore,
+  currentLeg,
+  dartsInVisit,
+  currentVisitScore,
   checkoutSuggestion,
   bust,
 }: ScoreDisplayProps) {
@@ -49,7 +49,7 @@ export function ScoreDisplay({
                 {activePlayer.score}
               </span>
               <span className="text-muted-foreground text-xs">
-                Rounds won: {activePlayer.roundsWon}
+                Legs won: {activePlayer.legsWon}
               </span>
             </div>
           ) : (
@@ -71,7 +71,7 @@ export function ScoreDisplay({
                     {player.score}
                   </span>
                   <span className="text-muted-foreground text-xs">
-                    Rounds won: {player.roundsWon}
+                    Legs won: {player.legsWon}
                   </span>
                 </div>
               ))}
@@ -96,10 +96,10 @@ export function ScoreDisplay({
             </div>
           )}
 
-          {/* Round score */}
+          {/* Visit score */}
           <div className="mt-3 text-center">
-            <span className="text-muted-foreground text-sm">Round score:</span>
-            <span className="ml-2 font-medium">{currentRoundScore}</span>
+            <span className="text-muted-foreground text-sm">Visit score:</span>
+            <span className="ml-2 font-medium">{currentVisitScore}</span>
           </div>
 
           {/* Visual indicator for darts thrown */}
@@ -112,7 +112,7 @@ export function ScoreDisplay({
               [0, 1, 2].map((index) => (
                 <div
                   key={index}
-                  className={`h-3 w-3 rounded-full ${index < dartsInRound ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  className={`h-3 w-3 rounded-full ${index < dartsInVisit ? "bg-primary" : "bg-muted-foreground/30"}`}
                 />
               ))
             )}
@@ -120,12 +120,12 @@ export function ScoreDisplay({
 
           <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
             <div>
-              <p className="text-muted-foreground">Round</p>
-              <p className="font-medium">{currentRound}</p>
+              <p className="text-muted-foreground">Leg</p>
+              <p className="font-medium">{currentLeg}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Darts</p>
-              <p className="font-medium">{dartsInRound}/3</p>
+              <p className="font-medium">{dartsInVisit}/3</p>
             </div>
             <div>
               <p className="text-muted-foreground">Average</p>

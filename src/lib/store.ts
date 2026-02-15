@@ -12,24 +12,24 @@ export type GameStoreState = {
   players: Player[];
   activePlayerId: number;
   gameSettings: GameSettings;
-  currentRound: number;
-  currentRoundScores: number[];
-  roundWinner: number | null;
-  gameWinner: number | null;
+  currentLeg: number;
+  currentVisitScores: number[];
+  legWinner: number | null;
+  matchWinner: number | null;
 };
 
 export type DartThrowResult = {
   newScore: number;
   validatedScore: number;
-  isRoundWin: boolean;
+  isLegWin: boolean;
   isBust: boolean;
-  currentRoundTotal: number;
+  currentVisitTotal: number;
 };
 
 export type UndoResult = {
   success: boolean;
   lastScore: number;
-  newRoundTotal: number;
+  newVisitTotal: number;
 };
 
 export type GameStoreActions = {
@@ -45,8 +45,8 @@ export type GameStoreActions = {
 
   // Game play
   startGame(): void;
-  finishRound(): void;
-  startNextRound(): void;
+  finishVisit(): void;
+  startNextLeg(): void;
   resetGame(): void;
 
   // Logic
@@ -59,7 +59,7 @@ export type GameStore = GameStoreState & GameStoreActions;
 const initialSettings: GameSettings = {
   startingScore: 501,
   outMode: "single",
-  roundsToWin: 3,
+  legsToWin: 3,
   checkoutAssist: false,
 };
 
@@ -68,10 +68,10 @@ const initialState: GameStoreState = {
   players: [],
   activePlayerId: 1,
   gameSettings: initialSettings,
-  currentRound: 1,
-  currentRoundScores: [],
-  roundWinner: null,
-  gameWinner: null,
+  currentLeg: 1,
+  currentVisitScores: [],
+  legWinner: null,
+  matchWinner: null,
 };
 
 export const createGameStore = (initState: GameStoreState = initialState) => {
@@ -106,10 +106,10 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
       },
 
       startGame() {
-        set({ gamePhase: "playing", currentRound: 1 });
+        set({ gamePhase: "playing", currentLeg: 1 });
       },
 
-      finishRound() {
+      finishVisit() {
         set((state) => {
           if (state.players.length > 1) {
             const next = state.players.find(
@@ -117,19 +117,19 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             );
             if (next) state.activePlayerId = next.id;
           }
-          state.currentRoundScores = [];
+          state.currentVisitScores = [];
         });
       },
 
-      startNextRound() {
+      startNextLeg() {
         set((state) => {
           state.players.forEach((p) => {
             p.score = state.gameSettings.startingScore;
             p.scoreHistory.push([]);
           });
-          state.currentRound += 1;
-          state.currentRoundScores = [];
-          state.roundWinner = null;
+          state.currentLeg += 1;
+          state.currentVisitScores = [];
+          state.legWinner = null;
         });
       },
 
@@ -142,12 +142,12 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         const player = state.players.find((p) => p.id === state.activePlayerId);
         if (!player) throw new Error("Active player not found");
 
-        const { newScore, validatedScore, isBust, isRoundWin } =
+        const { newScore, validatedScore, isBust, isLegWin } =
           computeDartThrow(player, score, modifier, state.gameSettings);
 
-        const currentRoundIndex = state.currentRound - 1;
-        const prevRoundTotal =
-          player.scoreHistory[currentRoundIndex]?.reduce(
+        const currentLegIndex = state.currentLeg - 1;
+        const prevVisitTotal =
+          player.scoreHistory[currentLegIndex]?.reduce(
             (sum, s) => sum + s,
             0,
           ) ?? 0;
@@ -156,23 +156,23 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           const p = state.players.find((x) => x.id === state.activePlayerId);
           if (!p) return;
 
-          const roundIdx = state.currentRound - 1;
+          const legIdx = state.currentLeg - 1;
           const originalScore = p.score;
 
           p.score = newScore;
           p.totalScore += originalScore - newScore;
           p.dartsThrown += 1;
-          p.scoreHistory[roundIdx] ??= [];
-          p.scoreHistory[roundIdx].push(validatedScore);
+          p.scoreHistory[legIdx] ??= [];
+          p.scoreHistory[legIdx].push(validatedScore);
 
-          state.currentRoundScores.push(validatedScore);
+          state.currentVisitScores.push(validatedScore);
 
-          if (isRoundWin) {
-            p.roundsWon += 1;
-            state.roundWinner = p.id;
+          if (isLegWin) {
+            p.legsWon += 1;
+            state.legWinner = p.id;
 
-            if (p.roundsWon >= state.gameSettings.roundsToWin) {
-              state.gameWinner = p.id;
+            if (p.legsWon >= state.gameSettings.legsToWin) {
+              state.matchWinner = p.id;
               state.gamePhase = "gameOver";
             }
           }
@@ -182,21 +182,21 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           newScore,
           validatedScore,
           isBust,
-          isRoundWin,
-          currentRoundTotal: prevRoundTotal + validatedScore,
+          isLegWin,
+          currentVisitTotal: prevVisitTotal + validatedScore,
         };
       },
 
       handleUndoThrow() {
         const state = get();
         const player = state.players.find((p) => p.id === state.activePlayerId);
-        if (!player || state.currentRoundScores.length === 0) {
-          return { success: false, lastScore: 0, newRoundTotal: 0 };
+        if (!player || state.currentVisitScores.length === 0) {
+          return { success: false, lastScore: 0, newVisitTotal: 0 };
         }
 
-        const lastScore = state.currentRoundScores.at(-1)!;
-        const currentRoundIndex = state.currentRound - 1;
-        const prevTotal = state.currentRoundScores
+        const lastScore = state.currentVisitScores.at(-1)!;
+        const currentLegIndex = state.currentLeg - 1;
+        const prevTotal = state.currentVisitScores
           .slice(0, -1)
           .reduce((sum, s) => sum + s, 0);
 
@@ -208,11 +208,11 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           p.totalScore -= lastScore;
           p.dartsThrown -= 1;
 
-          p.scoreHistory[currentRoundIndex]?.pop();
-          state.currentRoundScores.pop();
+          p.scoreHistory[currentLegIndex]?.pop();
+          state.currentVisitScores.pop();
         });
 
-        return { success: true, lastScore, newRoundTotal: prevTotal };
+        return { success: true, lastScore, newVisitTotal: prevTotal };
       },
     })),
   );

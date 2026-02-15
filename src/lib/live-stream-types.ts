@@ -10,7 +10,7 @@ export const liveStreamPlayerSchema = playerSchema.pick({
   id: true,
   name: true,
   score: true,
-  roundsWon: true,
+  legsWon: true,
   dartsThrown: true,
   totalScore: true,
 });
@@ -19,13 +19,13 @@ export const liveStreamGameMetadataSchema = z.object({
   gameId: z.string().uuid(),
   startingScore: z.number(),
   outMode: gameSettingsSchema.shape.outMode,
-  roundsToWin: z.number(),
+  legsToWin: z.number(),
   players: z.array(liveStreamPlayerSchema),
-  currentRound: z.number(),
+  currentLeg: z.number(),
   activePlayerId: z.number(),
   gamePhase: z.enum(["setup", "preGame", "playing", "gameOver"]),
-  roundWinner: z.number().nullable(),
-  gameWinner: z.number().nullable(),
+  legWinner: z.number().nullable(),
+  matchWinner: z.number().nullable(),
 });
 
 export type LiveStreamGameMetadata = z.infer<
@@ -40,21 +40,21 @@ export const scoreEventSchema = z.object({
   modifier: scoreModifierSchema,
   newScore: z.number(),
   validatedScore: z.number(),
-  isRoundWin: z.boolean(),
+  isLegWin: z.boolean(),
   isBust: z.boolean(),
-  currentRoundTotal: z.number(),
+  currentVisitTotal: z.number(),
 });
 
 export const undoEventSchema = z.object({
   type: z.literal("undo"),
   playerId: z.number(),
   lastScore: z.number(),
-  newRoundTotal: z.number(),
+  newVisitTotal: z.number(),
 });
 
 export const roundFinishEventSchema = z.object({
   type: z.literal("roundFinish"),
-  roundNumber: z.number(),
+  legNumber: z.number(),
   winnerId: z.number().nullable(),
 });
 

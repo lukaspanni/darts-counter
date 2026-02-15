@@ -2,17 +2,17 @@ import type { GameHistory } from "./schemas";
 
 export interface PlayerStats {
   name: string;
-  gamesPlayed: number;
-  gamesWon: number;
+  matchesPlayed: number;
+  matchesWon: number;
   averageScore: number; // Average per dart
-  averagePerRound: number; // Average per round (3 darts)
+  averagePerVisit: number; // Average per visit (3 darts)
 }
 
 export interface PlayerAverageHistory {
   name: string;
   date: string;
   average: number;
-  gameNumber: number;
+  matchNumber: number;
 }
 
 /**
@@ -23,7 +23,7 @@ export function calculatePlayerStats(
 ): PlayerStats[] {
   const playerMap = new Map<
     string,
-    Omit<PlayerStats, "averageScore" | "averagePerRound"> & {
+    Omit<PlayerStats, "averageScore" | "averagePerVisit"> & {
       totalAverageScore: number;
     }
   >();
@@ -33,16 +33,16 @@ export function calculatePlayerStats(
       const existing = playerMap.get(player.name);
 
       if (existing) {
-        existing.gamesPlayed++;
+        existing.matchesPlayed++;
         existing.totalAverageScore += player.averageScore;
         if (game.winner === player.name) {
-          existing.gamesWon++;
+          existing.matchesWon++;
         }
       } else {
         playerMap.set(player.name, {
           name: player.name,
-          gamesPlayed: 1,
-          gamesWon: game.winner === player.name ? 1 : 0,
+          matchesPlayed: 1,
+          matchesWon: game.winner === player.name ? 1 : 0,
           totalAverageScore: player.averageScore,
         });
       }
@@ -52,20 +52,20 @@ export function calculatePlayerStats(
   // Calculate final averages
   const stats: PlayerStats[] = Array.from(playerMap.values()).map((player) => {
     const avgScore =
-      player.gamesPlayed > 0
-        ? player.totalAverageScore / player.gamesPlayed
+      player.matchesPlayed > 0
+        ? player.totalAverageScore / player.matchesPlayed
         : 0;
     return {
       name: player.name,
-      gamesPlayed: player.gamesPlayed,
-      gamesWon: player.gamesWon,
+      matchesPlayed: player.matchesPlayed,
+      matchesWon: player.matchesWon,
       averageScore: Number(avgScore.toFixed(2)),
-      averagePerRound: Number((avgScore * 3).toFixed(2)),
+      averagePerVisit: Number((avgScore * 3).toFixed(2)),
     };
   });
 
-  // Sort by games played descending
-  return stats.sort((a, b) => b.gamesPlayed - a.gamesPlayed);
+  // Sort by matches played descending
+  return stats.sort((a, b) => b.matchesPlayed - a.matchesPlayed);
 }
 
 /**
@@ -100,8 +100,8 @@ export function calculatePlayerAverageHistory(
       result.push({
         name: player.name,
         date: game.date,
-        average: Number((runningAverage * 3).toFixed(2)), // Convert to per-round
-        gameNumber: gameIndex + 1,
+        average: Number((runningAverage * 3).toFixed(2)), // Convert to per-visit
+        matchNumber: gameIndex + 1,
       });
     });
   });

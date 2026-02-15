@@ -22,11 +22,11 @@ export function PreGameStart() {
   );
 
   const handleStartGame = useCallback(() => {
-    posthog.capture("game_started", {
+    posthog.capture("match_started", {
       player_count: players.length,
       starting_score: gameSettings.startingScore,
       out_mode: gameSettings.outMode,
-      rounds_to_win: gameSettings.roundsToWin,
+      legs_to_win: gameSettings.legsToWin,
     });
     setActivePlayer(startingPlayerId);
     startGame();
@@ -82,7 +82,7 @@ export function PreGameStart() {
           <Button variant="outline" onClick={handleBack}>
             Back
           </Button>
-          <Button onClick={handleStartGame}>Start Game</Button>
+          <Button onClick={handleStartGame}>Start Match</Button>
         </CardFooter>
       </Card>
 

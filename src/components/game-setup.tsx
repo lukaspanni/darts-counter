@@ -27,7 +27,7 @@ import { z } from "zod";
 
 const gameSetupSchema = gameSettingsSchema.extend({
   startingScore: z.enum(["301", "501"]),
-  roundsToWin: z.enum(["1", "3", "5", "7"]),
+  legsToWin: z.enum(["1", "3", "5", "7"]),
   player1: z.string().min(1, "Player 1 name is required"),
   player2: z.string().optional(),
   // Override checkoutAssist from parent schema to ensure it's always boolean (not optional)
@@ -47,7 +47,7 @@ export function GameSetup() {
     defaultValues: {
       startingScore: "501",
       outMode: "single",
-      roundsToWin: "3",
+      legsToWin: "3",
       player1: "",
       player2: "",
       checkoutAssist: false,
@@ -57,10 +57,10 @@ export function GameSetup() {
   const onSubmit = (data: GameSetupFormValues) => {
     const playerCount = data.player2 && data.player2.trim() !== "" ? 2 : 1;
 
-    posthog.capture("game_setup_completed", {
+    posthog.capture("match_setup_completed", {
       starting_score: Number.parseInt(data.startingScore),
       out_mode: data.outMode,
-      rounds_to_win: Number.parseInt(data.roundsToWin),
+      legs_to_win: Number.parseInt(data.legsToWin),
       checkout_assist: data.checkoutAssist,
       player_count: playerCount,
     });
@@ -68,7 +68,7 @@ export function GameSetup() {
     setGameSettings({
       startingScore: Number.parseInt(data.startingScore),
       outMode: data.outMode,
-      roundsToWin: Number.parseInt(data.roundsToWin),
+      legsToWin: Number.parseInt(data.legsToWin),
       checkoutAssist: data.checkoutAssist,
     });
 
@@ -85,7 +85,7 @@ export function GameSetup() {
   return (
     <Card className="w-full lg:mx-auto lg:w-xl">
       <CardHeader>
-        <CardTitle className="text-center">New Game Setup</CardTitle>
+        <CardTitle className="text-center">New Match Setup</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -142,24 +142,24 @@ export function GameSetup() {
 
             <FormField
               control={form.control}
-              name="roundsToWin"
+              name="legsToWin"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rounds to Win</FormLabel>
+                  <FormLabel>Legs to Win</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select rounds to win" />
+                        <SelectValue placeholder="Select legs to win" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="1">1 Round</SelectItem>
-                      <SelectItem value="3">3 Rounds</SelectItem>
-                      <SelectItem value="5">5 Rounds</SelectItem>
-                      <SelectItem value="7">7 Rounds</SelectItem>
+                      <SelectItem value="1">1 Leg</SelectItem>
+                      <SelectItem value="3">3 Legs</SelectItem>
+                      <SelectItem value="5">5 Legs</SelectItem>
+                      <SelectItem value="7">7 Legs</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

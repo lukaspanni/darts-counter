@@ -22,7 +22,7 @@ import confetti from "canvas-confetti";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 
-const MAX_DARTS_PER_ROUND = 3;
+const MAX_DARTS_PER_VISIT = 3;
 
 export function GamePlay() {
   const {
@@ -30,37 +30,37 @@ export function GamePlay() {
     activePlayerId,
     gameSettings,
     gamePhase,
-    finishRound,
-    startNextRound,
-    currentRound,
+    finishVisit,
+    startNextLeg,
+    currentLeg,
     handleDartThrow,
     handleUndoThrow,
     resetGame,
-    roundWinner,
-    gameWinner,
+    legWinner,
+    matchWinner,
   } = useGameStore((state) => state);
 
   const { state: liveStreamState, sendEvent } = useLiveStream();
 
-  const [showRoundWonModal, setShowRoundWonModal] = useState(false);
+  const [showLegWonModal, setShowLegWonModal] = useState(false);
   const [show180, setShow180] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [checkoutSuggestion, setCheckoutSuggestion] = useState<string | null>(
     null,
   );
   const [currentScore, setCurrentScore] = useState(0);
-  const [dartsInRound, setDartsInRound] = useState(0);
+  const [dartsInVisit, setDartsInVisit] = useState(0);
   const [lastThrowBust, setLastThrowBust] = useState(false);
   const { isLargeScreen, settings } = useUiSettings();
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
   const canThrowMoreDarts =
-    dartsInRound < MAX_DARTS_PER_ROUND && !lastThrowBust;
+    dartsInVisit < MAX_DARTS_PER_VISIT && !lastThrowBust;
   const showEnhancedView = settings.enhancedView;
 
   useEffect(() => {
     if (gameSettings.checkoutAssist && activePlayer) {
-      const remainingDarts = 3 - dartsInRound;
+      const remainingDarts = 3 - dartsInVisit;
       const checkout = findCheckout(
         activePlayer.score,
         remainingDarts,
@@ -73,7 +73,7 @@ export function GamePlay() {
   }, [
     activePlayer,
     activePlayer.score,
-    dartsInRound,
+    dartsInVisit,
     gameSettings.checkoutAssist,
     gameSettings.outMode,
   ]);
@@ -117,20 +117,20 @@ export function GamePlay() {
           gameId: liveStreamState.connection?.gameId || "",
           startingScore: gameSettings.startingScore,
           outMode: gameSettings.outMode,
-          roundsToWin: gameSettings.roundsToWin,
+          legsToWin: gameSettings.legsToWin,
           players: players.map((p) => ({
             id: p.id,
             name: p.name,
             score: p.score,
-            roundsWon: p.roundsWon,
+            legsWon: p.legsWon,
             dartsThrown: p.dartsThrown,
             totalScore: p.totalScore,
           })),
-          currentRound,
+          currentLeg,
           activePlayerId,
           gamePhase,
-          roundWinner,
-          gameWinner,
+          legWinner,
+          matchWinner,
         },
       });
     }
@@ -140,10 +140,10 @@ export function GamePlay() {
     liveStreamState.connection,
     players,
     gameSettings,
-    currentRound,
+    currentLeg,
     activePlayerId,
-    roundWinner,
-    gameWinner,
+    legWinner,
+    matchWinner,
     gamePhase,
     sendEvent,
   ]);
@@ -155,16 +155,16 @@ export function GamePlay() {
     const result = handleDartThrow(scoreAfterModifier, modifier);
 
     // Update local component state
-    setDartsInRound((prev) => prev + 1);
+    setDartsInVisit((prev) => prev + 1);
     setCurrentScore((prev) => prev + result.validatedScore);
     setLastThrowBust(result.isBust);
 
-    if (result.isRoundWin) {
-      posthog.capture("round_won", {
-        round_number: currentRound,
+    if (result.isLegWin) {
+      posthog.capture("leg_won", {
+        leg_number: currentLeg,
         player_count: players.length,
       });
-      setShowRoundWonModal(true);
+      setShowLegWonModal(true);
       if (!settings.noBullshitMode) {
         void confetti({
           particleCount: 100,
@@ -175,9 +175,9 @@ export function GamePlay() {
       return;
     }
 
-    if (result.currentRoundTotal === 180) {
+    if (result.currentVisitTotal === 180) {
       posthog.capture("180_scored", {
-        round_number: currentRound,
+        leg_number: currentLeg,
       });
       setShow180(true);
       if (!settings.noBullshitMode) {
@@ -191,17 +191,17 @@ export function GamePlay() {
   };
 
   const endTurn = () => {
-    finishRound();
-    setDartsInRound(0);
+    finishVisit();
+    setDartsInVisit(0);
     setCurrentScore(0);
     setLastThrowBust(false);
     setShow180(false);
   };
 
-  const handleRoundComplete = () => {
-    setShowRoundWonModal(false);
-    startNextRound();
-    setDartsInRound(0);
+  const handleLegComplete = () => {
+    setShowLegWonModal(false);
+    startNextLeg();
+    setDartsInVisit(0);
     setCurrentScore(0);
     setShow180(false);
   };
@@ -211,8 +211,8 @@ export function GamePlay() {
 
     if (result.success) {
       setLastThrowBust(false);
-      setDartsInRound((prev) => prev - 1);
-      setCurrentScore(result.newRoundTotal);
+      setDartsInVisit((prev) => prev - 1);
+      setCurrentScore(result.newVisitTotal);
       setShow180(false);
     }
   };
@@ -243,9 +243,9 @@ export function GamePlay() {
       <ScoreDisplay
         players={players}
         activePlayerId={activePlayerId}
-        currentRound={currentRound}
-        dartsInRound={dartsInRound}
-        currentRoundScore={currentScore}
+        currentLeg={currentLeg}
+        dartsInVisit={dartsInVisit}
+        currentVisitScore={currentScore}
         checkoutSuggestion={checkoutSuggestion}
         bust={lastThrowBust}
       />
@@ -256,8 +256,8 @@ export function GamePlay() {
             <ScoreKeypad
               onScoreEntry={handleScoreEntry}
               onUndo={handleUndo}
-              onFinishRound={endTurn}
-              dartsInRound={dartsInRound}
+              onFinishVisit={endTurn}
+              dartsInVisit={dartsInVisit}
               canThrowMoreDarts={canThrowMoreDarts}
             />
             {!isLargeScreen && <Dartboard {...dartboardProps} />}
@@ -265,7 +265,7 @@ export function GamePlay() {
               variant={"destructive"}
               onClick={() => setShowConfirmDialog(true)}
             >
-              Reset Game
+              Reset Match
             </Button>
           </div>
           {isLargeScreen && (
@@ -279,8 +279,8 @@ export function GamePlay() {
           <ScoreKeypad
             onScoreEntry={handleScoreEntry}
             onUndo={handleUndo}
-            onFinishRound={endTurn}
-            dartsInRound={dartsInRound}
+            onFinishVisit={endTurn}
+            dartsInVisit={dartsInVisit}
             canThrowMoreDarts={canThrowMoreDarts}
           />
           <Button
@@ -293,16 +293,16 @@ export function GamePlay() {
         </>
       )}
 
-      {/* Round Won Modal */}
-      <Dialog open={showRoundWonModal} onOpenChange={setShowRoundWonModal}>
+      {/* Leg Won Modal */}
+      <Dialog open={showLegWonModal} onOpenChange={setShowLegWonModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-xl">
-              Round Won!
+              Leg Won!
             </DialogTitle>
             <DialogDescription className="text-center">
-              {players.find((p) => p.id === roundWinner)?.name} has won the
-              round!
+              {players.find((p) => p.id === legWinner)?.name} has won the
+              leg!
             </DialogDescription>
           </DialogHeader>
 
@@ -313,7 +313,7 @@ export function GamePlay() {
                 {players.map((player) => (
                   <div key={player.id} className="flex justify-between gap-8">
                     <span>{player.name}:</span>
-                    <span>{player.roundsWon} rounds</span>
+                    <span>{player.legsWon} legs</span>
                   </div>
                 ))}
               </div>
@@ -321,7 +321,7 @@ export function GamePlay() {
           </div>
 
           <DialogFooter className="sm:justify-center">
-            <Button onClick={handleRoundComplete}>Next Round</Button>
+            <Button onClick={handleLegComplete}>Next Leg</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -329,14 +329,14 @@ export function GamePlay() {
         isOpen={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}
         onConfirm={() => {
-          posthog.capture("game_reset", {
-            round_number: currentRound,
+          posthog.capture("match_reset", {
+            leg_number: currentLeg,
             player_count: players.length,
           });
           resetGame();
         }}
-        title="Reset Game"
-        description="Are you sure you want to reset the game? All progress will be lost."
+        title="Reset Match"
+        description="Are you sure you want to reset the match? All progress will be lost."
       />
     </div>
   );
