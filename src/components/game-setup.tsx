@@ -100,7 +100,7 @@ export function GameSetup() {
         {hasPendingGame && (
           <div className="mb-6 rounded-lg border p-4">
             <p className="mb-3 text-sm font-medium">Pending game found</p>
-            <p className="text-muted-foreground mb-4 text-sm">
+            <p className="mb-4 text-sm text-muted-foreground">
               Continue your previous game or discard it and start a new match.
             </p>
             <div className="flex gap-2">

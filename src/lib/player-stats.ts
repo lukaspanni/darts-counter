@@ -1,5 +1,7 @@
 import type { GameHistory, VisitHistory } from "./schemas";
 
+const DARTS_PER_VISIT = 3;
+
 export interface PlayerStats {
   name: string;
   matchesPlayed: number;
@@ -111,7 +113,7 @@ function resolveAveragePerVisit(totalScored: number, totalDarts: number): number
   if (totalDarts === 0) {
     return 0;
   }
-  return (totalScored / totalDarts) * 3;
+  return (totalScored / totalDarts) * DARTS_PER_VISIT;
 }
 
 function applyMatchResult(
@@ -243,7 +245,7 @@ function accumulateLegWinner(
 
 function buildPlayerStats(player: PlayerAccumulator): PlayerStats {
   const averagePerVisit = resolveAveragePerVisit(player.totalScored, player.totalDarts);
-  const averagePerDart = averagePerVisit / 3;
+  const averagePerDart = averagePerVisit / DARTS_PER_VISIT;
 
   return {
     name: player.name,
@@ -256,7 +258,7 @@ function buildPlayerStats(player: PlayerAccumulator): PlayerStats {
       player.firstNineScored,
       player.firstNineDarts,
       2,
-      3,
+      DARTS_PER_VISIT,
     ),
     highestVisit: player.highestVisit,
     total180s: player.total180s,
@@ -292,7 +294,7 @@ function getThreeDartAverageForGame(
 
   const totalScored = visits.reduce((sum, visit) => sum + visit.totalScore, 0);
   const totalDarts = visits.reduce((sum, visit) => sum + visit.darts.length, 0);
-  return totalDarts > 0 ? (totalScored / totalDarts) * 3 : null;
+  return totalDarts > 0 ? (totalScored / totalDarts) * DARTS_PER_VISIT : null;
 }
 
 /**
