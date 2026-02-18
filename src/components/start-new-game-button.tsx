@@ -5,7 +5,9 @@ import posthog from "posthog-js";
 
 export function StartNewGameButton({ onNewGame }: { onNewGame: () => void }) {
   const handleClick = () => {
-    posthog.capture("new_game_started_from_game_over");
+    posthog.capture("new_game_started_from_game_over", {
+      history_event: "new_game_started_from_game_over",
+    });
     onNewGame();
   };
 

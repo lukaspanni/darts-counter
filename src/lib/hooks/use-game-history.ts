@@ -2,7 +2,7 @@ import { type GameHistory, gameHistorySchema } from "@/lib/schemas";
 import { loadFromLocalStorage, saveToLocalStorage } from "@/lib/local-storage";
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "game-history";
+const STORAGE_KEY = "game-history-v2";
 
 export function useGameHistory() {
   const [gameHistory, setGameHistory] = useState<GameHistory[]>([]);
