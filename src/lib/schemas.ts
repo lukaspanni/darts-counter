@@ -23,10 +23,9 @@ export const gameSettingsSchema = z.object({
 export type GameSettings = z.infer<typeof gameSettingsSchema>;
 
 export const gameHistoryPlayerSchema = z.object({
-  id: z.number().optional(),
+  id: z.number(),
   name: z.string(),
   legsWon: z.number(),
-  averageScore: z.number().optional(),
 });
 
 export const visitDartSchema = z.object({
@@ -65,8 +64,8 @@ export const gameHistorySchema = z.array(
     winner: z.string(),
     gameMode: z.string(),
     legsPlayed: z.number(),
-    settings: gameSettingsSchema.optional(),
-    legs: z.array(legHistorySchema).optional(),
+    settings: gameSettingsSchema,
+    legs: z.array(legHistorySchema),
   }),
 );
 

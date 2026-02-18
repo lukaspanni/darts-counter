@@ -7,13 +7,13 @@
     "dev:worker": "pnpm --filter darts-live-stream dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "redis": "^4.7.1",
     "@hookform/resolvers": "^5.2.2",
     "@posthog/react": "^1.7.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -40,6 +40,7 @@
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.71.1",
     "recharts": "^3.7.0",
+    "redis": "^4.7.1",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "^1.2.9",
@@ -61,7 +62,8 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4.1.18",
     "typescript": "^5",
-    "typescript-eslint": "^8.29.0"
+    "typescript-eslint": "^8.29.0",
+    "vitest": "4.0.18"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

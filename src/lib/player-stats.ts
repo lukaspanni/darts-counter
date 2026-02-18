@@ -40,30 +40,17 @@ function calculatePercentage(
   return Number(((numerator / denominator) * 100).toFixed(precision));
 }
 
-function resolveAveragePerVisit(
-  totalScored: number,
-  totalDarts: number,
-  legacyThreeDartAverageTotal: number,
-  legacyAverageMatchCount: number,
-): number {
-  if (totalDarts > 0) {
-    return (totalScored / totalDarts) * 3;
+function resolveAveragePerVisit(totalScored: number, totalDarts: number): number {
+  if (totalDarts === 0) {
+    return 0;
   }
-  if (legacyAverageMatchCount > 0) {
-    return legacyThreeDartAverageTotal / legacyAverageMatchCount;
-  }
-  return 0;
+  return (totalScored / totalDarts) * 3;
 }
 
 function getThreeDartAverageForGame(
   game: GameHistory,
   playerName: string,
 ): number | null {
-  if (!game.legs?.length) {
-    // Legacy entries persist 3-dart average in `averageScore`.
-    return game.players.find((p) => p.name === playerName)?.averageScore ?? null;
-  }
-
   const visits = game.legs.flatMap((leg) =>
     leg.visits.filter((visit) => visit.playerName === playerName),
   );
@@ -105,8 +92,6 @@ export function calculatePlayerStats(
     legsPlayed: number;
     dartsToFinishTotal: number;
     finishedLegs: number;
-    legacyThreeDartAverageTotal: number;
-    legacyAverageMatchCount: number;
   };
 
   const playerMap = new Map<string, PlayerAccumulator>();
@@ -135,8 +120,6 @@ export function calculatePlayerStats(
       legsPlayed: 0,
       dartsToFinishTotal: 0,
       finishedLegs: 0,
-      legacyThreeDartAverageTotal: 0,
-      legacyAverageMatchCount: 0,
     };
     playerMap.set(name, created);
     return created;
@@ -150,24 +133,6 @@ export function calculatePlayerStats(
         stats.matchesWon += 1;
       }
     });
-
-    if (!game.legs?.length) {
-      game.players.forEach((player) => {
-        const stats = getOrCreateAccumulator(player.name);
-        if (typeof player.averageScore === "number") {
-          stats.legacyThreeDartAverageTotal += player.averageScore;
-          stats.legacyAverageMatchCount += 1;
-        }
-        stats.legsWon += player.legsWon;
-      });
-      if (game.players.length > 0) {
-        game.players.forEach((player) => {
-          const stats = getOrCreateAccumulator(player.name);
-          stats.legsPlayed += game.legsPlayed;
-        });
-      }
-      return;
-    }
 
     game.legs.forEach((leg) => {
       const legDartsByPlayer = new Map<string, number>();
@@ -233,8 +198,6 @@ export function calculatePlayerStats(
     const averagePerVisit = resolveAveragePerVisit(
       player.totalScored,
       player.totalDarts,
-      player.legacyThreeDartAverageTotal,
-      player.legacyAverageMatchCount,
     );
     const averagePerDart = averagePerVisit / 3;
 
