@@ -156,6 +156,9 @@ export function GamePlay() {
     modifier: ScoreModifier,
   ) => {
     const result = handleDartThrow(scoreAfterModifier, modifier);
+    const isLiveStreamConnected =
+      liveStreamState.isActive && liveStreamState.status === "connected";
+
     posthog.capture("dart_thrown", {
       history_event: "dart_thrown",
       leg_number: currentLeg,
@@ -172,23 +175,28 @@ export function GamePlay() {
     setLastThrowBust(result.isBust);
 
     if (result.isLegWin) {
-      if (
-        result.isMatchWin &&
-        result.matchWinner !== null &&
-        liveStreamState.isActive &&
-        liveStreamState.status === "connected"
-      ) {
-        sendEvent({
-          type: "gameFinish",
-          winnerId: result.matchWinner,
+      if (result.isMatchWin && result.matchWinner !== null) {
+        if (isLiveStreamConnected) {
+          sendEvent({
+            type: "matchFinish",
+            winnerId: result.matchWinner,
+          });
+        }
+
+        posthog.capture("match_won", {
+          history_event: "match_won",
+          leg_number: currentLeg,
+          player_count: players.length,
+          player_name: activePlayer.name,
+        });
+      } else {
+        posthog.capture("leg_won", {
+          history_event: "leg_won",
+          leg_number: currentLeg,
+          player_count: players.length,
         });
       }
 
-      posthog.capture("leg_won", {
-        history_event: "leg_won",
-        leg_number: currentLeg,
-        player_count: players.length,
-      });
       setShowLegWonModal(true);
       if (!settings.noBullshitMode) {
         void confetti({

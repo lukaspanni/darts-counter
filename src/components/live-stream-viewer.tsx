@@ -79,9 +79,9 @@ function updateRoundFinishMetadata(
   };
 }
 
-function updateGameFinishMetadata(
+function updateMatchFinishMetadata(
   metadata: LiveStreamGameMetadata,
-  event: Extract<ClientEvent, { type: "gameFinish" }>,
+  event: Extract<ClientEvent, { type: "matchFinish" }>,
 ): LiveStreamGameMetadata {
   return {
     ...metadata,
@@ -217,9 +217,9 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
               );
               break;
 
-            case "gameFinish":
+            case "matchFinish":
               setMetadata((prev) =>
-                prev ? updateGameFinishMetadata(prev, clientEvent) : prev,
+                prev ? updateMatchFinishMetadata(prev, clientEvent) : prev,
               );
               break;
           }
