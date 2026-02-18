@@ -43,13 +43,6 @@ export default tseslint.config(
     },
   },
   {
-    files: ["workers/**/*.d.ts"],
-    linterOptions: {
-      reportUnusedDisableDirectives: false,
-    },
-  },
-
-  {
     linterOptions: {
       reportUnusedDisableDirectives: true,
     },
