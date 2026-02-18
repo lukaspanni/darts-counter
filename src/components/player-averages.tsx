@@ -15,6 +15,9 @@ import type { GameHistory } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 
 type SortField = "name" | "matchesPlayed" | "matchesWon" | "averagePerVisit";
+// Player table always shows 4 basic columns and 9 advanced columns.
+const BASE_COLUMN_COUNT = 4;
+const ADVANCED_COLUMN_COUNT = 9;
 
 interface PlayerAveragesProps {
   gameHistory: GameHistory[];
@@ -131,7 +134,11 @@ export function PlayerAverages({
             {sortedStats.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={showAdvancedStats ? 13 : 4}
+                  colSpan={
+                    showAdvancedStats
+                      ? BASE_COLUMN_COUNT + ADVANCED_COLUMN_COUNT
+                      : BASE_COLUMN_COUNT
+                  }
                   className="text-center"
                 >
                   No player data available

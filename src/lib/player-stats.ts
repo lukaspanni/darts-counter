@@ -29,11 +29,38 @@ export interface PlayerAverageHistory {
   matchNumber: number;
 }
 
+function calculatePercentage(
+  numerator: number,
+  denominator: number,
+  precision = 1,
+): number {
+  if (denominator === 0) {
+    return 0;
+  }
+  return Number(((numerator / denominator) * 100).toFixed(precision));
+}
+
+function resolveAveragePerVisit(
+  totalScored: number,
+  totalDarts: number,
+  legacyThreeDartAverageTotal: number,
+  legacyAverageMatchCount: number,
+): number {
+  if (totalDarts > 0) {
+    return (totalScored / totalDarts) * 3;
+  }
+  if (legacyAverageMatchCount > 0) {
+    return legacyThreeDartAverageTotal / legacyAverageMatchCount;
+  }
+  return 0;
+}
+
 function getThreeDartAverageForGame(
   game: GameHistory,
   playerName: string,
 ): number | null {
   if (!game.legs?.length) {
+    // Legacy entries persist 3-dart average in `averageScore`.
     return game.players.find((p) => p.name === playerName)?.averageScore ?? null;
   }
 
@@ -203,22 +230,22 @@ export function calculatePlayerStats(
   });
 
   const stats: PlayerStats[] = Array.from(playerMap.values()).map((player) => {
-    const averagePerVisit =
-      player.totalDarts > 0
-        ? (player.totalScored / player.totalDarts) * 3
-        : player.legacyAverageMatchCount > 0
-          ? player.legacyThreeDartAverageTotal / player.legacyAverageMatchCount
-          : 0;
+    const averagePerVisit = resolveAveragePerVisit(
+      player.totalScored,
+      player.totalDarts,
+      player.legacyThreeDartAverageTotal,
+      player.legacyAverageMatchCount,
+    );
     const averagePerDart = averagePerVisit / 3;
 
     return {
       name: player.name,
       matchesPlayed: player.matchesPlayed,
       matchesWon: player.matchesWon,
-      matchWinPercentage:
-        player.matchesPlayed > 0
-          ? Number(((player.matchesWon / player.matchesPlayed) * 100).toFixed(1))
-          : 0,
+      matchWinPercentage: calculatePercentage(
+        player.matchesWon,
+        player.matchesPlayed,
+      ),
       averageScore: Number(averagePerDart.toFixed(2)),
       averagePerVisit: Number(averagePerVisit.toFixed(2)),
       firstNineAverage:
@@ -236,14 +263,10 @@ export function calculatePlayerStats(
       total100PlusVisits: player.total100PlusVisits,
       checkoutAttempts: player.checkoutAttempts,
       checkoutSuccesses: player.checkoutSuccesses,
-      checkoutPercentage:
-        player.checkoutAttempts > 0
-          ? Number(
-              ((player.checkoutSuccesses / player.checkoutAttempts) * 100).toFixed(
-                1,
-              ),
-            )
-          : 0,
+      checkoutPercentage: calculatePercentage(
+        player.checkoutSuccesses,
+        player.checkoutAttempts,
+      ),
       averageDartsToFinish:
         player.finishedLegs > 0
           ? Number((player.dartsToFinishTotal / player.finishedLegs).toFixed(2))
@@ -254,10 +277,7 @@ export function calculatePlayerStats(
           : 0,
       legsWon: player.legsWon,
       legsPlayed: player.legsPlayed,
-      legWinPercentage:
-        player.legsPlayed > 0
-          ? Number(((player.legsWon / player.legsPlayed) * 100).toFixed(1))
-          : 0,
+      legWinPercentage: calculatePercentage(player.legsWon, player.legsPlayed),
     };
   });
 

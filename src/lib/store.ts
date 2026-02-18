@@ -269,7 +269,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
               endedScore: p.score,
               timestamp: new Date().toISOString(),
             });
-            currentLeg!.winnerPlayerId = p.id;
+            if (currentLeg) {
+              currentLeg.winnerPlayerId = p.id;
+            }
 
             state.currentVisitScores = [];
             state.currentVisitDarts = [];
