@@ -3,8 +3,6 @@
 import { GameController } from "@/components/game-controller";
 import { LiveStreamViewer } from "@/components/live-stream-viewer";
 import { useSearchParams } from "next/navigation";
-import posthog from "posthog-js";
-import { useFeatureFlagEnabled } from "posthog-js/react";
 
 export function HomeContent() {
   const searchParams = useSearchParams();

@@ -13,11 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { GameType } from "@/lib/schemas";
 
 export default function StatsPage() {
   const { gameHistory } = useGameHistory();
   const [selectedPlayer, setSelectedPlayer] = useState<string | undefined>(
     undefined,
+  );
+  const gameModes = Array.from(
+    new Set(gameHistory.map((game) => game.gameMode)),
   );
   const [selectedGameMode, setSelectedGameMode] = useState<string>("all");
 
@@ -33,20 +37,33 @@ export default function StatsPage() {
     setSelectedPlayer(selectedPlayer === playerName ? undefined : playerName);
   };
 
-  const gameModes = Array.from(new Set(gameHistory.map((game) => game.gameMode)));
   const filteredGameHistory =
     selectedGameMode === "all"
       ? gameHistory
       : gameHistory.filter((game) => game.gameMode === selectedGameMode);
 
+  const gameModeItems = Object.fromEntries(
+    [
+      { value: "all", label: "All game modes" },
+      ...gameModes.map((gameMode) => ({
+        value: gameMode,
+        label: gameMode,
+      })),
+    ].map((option) => [option.value, option.label]),
+  );
+
   return (
-    <main className="flex flex-grow flex-col items-center p-4">
+    <main className="flex grow flex-col items-center p-4">
       <h2 className="mb-8 text-3xl font-bold">Statistics</h2>
 
       <div className="w-full max-w-6xl space-y-8">
         <div className="flex items-center justify-end">
-          <Select value={selectedGameMode} onValueChange={setSelectedGameMode}>
-            <SelectTrigger className="w-[250px]">
+          <Select
+            value={selectedGameMode}
+            onValueChange={(value) => setSelectedGameMode(value ?? "all")}
+            items={gameModeItems}
+          >
+            <SelectTrigger className="w-62.5">
               <SelectValue placeholder="Filter by game mode" />
             </SelectTrigger>
             <SelectContent>
