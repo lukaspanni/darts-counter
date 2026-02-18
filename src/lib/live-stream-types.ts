@@ -59,8 +59,8 @@ export const roundFinishEventSchema = z.object({
   winnerId: z.number().nullable(),
 });
 
-export const gameFinishEventSchema = z.object({
-  type: z.literal("gameFinish"),
+export const matchFinishEventSchema = z.object({
+  type: z.literal("matchFinish"),
   winnerId: z.number(),
 });
 
@@ -79,7 +79,7 @@ export const clientEventSchema = z.discriminatedUnion("type", [
   scoreEventSchema,
   undoEventSchema,
   roundFinishEventSchema,
-  gameFinishEventSchema,
+  matchFinishEventSchema,
   gameUpdateEventSchema,
   heartbeatEventSchema,
 ]);

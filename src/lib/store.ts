@@ -46,6 +46,8 @@ export type DartThrowResult = {
   newScore: number;
   validatedScore: number;
   isLegWin: boolean;
+  isMatchWin: boolean;
+  matchWinner: number | null;
   isBust: boolean;
   currentVisitTotal: number;
 };
@@ -241,6 +243,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         const isDoubleAttempt =
           modifier === "double" && isDoubleCheckoutScore(player.score);
         const isMissedDouble = isDoubleAttempt && !isLegWin;
+        const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
+        const totalLegsAfterWin = player.legsWon + 1;
+        const isMatchWin = isLegWin && totalLegsAfterWin >= requiredLegs;
 
         const currentLegIndex = state.currentLeg - 1;
         const prevVisitTotal =
@@ -299,8 +304,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             p.legsWon += 1;
             state.legWinner = p.id;
 
-            const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
-            if (p.legsWon >= requiredLegs) {
+            if (isMatchWin) {
               state.matchWinner = p.id;
               state.gamePhase = "gameOver";
             }
@@ -312,6 +316,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           validatedScore,
           isBust,
           isLegWin,
+          isMatchWin,
+          matchWinner: isMatchWin ? player.id : null,
           currentVisitTotal: prevVisitTotal + validatedScore,
         };
       },
