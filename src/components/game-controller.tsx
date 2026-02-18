@@ -15,6 +15,7 @@ export function GameController() {
     currentLeg,
     gamePhase,
     players,
+    historyLegs,
     matchWinner,
     resetGame,
   } = useGameStore((state) => state);
@@ -38,6 +39,7 @@ export function GameController() {
           : 0;
 
       posthog.capture("match_completed", {
+        history_event: "match_completed",
         player_count: players.length,
         legs_played: currentLeg,
         starting_score: gameSettings.startingScore,
@@ -49,16 +51,15 @@ export function GameController() {
         id: crypto.randomUUID(),
         date: new Date().toISOString(),
         players: players.map((p) => ({
+          id: p.id,
           name: p.name,
           legsWon: p.legsWon,
-          averageScore:
-            p.dartsThrown > 0
-              ? Number(((p.totalScore / p.dartsThrown) * 3).toFixed(2))
-              : 0,
         })),
         winner: winnerPlayer?.name || "",
         gameMode: `${gameSettings.startingScore} ${gameSettings.outMode} out`,
         legsPlayed: currentLeg,
+        settings: gameSettings,
+        legs: historyLegs,
       };
       addGame(newGameHistory);
     }
@@ -68,6 +69,7 @@ export function GameController() {
     players,
     gameSettings,
     currentLeg,
+    historyLegs,
     addGame,
     isInitialRender,
   ]);

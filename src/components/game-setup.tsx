@@ -60,6 +60,7 @@ export function GameSetup() {
     const playerCount = data.player2 && data.player2.trim() !== "" ? 2 : 1;
 
     posthog.capture("match_setup_completed", {
+      history_event: "match_setup_completed",
       starting_score: Number.parseInt(data.startingScore),
       out_mode: data.outMode,
       game_mode: data.gameMode,

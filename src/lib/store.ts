@@ -1,7 +1,13 @@
 "use client";
 import { createStore } from "zustand/vanilla";
 import { immer } from "zustand/middleware/immer";
-import type { Player, GameSettings, ScoreModifier } from "@/lib/schemas";
+import type {
+  Player,
+  GameSettings,
+  ScoreModifier,
+  LegHistory,
+  VisitDart,
+} from "@/lib/schemas";
 import { computeDartThrow } from "./core/darts-score";
 import { createPlayers } from "./core/player-init";
 
@@ -17,6 +23,10 @@ function calculateRequiredLegsToWin(settings: GameSettings): number {
 
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
+function isDoubleCheckoutScore(score: number): boolean {
+  return score === 50 || (score > 0 && score <= 40 && score % 2 === 0);
+}
+
 export type GameStoreState = {
   gamePhase: GamePhase;
   players: Player[];
@@ -24,6 +34,8 @@ export type GameStoreState = {
   gameSettings: GameSettings;
   currentLeg: number;
   currentVisitScores: number[];
+  currentVisitDarts: VisitDart[];
+  historyLegs: LegHistory[];
   legWinner: number | null;
   matchWinner: number | null;
 };
@@ -81,6 +93,8 @@ const initialState: GameStoreState = {
   gameSettings: initialSettings,
   currentLeg: 1,
   currentVisitScores: [],
+  currentVisitDarts: [],
+  historyLegs: [],
   legWinner: null,
   matchWinner: null,
 };
@@ -117,11 +131,44 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
       },
 
       startGame() {
-        set({ gamePhase: "playing", currentLeg: 1 });
+        set((state) => {
+          state.gamePhase = "playing";
+          state.currentLeg = 1;
+          state.currentVisitScores = [];
+          state.currentVisitDarts = [];
+          state.historyLegs = [
+            {
+              legNumber: 1,
+              winnerPlayerId: null,
+              visits: [],
+            },
+          ];
+        });
       },
 
       finishVisit() {
         set((state) => {
+          const activePlayer = state.players.find(
+            (p) => p.id === state.activePlayerId,
+          );
+          if (activePlayer && state.currentVisitDarts.length > 0) {
+            const currentLeg = state.historyLegs[state.currentLeg - 1];
+            const totalScore = state.currentVisitDarts.reduce(
+              (sum, dart) => sum + dart.validatedScore,
+              0,
+            );
+            currentLeg?.visits.push({
+              playerId: activePlayer.id,
+              playerName: activePlayer.name,
+              legNumber: state.currentLeg,
+              darts: [...state.currentVisitDarts],
+              totalScore,
+              startedScore: activePlayer.score + totalScore,
+              endedScore: activePlayer.score,
+              timestamp: new Date().toISOString(),
+            });
+          }
+
           if (state.players.length > 1) {
             const next = state.players.find(
               (p) => p.id !== state.activePlayerId,
@@ -129,6 +176,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             if (next) state.activePlayerId = next.id;
           }
           state.currentVisitScores = [];
+          state.currentVisitDarts = [];
         });
       },
 
@@ -140,6 +188,12 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           });
           state.currentLeg += 1;
           state.currentVisitScores = [];
+          state.currentVisitDarts = [];
+          state.historyLegs.push({
+            legNumber: state.currentLeg,
+            winnerPlayerId: null,
+            visits: [],
+          });
           state.legWinner = null;
         });
       },
@@ -159,6 +213,13 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           modifier,
           state.gameSettings,
         );
+        const isCheckoutAttempt =
+          player.score <= 170 &&
+          player.score > 0 &&
+          (state.gameSettings.outMode === "single" || player.score !== 1);
+        const isDoubleAttempt =
+          modifier === "double" && isDoubleCheckoutScore(player.score);
+        const isMissedDouble = isDoubleAttempt && !isLegWin;
 
         const currentLegIndex = state.currentLeg - 1;
         const prevVisitTotal =
@@ -179,10 +240,39 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           p.dartsThrown += 1;
           p.scoreHistory[legIdx] ??= [];
           p.scoreHistory[legIdx].push(validatedScore);
+          state.currentVisitDarts.push({
+            score,
+            modifier,
+            validatedScore,
+            isBust,
+            isCheckoutAttempt,
+            isCheckoutSuccess: isLegWin,
+            isDoubleAttempt,
+            isMissedDouble,
+          });
 
           state.currentVisitScores.push(validatedScore);
 
           if (isLegWin) {
+            const currentLeg = state.historyLegs[state.currentLeg - 1];
+            const totalScore = state.currentVisitDarts.reduce(
+              (sum, dart) => sum + dart.validatedScore,
+              0,
+            );
+            currentLeg?.visits.push({
+              playerId: p.id,
+              playerName: p.name,
+              legNumber: state.currentLeg,
+              darts: [...state.currentVisitDarts],
+              totalScore,
+              startedScore: p.score + totalScore,
+              endedScore: p.score,
+              timestamp: new Date().toISOString(),
+            });
+            currentLeg!.winnerPlayerId = p.id;
+
+            state.currentVisitScores = [];
+            state.currentVisitDarts = [];
             p.legsWon += 1;
             state.legWinner = p.id;
 
@@ -226,6 +316,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
           p.scoreHistory[currentLegIndex]?.pop();
           state.currentVisitScores.pop();
+          state.currentVisitDarts.pop();
         });
 
         return { success: true, lastScore, newVisitTotal: prevTotal };

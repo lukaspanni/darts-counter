@@ -12,6 +12,7 @@ import {
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import { calculatePlayerStats, type PlayerStats } from "@/lib/player-stats";
 import type { GameHistory } from "@/lib/schemas";
+import { Button } from "@/components/ui/button";
 
 type SortField = "name" | "matchesPlayed" | "matchesWon" | "averagePerVisit";
 
@@ -26,6 +27,7 @@ export function PlayerAverages({
 }: PlayerAveragesProps) {
   const [sortField, setSortField] = useState<SortField>("matchesPlayed");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [showAdvancedStats, setShowAdvancedStats] = useState(false);
 
   const playerStats = calculatePlayerStats(gameHistory);
 
@@ -73,6 +75,15 @@ export function PlayerAverages({
   return (
     <div className="w-full space-y-4">
       <h3 className="text-xl font-semibold">Player Averages</h3>
+      <div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAdvancedStats((prev) => !prev)}
+        >
+          {showAdvancedStats ? "Hide advanced stats" : "Show advanced stats"}
+        </Button>
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -101,12 +112,28 @@ export function PlayerAverages({
               >
                 Avg/Visit {getSortIcon("averagePerVisit")}
               </TableHead>
+              {showAdvancedStats && (
+                <>
+                  <TableHead>1st 9 Avg</TableHead>
+                  <TableHead>Highest</TableHead>
+                  <TableHead>180s</TableHead>
+                  <TableHead>100+ visits</TableHead>
+                  <TableHead>Checkout %</TableHead>
+                  <TableHead>Avg darts finish</TableHead>
+                  <TableHead>Missed dbl/leg</TableHead>
+                  <TableHead>Leg win %</TableHead>
+                  <TableHead>Match win %</TableHead>
+                </>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedStats.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
+                <TableCell
+                  colSpan={showAdvancedStats ? 13 : 4}
+                  className="text-center"
+                >
                   No player data available
                 </TableCell>
               </TableRow>
@@ -126,6 +153,22 @@ export function PlayerAverages({
                 <TableCell className="font-semibold">
                   {player.averagePerVisit}
                 </TableCell>
+                {showAdvancedStats && (
+                  <>
+                    <TableCell>{player.firstNineAverage}</TableCell>
+                    <TableCell>{player.highestVisit}</TableCell>
+                    <TableCell>{player.total180s}</TableCell>
+                    <TableCell>{player.total100PlusVisits}</TableCell>
+                    <TableCell>
+                      {player.checkoutPercentage}% ({player.checkoutSuccesses}/
+                      {player.checkoutAttempts})
+                    </TableCell>
+                    <TableCell>{player.averageDartsToFinish}</TableCell>
+                    <TableCell>{player.missedDoublesPerLeg}</TableCell>
+                    <TableCell>{player.legWinPercentage}%</TableCell>
+                    <TableCell>{player.matchWinPercentage}%</TableCell>
+                  </>
+                )}
               </TableRow>
             ))}
           </TableBody>

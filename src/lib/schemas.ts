@@ -23,9 +23,38 @@ export const gameSettingsSchema = z.object({
 export type GameSettings = z.infer<typeof gameSettingsSchema>;
 
 export const gameHistoryPlayerSchema = z.object({
+  id: z.number().optional(),
   name: z.string(),
   legsWon: z.number(),
-  averageScore: z.number(),
+  averageScore: z.number().optional(),
+});
+
+export const visitDartSchema = z.object({
+  score: z.number(),
+  modifier: z.enum(["single", "double", "triple"]),
+  validatedScore: z.number(),
+  isBust: z.boolean(),
+  isCheckoutAttempt: z.boolean(),
+  isCheckoutSuccess: z.boolean(),
+  isDoubleAttempt: z.boolean(),
+  isMissedDouble: z.boolean(),
+});
+
+export const visitHistorySchema = z.object({
+  playerId: z.number(),
+  playerName: z.string(),
+  legNumber: z.number(),
+  darts: z.array(visitDartSchema).max(3),
+  totalScore: z.number(),
+  startedScore: z.number(),
+  endedScore: z.number(),
+  timestamp: z.string(),
+});
+
+export const legHistorySchema = z.object({
+  legNumber: z.number(),
+  winnerPlayerId: z.number().nullable(),
+  visits: z.array(visitHistorySchema),
 });
 
 export const gameHistorySchema = z.array(
@@ -36,10 +65,15 @@ export const gameHistorySchema = z.array(
     winner: z.string(),
     gameMode: z.string(),
     legsPlayed: z.number(),
+    settings: gameSettingsSchema.optional(),
+    legs: z.array(legHistorySchema).optional(),
   }),
 );
 
 export type GameHistory = z.infer<typeof gameHistorySchema>[number];
+export type VisitDart = z.infer<typeof visitDartSchema>;
+export type VisitHistory = z.infer<typeof visitHistorySchema>;
+export type LegHistory = z.infer<typeof legHistorySchema>;
 export const uiSettingsSchema = z.object({
   enhancedView: z.boolean(),
   noBullshitMode: z.boolean().default(false),
