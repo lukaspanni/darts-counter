@@ -103,6 +103,7 @@ export function GameSetup() {
       checkoutAssist: data.checkoutAssist,
     });
 
+    // Note: UI only supports 1-2 players (enforced by form schema)
     const players: { name: string }[] = [{ name: data.player1 }];
 
     if (data.player2 && data.player2.trim() !== "") {
