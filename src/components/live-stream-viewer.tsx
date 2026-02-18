@@ -311,7 +311,8 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-center">
-              Leg {Math.max(1, metadata.currentLeg)} · Best of{" "}
+              Leg {Math.max(1, metadata.currentLeg)} ·{" "}
+              {metadata.gameMode === "bestOf" ? "Best of" : "First to"}{" "}
               {metadata.legsToWin}
             </CardTitle>
           </CardHeader>
@@ -340,6 +341,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
                 <div className="text-right">
                   <div className="text-4xl font-bold">{player.score}</div>
                   <div className="text-muted-foreground text-sm">
+                    Legs won: {player.legsWon}
                     Legs won: {player.legsWon}
                   </div>
                 </div>

@@ -19,6 +19,7 @@ export const liveStreamGameMetadataSchema = z.object({
   gameId: z.string().uuid(),
   startingScore: z.number(),
   outMode: gameSettingsSchema.shape.outMode,
+  gameMode: gameSettingsSchema.shape.gameMode,
   legsToWin: z.number(),
   players: z.array(liveStreamPlayerSchema),
   currentLeg: z.number(),

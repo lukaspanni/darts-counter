@@ -5,6 +5,16 @@ import type { Player, GameSettings, ScoreModifier } from "@/lib/schemas";
 import { computeDartThrow } from "./core/darts-score";
 import { createPlayers } from "./core/player-init";
 
+// Helper function to calculate required legs to win based on game mode
+function calculateRequiredLegsToWin(settings: GameSettings): number {
+  if (settings.gameMode === "firstTo") {
+    return settings.legsToWin;
+  }
+  // For "bestOf", calculate the first to X where X = (total + 1) / 2
+  // e.g., best of 7 means first to 4, best of 5 means first to 3
+  return Math.ceil(settings.legsToWin / 2);
+}
+
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
 export type GameStoreState = {
@@ -59,6 +69,7 @@ export type GameStore = GameStoreState & GameStoreActions;
 const initialSettings: GameSettings = {
   startingScore: 501,
   outMode: "single",
+  gameMode: "bestOf",
   legsToWin: 3,
   checkoutAssist: false,
 };
@@ -142,8 +153,12 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         const player = state.players.find((p) => p.id === state.activePlayerId);
         if (!player) throw new Error("Active player not found");
 
-        const { newScore, validatedScore, isBust, isLegWin } =
-          computeDartThrow(player, score, modifier, state.gameSettings);
+        const { newScore, validatedScore, isBust, isLegWin } = computeDartThrow(
+          player,
+          score,
+          modifier,
+          state.gameSettings,
+        );
 
         const currentLegIndex = state.currentLeg - 1;
         const prevVisitTotal =
@@ -171,7 +186,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             p.legsWon += 1;
             state.legWinner = p.id;
 
-            if (p.legsWon >= state.gameSettings.legsToWin) {
+            const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
+            if (p.legsWon >= requiredLegs) {
               state.matchWinner = p.id;
               state.gamePhase = "gameOver";
             }

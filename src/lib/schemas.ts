@@ -15,6 +15,7 @@ export type Player = z.infer<typeof playerSchema>;
 export const gameSettingsSchema = z.object({
   startingScore: z.number(),
   outMode: z.enum(["single", "double"]),
+  gameMode: z.enum(["bestOf", "firstTo"]),
   legsToWin: z.number(),
   checkoutAssist: z.boolean().default(false),
 });
