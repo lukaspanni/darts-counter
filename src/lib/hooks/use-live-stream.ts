@@ -46,7 +46,15 @@ export function useLiveStream() {
     const unsubscribe = manager.subscribe((event: ServerEvent) => {
       if (event.type === "sync") {
         setState((prev) => ({ ...prev, status: "connected", error: null }));
-      } else if (event.type === "error") {
+        return;
+      }
+
+      if (event.type === "broadcast" && event.event.type === "gameUpdate") {
+        setState((prev) => ({ ...prev, status: "connected", error: null }));
+        return;
+      }
+
+      if (event.type === "error") {
         setState((prev) => ({
           ...prev,
           status: "error",

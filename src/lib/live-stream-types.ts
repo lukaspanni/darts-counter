@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { playerSchema, gameSettingsSchema } from "./schemas";
+import { playerSchema, gameSettingsSchema, gameTypeSchema } from "./schemas";
 
 // Derive score modifier from existing schema
 export const scoreModifierSchema = z.enum(["single", "double", "triple"]);
@@ -19,7 +19,7 @@ export const liveStreamGameMetadataSchema = z.object({
   gameId: z.string().uuid(),
   startingScore: z.number(),
   outMode: gameSettingsSchema.shape.outMode,
-  gameMode: gameSettingsSchema.shape.gameMode,
+  gameMode: gameTypeSchema,
   legsToWin: z.number(),
   players: z.array(liveStreamPlayerSchema),
   currentLeg: z.number(),
