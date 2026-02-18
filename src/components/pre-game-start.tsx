@@ -60,7 +60,7 @@ export function PreGameStart() {
           <RadioGroup
             value={startingPlayerId.toString()}
             onValueChange={(value) =>
-              setStartingPlayerId(Number.parseInt(value))
+              setStartingPlayerId(Number.parseInt(String(value)))
             }
             className="space-y-4"
           >
