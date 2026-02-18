@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -80,6 +81,21 @@ export function GameSetup() {
       checkoutAssist: false,
     },
   });
+
+  // Watch the gameMode to provide contextual help text
+  const gameMode = form.watch("gameMode");
+  const legsToWin = form.watch("legsToWin");
+
+  // Calculate description based on game mode to clarify semantics
+  const getLegsDescription = () => {
+    const legs = Number.parseInt(legsToWin || "3");
+    if (gameMode === "firstTo") {
+      return `First player to win ${legs} legs wins the match`;
+    } else {
+      const required = Math.ceil(legs / 2);
+      return `Best of ${legs} legs (first to ${required} wins the match)`;
+    }
+  };
 
   const onSubmit = (data: GameSetupFormValues) => {
     clearPendingGame();
@@ -257,6 +273,7 @@ export function GameSetup() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormDescription>{getLegsDescription()}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
