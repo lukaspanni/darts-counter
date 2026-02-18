@@ -117,6 +117,7 @@ export function GamePlay() {
           gameId: liveStreamState.connection?.gameId || "",
           startingScore: gameSettings.startingScore,
           outMode: gameSettings.outMode,
+          gameMode: gameSettings.gameMode,
           legsToWin: gameSettings.legsToWin,
           players: players.map((p) => ({
             id: p.id,
@@ -297,12 +298,9 @@ export function GamePlay() {
       <Dialog open={showLegWonModal} onOpenChange={setShowLegWonModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">
-              Leg Won!
-            </DialogTitle>
+            <DialogTitle className="text-center text-xl">Leg Won!</DialogTitle>
             <DialogDescription className="text-center">
-              {players.find((p) => p.id === legWinner)?.name} has won the
-              leg!
+              {players.find((p) => p.id === legWinner)?.name} has won the leg!
             </DialogDescription>
           </DialogHeader>
 
