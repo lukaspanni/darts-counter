@@ -15,6 +15,7 @@ import {
 import { findCheckout } from "@/lib/core/checkout";
 import { useUiSettings } from "@/lib/hooks/use-ui-settings";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
+import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ export function GamePlay() {
   } = useGameStore((state) => state);
 
   const { state: liveStreamState, sendEvent } = useLiveStream();
+  const { clearPendingGame } = usePendingGame();
 
   const [showLegWonModal, setShowLegWonModal] = useState(false);
   const [show180, setShow180] = useState(false);
@@ -350,6 +352,7 @@ export function GamePlay() {
             leg_number: currentLeg,
             player_count: players.length,
           });
+          clearPendingGame();
           resetGame();
         }}
         title="Reset Match"

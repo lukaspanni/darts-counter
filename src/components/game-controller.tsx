@@ -5,6 +5,7 @@ import { PreGameStart } from "@/components/pre-game-start";
 import { GamePlay } from "@/components/game-play";
 import { GameOver } from "@/components/game-over";
 import { useGameHistory } from "@/lib/hooks/use-game-history";
+import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/lib/store-provider";
@@ -15,17 +16,57 @@ export function GameController() {
     currentLeg,
     gamePhase,
     players,
+    matchId,
+    activePlayerId,
+    currentVisitScores,
+    currentVisitDarts,
     historyLegs,
     matchWinner,
     resetGame,
   } = useGameStore((state) => state);
 
   const { gameHistory, addGame } = useGameHistory();
+  const { savePendingGame, clearPendingGame } = usePendingGame();
   const [isInitialRender, setIsInitialRender] = useState(true);
+
+  useEffect(() => {
+    if (gamePhase !== "playing") {
+      return;
+    }
+
+    const hasAnyVisits = historyLegs.some((leg) => leg.visits.length > 0);
+    if (!hasAnyVisits || !matchId) {
+      return;
+    }
+
+    savePendingGame({
+      matchId,
+      date: new Date().toISOString(),
+      players,
+      activePlayerId,
+      gameSettings,
+      currentLeg,
+      currentVisitScores,
+      currentVisitDarts,
+      historyLegs,
+    });
+  }, [
+    gamePhase,
+    historyLegs,
+    matchId,
+    players,
+    activePlayerId,
+    gameSettings,
+    currentLeg,
+    currentVisitScores,
+    currentVisitDarts,
+    savePendingGame,
+  ]);
 
   useEffect(() => {
     if (isInitialRender && gamePhase === "gameOver" && matchWinner !== null) {
       setIsInitialRender(false);
+      clearPendingGame();
 
       const winnerPlayer = players.find((p) => p.id === matchWinner);
       const winnerAverage =
@@ -48,7 +89,7 @@ export function GameController() {
       });
 
       const newGameHistory = {
-        id: crypto.randomUUID(),
+        id: matchId ?? crypto.randomUUID(),
         date: new Date().toISOString(),
         players: players.map((p) => ({
           id: p.id,
@@ -66,7 +107,9 @@ export function GameController() {
   }, [
     gamePhase,
     matchWinner,
+    clearPendingGame,
     players,
+    matchId,
     gameSettings,
     currentLeg,
     historyLegs,

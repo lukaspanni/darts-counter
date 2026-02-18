@@ -7,6 +7,7 @@ import type {
   ScoreModifier,
   LegHistory,
   VisitDart,
+  PendingGameSnapshot,
 } from "@/lib/schemas";
 import { computeDartThrow } from "./core/darts-score";
 import { createPlayers } from "./core/player-init";
@@ -30,6 +31,7 @@ function isDoubleCheckoutScore(score: number): boolean {
 export type GameStoreState = {
   gamePhase: GamePhase;
   players: Player[];
+  matchId: string | null;
   activePlayerId: number;
   gameSettings: GameSettings;
   currentLeg: number;
@@ -64,6 +66,7 @@ export type GameStoreActions = {
 
   // Game phase control
   setGamePhase(phase: GamePhase): void;
+  restorePendingGame(snapshot: PendingGameSnapshot): void;
 
   // Game play
   startGame(): void;
@@ -89,6 +92,7 @@ const initialSettings: GameSettings = {
 const initialState: GameStoreState = {
   gamePhase: "setup",
   players: [],
+  matchId: null,
   activePlayerId: 1,
   gameSettings: initialSettings,
   currentLeg: 1,
@@ -130,9 +134,26 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         set({ gamePhase: phase });
       },
 
+      restorePendingGame(snapshot) {
+        set((state) => {
+          state.matchId = snapshot.matchId;
+          state.players = snapshot.players;
+          state.activePlayerId = snapshot.activePlayerId;
+          state.gameSettings = snapshot.gameSettings;
+          state.currentLeg = snapshot.currentLeg;
+          state.currentVisitScores = snapshot.currentVisitScores;
+          state.currentVisitDarts = snapshot.currentVisitDarts;
+          state.historyLegs = snapshot.historyLegs;
+          state.legWinner = null;
+          state.matchWinner = null;
+          state.gamePhase = "playing";
+        });
+      },
+
       startGame() {
         set((state) => {
           state.gamePhase = "playing";
+          state.matchId = crypto.randomUUID();
           state.currentLeg = 1;
           state.currentVisitScores = [];
           state.currentVisitDarts = [];

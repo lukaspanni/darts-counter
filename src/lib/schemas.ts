@@ -56,6 +56,23 @@ export const legHistorySchema = z.object({
   visits: z.array(visitHistorySchema),
 });
 
+export const pendingGameSnapshotSchema = z.object({
+  matchId: z.string(),
+  date: z.string(),
+  players: z.array(playerSchema),
+  activePlayerId: z.number(),
+  gameSettings: gameSettingsSchema,
+  currentLeg: z.number(),
+  currentVisitScores: z.array(z.number()),
+  currentVisitDarts: z.array(visitDartSchema),
+  historyLegs: z.array(legHistorySchema),
+});
+
+export const pendingGameSchema = z.object({
+  status: z.literal("pending"),
+  snapshot: pendingGameSnapshotSchema,
+});
+
 export const gameHistorySchema = z.array(
   z.object({
     id: z.uuid(),
@@ -73,6 +90,8 @@ export type GameHistory = z.infer<typeof gameHistorySchema>[number];
 export type VisitDart = z.infer<typeof visitDartSchema>;
 export type VisitHistory = z.infer<typeof visitHistorySchema>;
 export type LegHistory = z.infer<typeof legHistorySchema>;
+export type PendingGame = z.infer<typeof pendingGameSchema>;
+export type PendingGameSnapshot = z.infer<typeof pendingGameSnapshotSchema>;
 export const uiSettingsSchema = z.object({
   enhancedView: z.boolean(),
   noBullshitMode: z.boolean().default(false),
