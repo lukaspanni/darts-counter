@@ -1,0 +1,35 @@
+{
+  "node": {
+    "c0262f1453fbb421dd43516818e5c6cf94d6c25921": {
+      "workers": {
+        "app/_not-found/page": {
+          "moduleId": 11531,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "packages/frontend/src/lib/get-feature-flags.ts"
+        }
+      },
+      "layer": {
+        "app/_not-found/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_0",
+      "filename": "packages/frontend/src/lib/get-feature-flags.ts"
+    },
+    "e0d16e1c6a8a13fddabd6ec70409eb266e9a659e9d": {
+      "workers": {
+        "app/_not-found/page": {
+          "moduleId": 11531,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_1",
+          "filename": "packages/frontend/src/lib/get-feature-flags.ts"
+        }
+      },
+      "layer": {
+        "app/_not-found/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_CACHE_1",
+      "filename": "packages/frontend/src/lib/get-feature-flags.ts"
+    }
+  },
+  "edge": {}
+}
