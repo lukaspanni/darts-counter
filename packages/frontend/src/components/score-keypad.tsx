@@ -11,6 +11,7 @@ interface ScoreKeypadProps {
   onFinishVisit: () => void;
   dartsInVisit: number;
   canThrowMoreDarts: boolean;
+  canUndo?: boolean;
 }
 
 export function ScoreKeypad({
@@ -19,6 +20,7 @@ export function ScoreKeypad({
   onFinishVisit,
   dartsInVisit,
   canThrowMoreDarts,
+  canUndo = true,
 }: ScoreKeypadProps) {
   const [modifier, setModifier] = useState<ScoreModifier>("single");
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -122,7 +124,7 @@ export function ScoreKeypad({
           <Button
             variant="outline"
             onClick={onUndo}
-            disabled={dartsInVisit === 0}
+            disabled={dartsInVisit === 0 || !canUndo}
             className="h-12"
           >
             <RotateCcw className="mr-2 h-4 w-4" /> Undo

@@ -325,7 +325,12 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
       handleUndoThrow() {
         const state = get();
         const player = state.players.find((p) => p.id === state.activePlayerId);
-        if (!player || state.currentVisitScores.length === 0) {
+        if (
+          !player ||
+          state.currentVisitScores.length === 0 ||
+          state.legWinner !== null ||
+          state.matchWinner !== null
+        ) {
           return { success: false, lastScore: 0, newVisitTotal: 0 };
         }
 

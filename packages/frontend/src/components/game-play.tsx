@@ -300,6 +300,7 @@ export function GamePlay() {
               onFinishVisit={endTurn}
               dartsInVisit={dartsInVisit}
               canThrowMoreDarts={canThrowMoreDarts}
+              canUndo={legWinner === null && matchWinner === null}
             />
             {!isLargeScreen && <Dartboard {...dartboardProps} />}
             <Button
@@ -323,6 +324,7 @@ export function GamePlay() {
             onFinishVisit={endTurn}
             dartsInVisit={dartsInVisit}
             canThrowMoreDarts={canThrowMoreDarts}
+            canUndo={legWinner === null && matchWinner === null}
           />
           <Button
             variant={"destructive"}
