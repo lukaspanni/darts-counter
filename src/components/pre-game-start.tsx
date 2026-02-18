@@ -58,7 +58,7 @@ export function PreGameStart() {
         </CardHeader>
         <CardContent>
           <RadioGroup
-            defaultValue={startingPlayerId.toString()}
+            value={startingPlayerId.toString()}
             onValueChange={(value) =>
               setStartingPlayerId(Number.parseInt(value))
             }

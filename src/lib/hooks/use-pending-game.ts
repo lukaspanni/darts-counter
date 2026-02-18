@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  type PendingGame,
-  type PendingGameSnapshot,
-} from "@/lib/schemas";
+import { type PendingGame, type PendingGameSnapshot } from "@/lib/schemas";
 import { saveToLocalStorage } from "@/lib/local-storage";
 import { useCallback, useEffect, useState } from "react";
 
@@ -13,7 +10,9 @@ export function usePendingGame() {
   const [pendingGame, setPendingGame] = useState<PendingGame | null>(null);
 
   useEffect(() => {
-    const rawPendingGame = window.localStorage.getItem(PENDING_GAME_STORAGE_KEY);
+    const rawPendingGame = window.localStorage.getItem(
+      PENDING_GAME_STORAGE_KEY,
+    );
     if (!rawPendingGame) {
       return;
     }
