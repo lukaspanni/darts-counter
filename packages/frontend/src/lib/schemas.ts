@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  gameTypeSchema as sharedGameTypeSchema,
+  outModeSchema,
+  scoreModifierSchema,
+} from "@darts-counter/shared";
 
 export const playerSchema = z.object({
   id: z.number(),
@@ -12,12 +17,12 @@ export const playerSchema = z.object({
 
 export type Player = z.infer<typeof playerSchema>;
 
-export const gameTypeSchema = z.enum(["bestOf", "firstTo"]);
+export const gameTypeSchema = sharedGameTypeSchema;
 export type GameType = z.infer<typeof gameTypeSchema>;
 
 export const gameSettingsSchema = z.object({
   startingScore: z.number(),
-  outMode: z.enum(["single", "double"]),
+  outMode: outModeSchema,
   gameMode: gameTypeSchema,
   legsToWin: z.number(),
   checkoutAssist: z.boolean().default(false),
@@ -33,7 +38,7 @@ export const gameHistoryPlayerSchema = z.object({
 
 export const visitDartSchema = z.object({
   score: z.number(),
-  modifier: z.enum(["single", "double", "triple"]),
+  modifier: scoreModifierSchema,
   validatedScore: z.number(),
   isBust: z.boolean(),
   isCheckoutAttempt: z.boolean(),
@@ -103,5 +108,4 @@ export const uiSettingsSchema = z.object({
 export type UiSettings = z.infer<typeof uiSettingsSchema>;
 export type Dart = string;
 export type Checkout = Dart[];
-export type ScoreModifier = "single" | "double" | "triple";
-export type OutMode = z.infer<typeof gameSettingsSchema>["outMode"];
+export type { ScoreModifier, OutMode } from "@darts-counter/shared";
