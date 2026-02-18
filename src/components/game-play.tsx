@@ -15,6 +15,7 @@ import {
 import { findCheckout } from "@/lib/core/checkout";
 import { useUiSettings } from "@/lib/hooks/use-ui-settings";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
+import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ export function GamePlay() {
   } = useGameStore((state) => state);
 
   const { state: liveStreamState, sendEvent } = useLiveStream();
+  const { clearPendingGame } = usePendingGame();
 
   const [showLegWonModal, setShowLegWonModal] = useState(false);
   const [show180, setShow180] = useState(false);
@@ -154,6 +156,15 @@ export function GamePlay() {
     modifier: ScoreModifier,
   ) => {
     const result = handleDartThrow(scoreAfterModifier, modifier);
+    posthog.capture("dart_thrown", {
+      history_event: "dart_thrown",
+      leg_number: currentLeg,
+      player_name: activePlayer.name,
+      score: scoreAfterModifier,
+      validated_score: result.validatedScore,
+      modifier,
+      is_bust: result.isBust,
+    });
 
     // Update local component state
     setDartsInVisit((prev) => prev + 1);
@@ -162,6 +173,7 @@ export function GamePlay() {
 
     if (result.isLegWin) {
       posthog.capture("leg_won", {
+        history_event: "leg_won",
         leg_number: currentLeg,
         player_count: players.length,
       });
@@ -178,6 +190,7 @@ export function GamePlay() {
 
     if (result.currentVisitTotal === 180) {
       posthog.capture("180_scored", {
+        history_event: "180_scored",
         leg_number: currentLeg,
       });
       setShow180(true);
@@ -192,6 +205,13 @@ export function GamePlay() {
   };
 
   const endTurn = () => {
+    posthog.capture("visit_completed", {
+      history_event: "visit_completed",
+      leg_number: currentLeg,
+      player_name: activePlayer.name,
+      visit_score: currentScore,
+      darts_in_visit: dartsInVisit,
+    });
     finishVisit();
     setDartsInVisit(0);
     setCurrentScore(0);
@@ -328,9 +348,11 @@ export function GamePlay() {
         onClose={() => setShowConfirmDialog(false)}
         onConfirm={() => {
           posthog.capture("match_reset", {
+            history_event: "match_reset",
             leg_number: currentLeg,
             player_count: players.length,
           });
+          clearPendingGame();
           resetGame();
         }}
         title="Reset Match"

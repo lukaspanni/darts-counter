@@ -14,11 +14,17 @@ import { Input } from "./ui/input";
 import { ArrowUpDown, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useGameHistory } from "@/lib/hooks/use-game-history";
+import type { GameHistory } from "@/lib/schemas";
 
 type SortField = "date" | "gameMode" | "result";
 
-export function StatsTable() {
+interface StatsTableProps {
+  gameHistory?: GameHistory[];
+}
+
+export function StatsTable({ gameHistory: providedGameHistory }: StatsTableProps) {
   const { gameHistory, removeGame } = useGameHistory();
+  const history = providedGameHistory ?? gameHistory;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<SortField>("date");
@@ -43,7 +49,7 @@ export function StatsTable() {
     );
   };
 
-  const filteredAndSortedGames = gameHistory
+  const filteredAndSortedGames = history
     .filter((game) =>
       game.players.some((player) =>
         player.name.toLowerCase().includes(searchTerm.toLowerCase()),

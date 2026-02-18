@@ -57,7 +57,9 @@ export function LiveStreamControl() {
 
   const handleCopyUrl = async () => {
     if (liveStreamUrl) {
-      posthog.capture("live_stream_url_copied");
+      posthog.capture("live_stream_url_copied", {
+        history_event: "live_stream_url_copied",
+      });
       await navigator.clipboard.writeText(liveStreamUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -65,12 +67,16 @@ export function LiveStreamControl() {
   };
 
   const handleStartStream = async () => {
-    posthog.capture("live_stream_started");
+    posthog.capture("live_stream_started", {
+      history_event: "live_stream_started",
+    });
     await startLiveStream();
   };
 
   const handleStopStream = () => {
-    posthog.capture("live_stream_stopped");
+    posthog.capture("live_stream_stopped", {
+      history_event: "live_stream_stopped",
+    });
     stopLiveStream();
   };
 

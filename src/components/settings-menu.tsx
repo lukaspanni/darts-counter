@@ -17,6 +17,7 @@ export const SettingsMenu = () => {
 
   const handleEnhancedViewChange = (checked: boolean) => {
     posthog.capture("settings_changed", {
+      history_event: "settings_changed",
       setting: "enhanced_view",
       value: checked,
     });
@@ -25,6 +26,7 @@ export const SettingsMenu = () => {
 
   const handleNoBullshitModeChange = (checked: boolean) => {
     posthog.capture("settings_changed", {
+      history_event: "settings_changed",
       setting: "no_bullshit_mode",
       value: checked,
     });

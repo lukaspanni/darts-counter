@@ -20,6 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { gameSettingsSchema } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
+import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import posthog from "posthog-js";
@@ -39,9 +40,9 @@ const gameSetupSchema = gameSettingsSchema.extend({
 type GameSetupFormValues = z.infer<typeof gameSetupSchema>;
 
 export function GameSetup() {
-  const { setGameSettings, setPlayers, setGamePhase } = useGameStore(
-    (state) => state,
-  );
+  const { setGameSettings, setPlayers, setGamePhase, restorePendingGame } =
+    useGameStore((state) => state);
+  const { pendingGame, clearPendingGame } = usePendingGame();
 
   const form = useForm<GameSetupFormValues>({
     resolver: zodResolver(gameSetupSchema),
@@ -57,9 +58,11 @@ export function GameSetup() {
   });
 
   const onSubmit = (data: GameSetupFormValues) => {
+    clearPendingGame();
     const playerCount = data.player2 && data.player2.trim() !== "" ? 2 : 1;
 
     posthog.capture("match_setup_completed", {
+      history_event: "match_setup_completed",
       starting_score: Number.parseInt(data.startingScore),
       out_mode: data.outMode,
       game_mode: data.gameMode,
@@ -86,12 +89,37 @@ export function GameSetup() {
     setGamePhase("preGame");
   };
 
+  const hasPendingGame = pendingGame?.status === "pending";
+
   return (
     <Card className="w-full lg:mx-auto lg:w-xl">
       <CardHeader>
         <CardTitle className="text-center">New Match Setup</CardTitle>
       </CardHeader>
       <CardContent>
+        {hasPendingGame && (
+          <div className="mb-6 rounded-lg border p-4">
+            <p className="mb-3 text-sm font-medium">Pending game found</p>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Continue your previous game or discard it and start a new match.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                onClick={() => restorePendingGame(pendingGame.snapshot)}
+              >
+                Continue game
+              </Button>
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={clearPendingGame}
+              >
+                Discard pending game
+              </Button>
+            </div>
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField

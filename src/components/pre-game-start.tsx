@@ -23,6 +23,7 @@ export function PreGameStart() {
 
   const handleStartGame = useCallback(() => {
     posthog.capture("match_started", {
+      history_event: "match_started",
       player_count: players.length,
       starting_score: gameSettings.startingScore,
       out_mode: gameSettings.outMode,

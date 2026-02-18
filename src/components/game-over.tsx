@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/card";
 import type { Player, GameHistory } from "@/lib/schemas";
 import { StartNewGameButton } from "./start-new-game-button";
+import { calculatePlayerStats } from "@/lib/player-stats";
 
 interface GameOverProps {
   winner: Player;
@@ -15,31 +16,9 @@ interface GameOverProps {
 }
 
 export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
-  const winnerStats = {
-    matchesPlayed: 0,
-    matchesWon: 0,
-    averageScore: 0,
-  };
-
-  // Calculate historical stats
-
-  gameHistory
-    .filter((game) => game.players.find((p) => p.name === winner.name))
-    .filter(Boolean)
-    .forEach((game) => {
-      winnerStats.matchesPlayed++;
-      winnerStats.averageScore +=
-        game.players.find((p) => p.name === winner.name)?.averageScore || 0;
-      if (game.winner === winner.name) {
-        winnerStats.matchesWon++;
-      }
-    });
-
-  if (winnerStats.matchesPlayed > 0) {
-    winnerStats.averageScore = Number(
-      (winnerStats.averageScore / winnerStats.matchesPlayed).toFixed(2),
-    );
-  }
+  const winnerStats = calculatePlayerStats(gameHistory).find(
+    (stats) => stats.name === winner.name,
+  );
 
   const currentAverage =
     winner.dartsThrown > 0
@@ -47,7 +26,8 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
       : 0;
 
   const isAboveAverage =
-    currentAverage > winnerStats.averageScore && winnerStats.matchesPlayed > 0;
+    currentAverage > (winnerStats?.averagePerVisit ?? 0) &&
+    (winnerStats?.matchesPlayed ?? 0) > 0;
 
   return (
     <div>
@@ -70,12 +50,12 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
                 <span className="font-medium">{currentAverage}</span>
               </div>
 
-              {winnerStats.matchesPlayed > 0 && (
+              {(winnerStats?.matchesPlayed ?? 0) > 0 && (
                 <>
                   <div className="flex justify-between">
                     <span>Historical Average:</span>
                     <span className="font-medium">
-                      {winnerStats.averageScore}
+                      {winnerStats?.averagePerVisit}
                     </span>
                   </div>
                   <div className="flex justify-between">
