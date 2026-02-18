@@ -176,10 +176,13 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           );
           if (activePlayer && state.currentVisitDarts.length > 0) {
             const currentLeg = state.historyLegs[state.currentLeg - 1];
-            const totalScore = state.currentVisitDarts.reduce(
-              (sum, dart) => sum + dart.validatedScore,
-              0,
-            );
+            const hasBust = state.currentVisitDarts.some((dart) => dart.isBust);
+            const totalScore = hasBust
+              ? 0
+              : state.currentVisitDarts.reduce(
+                  (sum, dart) => sum + dart.validatedScore,
+                  0,
+                );
             currentLeg?.visits.push({
               playerId: activePlayer.id,
               playerName: activePlayer.name,
