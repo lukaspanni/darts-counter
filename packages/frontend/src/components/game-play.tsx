@@ -5,6 +5,12 @@ import { ScoreDisplay } from "@/components/score-display";
 import { ScoreKeypad } from "@/components/score-keypad";
 import { Button } from "@/components/ui/button";
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -55,7 +61,7 @@ export function GamePlay() {
   const [lastThrowBust, setLastThrowBust] = useState(false);
   const { isLargeScreen, settings } = useUiSettings();
 
-  const activePlayer = players.find((p) => p.id === activePlayerId)!;
+  const activePlayer = players.find((p) => p.id === activePlayerId);
   const canThrowMoreDarts =
     dartsInVisit < MAX_DARTS_PER_VISIT && !lastThrowBust;
   const showEnhancedView = settings.enhancedView;
@@ -74,7 +80,7 @@ export function GamePlay() {
     }
   }, [
     activePlayer,
-    activePlayer.score,
+    activePlayer?.score,
     dartsInVisit,
     gameSettings.checkoutAssist,
     gameSettings.outMode,
@@ -150,6 +156,31 @@ export function GamePlay() {
     gamePhase,
     sendEvent,
   ]);
+
+  // Safety check: if no active player, render fallback
+  if (!activePlayer) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Card className="w-full lg:mx-auto lg:w-xl">
+          <CardHeader>
+            <CardTitle className="text-center">Game Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center">
+              Unable to find active player. Please restart the game.
+            </p>
+            <Button
+              variant="default"
+              className="mt-4 w-full"
+              onClick={resetGame}
+            >
+              Restart Game
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleScoreEntry = (
     scoreAfterModifier: number,

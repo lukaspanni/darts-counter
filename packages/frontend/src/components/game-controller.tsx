@@ -126,14 +126,17 @@ export function GameController() {
     case "playing":
       return <GamePlay />;
     case "gameOver":
-      if (matchWinner) {
-        return (
-          <GameOver
-            winner={players.find((p) => p.id === matchWinner)!}
-            gameHistory={gameHistory}
-            onNewGame={resetGame}
-          />
-        );
+      if (matchWinner !== null) {
+        const winner = players.find((p) => p.id === matchWinner);
+        if (winner) {
+          return (
+            <GameOver
+              winner={winner}
+              gameHistory={gameHistory}
+              onNewGame={resetGame}
+            />
+          );
+        }
       }
       // Fallback in case of error
       return <GameSetup />;
