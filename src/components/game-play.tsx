@@ -172,6 +172,18 @@ export function GamePlay() {
     setLastThrowBust(result.isBust);
 
     if (result.isLegWin) {
+      if (
+        result.isMatchWin &&
+        result.matchWinner !== null &&
+        liveStreamState.isActive &&
+        liveStreamState.status === "connected"
+      ) {
+        sendEvent({
+          type: "gameFinish",
+          winnerId: result.matchWinner,
+        });
+      }
+
       posthog.capture("leg_won", {
         history_event: "leg_won",
         leg_number: currentLeg,
