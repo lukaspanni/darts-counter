@@ -182,13 +182,13 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
           state.currentVisitScores.push(validatedScore);
 
-          if (isRoundWin) {
+          if (isLegWin) {
             p.legsWon += 1;
-            state.roundWinner = p.id;
+            state.legWinner = p.id;
 
             const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
             if (p.legsWon >= requiredLegs) {
-              state.gameWinner = p.id;
+              state.matchWinner = p.id;
               state.gamePhase = "gameOver";
             }
           }

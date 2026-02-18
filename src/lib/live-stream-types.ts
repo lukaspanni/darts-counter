@@ -11,7 +11,6 @@ export const liveStreamPlayerSchema = playerSchema.pick({
   name: true,
   score: true,
   legsWon: true,
-  legsWon: true,
   dartsThrown: true,
   totalScore: true,
 });
