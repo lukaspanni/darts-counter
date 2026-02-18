@@ -8,11 +8,13 @@ export const sessionSchema = z.object({
 
 export type Session = z.infer<typeof sessionSchema>;
 
-// Game metadata schema
+const gameModeSchema = z.enum(['bestOf', 'firstTo']);
+
 export const gameMetadataSchema = z.object({
 	gameId: z.string().uuid(),
 	startingScore: z.number(),
 	outMode: z.enum(['single', 'double']),
+	gameMode: gameModeSchema,
 	legsToWin: z.number(),
 	players: z.array(
 		z.object({

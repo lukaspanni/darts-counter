@@ -195,6 +195,8 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
             case "gameUpdate":
               // Full game state update
               setMetadata(clientEvent.metadata);
+              setStatus("connected");
+              setError(null);
               break;
 
             case "score":
@@ -341,7 +343,6 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
                 <div className="text-right">
                   <div className="text-4xl font-bold">{player.score}</div>
                   <div className="text-muted-foreground text-sm">
-                    Legs won: {player.legsWon}
                     Legs won: {player.legsWon}
                   </div>
                 </div>

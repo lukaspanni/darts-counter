@@ -116,6 +116,11 @@ export class Game extends DurableObject<Env> {
 
 		// Ensure state exists before processing
 		if (!this.state) {
+			const stored = await this.ctx.storage.get<GameState>('state');
+			this.state = stored || null;
+		}
+
+		if (!this.state) {
 			try {
 				ws.send(JSON.stringify({ type: 'error', message: 'Game state not initialized' } satisfies ServerEvent));
 				console.error(
