@@ -12,7 +12,7 @@ export const createPlayers = (
   if (validPartials.length === 0) {
     validPartials.push({});
   }
-  
+
   return validPartials.map((p, i) => ({
     id: i + 1,
     name: p.name || `Player ${i + 1}`,
