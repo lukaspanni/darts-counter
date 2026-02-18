@@ -244,7 +244,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           modifier === "double" && isDoubleCheckoutScore(player.score);
         const isMissedDouble = isDoubleAttempt && !isLegWin;
         const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
-        const isMatchWin = isLegWin && player.legsWon + 1 >= requiredLegs;
+        const totalLegsAfterWin = player.legsWon + 1;
+        const isMatchWin = isLegWin && totalLegsAfterWin >= requiredLegs;
 
         const currentLegIndex = state.currentLeg - 1;
         const prevVisitTotal =
