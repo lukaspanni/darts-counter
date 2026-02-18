@@ -251,11 +251,13 @@ describe("calculatePlayerAverageHistory", () => {
     const history = calculatePlayerAverageHistory(gameHistoryFixture, "Bob");
 
     expect(history).toHaveLength(2);
+    // Match 1: 220 scored / 7 darts * 3 = 94.29
     expect(history[0]).toMatchObject({
       name: "Bob",
       average: 94.29,
       matchNumber: 1,
     });
+    // Running average: (94.29 + (196 scored / 4 darts * 3 = 147.00)) / 2 = 120.64
     expect(history[1]).toMatchObject({
       name: "Bob",
       average: 120.64,
