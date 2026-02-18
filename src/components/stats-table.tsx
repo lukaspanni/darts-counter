@@ -22,7 +22,9 @@ interface StatsTableProps {
   gameHistory?: GameHistory[];
 }
 
-export function StatsTable({ gameHistory: providedGameHistory }: StatsTableProps) {
+export function StatsTable({
+  gameHistory: providedGameHistory,
+}: StatsTableProps) {
   const { gameHistory, removeGame } = useGameHistory();
   const history = providedGameHistory ?? gameHistory;
 

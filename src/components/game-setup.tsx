@@ -39,6 +39,30 @@ const gameSetupSchema = gameSettingsSchema.extend({
 
 type GameSetupFormValues = z.infer<typeof gameSetupSchema>;
 
+const startingScoreOptions = [
+  { value: "501", label: "501" },
+  { value: "301", label: "301" },
+];
+
+const outModeOptions = [
+  { value: "single", label: "Single Out" },
+  { value: "double", label: "Double Out" },
+];
+
+const gameModeOptions = [
+  { value: "bestOf", label: "Best of X legs" },
+  { value: "firstTo", label: "First to X legs" },
+];
+
+const legsToWinOptions = [
+  { value: "3", label: "3" },
+  { value: "5", label: "5" },
+  { value: "6", label: "6" },
+  { value: "7", label: "7" },
+  { value: "8", label: "8" },
+  { value: "9", label: "9" },
+];
+
 export function GameSetup() {
   const { setGameSettings, setPlayers, setGamePhase, restorePendingGame } =
     useGameStore((state) => state);
@@ -100,7 +124,7 @@ export function GameSetup() {
         {hasPendingGame && (
           <div className="mb-6 rounded-lg border p-4">
             <p className="mb-3 text-sm font-medium">Pending game found</p>
-            <p className="mb-4 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mb-4 text-sm">
               Continue your previous game or discard it and start a new match.
             </p>
             <div className="flex gap-2">
@@ -129,8 +153,9 @@ export function GameSetup() {
                 <FormItem>
                   <FormLabel>Starting Score</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value ?? "")}
+                    items={startingScoreOptions}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -138,8 +163,11 @@ export function GameSetup() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="501">501</SelectItem>
-                      <SelectItem value="301">301</SelectItem>
+                      {startingScoreOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -154,8 +182,9 @@ export function GameSetup() {
                 <FormItem>
                   <FormLabel>Game Mode</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value ?? "")}
+                    items={outModeOptions}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -163,8 +192,11 @@ export function GameSetup() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="single">Single Out</SelectItem>
-                      <SelectItem value="double">Double Out</SelectItem>
+                      {outModeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -179,8 +211,9 @@ export function GameSetup() {
                 <FormItem>
                   <FormLabel>Match Format</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value ?? "")}
+                    items={gameModeOptions}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -188,8 +221,11 @@ export function GameSetup() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="bestOf">Best of X legs</SelectItem>
-                      <SelectItem value="firstTo">First to X legs</SelectItem>
+                      {gameModeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -204,8 +240,9 @@ export function GameSetup() {
                 <FormItem>
                   <FormLabel>Number of Legs</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value ?? "")}
+                    items={legsToWinOptions}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -213,12 +250,11 @@ export function GameSetup() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="6">6</SelectItem>
-                      <SelectItem value="7">7</SelectItem>
-                      <SelectItem value="8">8</SelectItem>
-                      <SelectItem value="9">9</SelectItem>
+                      {legsToWinOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

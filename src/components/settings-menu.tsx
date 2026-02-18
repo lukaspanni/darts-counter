@@ -7,7 +7,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { useUiSettings } from "@/lib/hooks/use-ui-settings";
 import { Settings } from "lucide-react";
 import posthog from "posthog-js";
@@ -35,11 +35,11 @@ export const SettingsMenu = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Settings className="h-[1.2rem] w-[1.2rem]" />
-          <span className="sr-only">Open settings</span>
-        </Button>
+      <DropdownMenuTrigger
+        className={buttonVariants({ variant: "outline", size: "icon" })}
+      >
+        <Settings className="h-[1.2rem] w-[1.2rem]" />
+        <span className="sr-only">Open settings</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Settings</DropdownMenuLabel>

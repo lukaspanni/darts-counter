@@ -109,7 +109,10 @@ function safeDivideAndRound(
   return Number(((numerator / denominator) * multiplier).toFixed(precision));
 }
 
-function resolveAveragePerVisit(totalScored: number, totalDarts: number): number {
+function resolveAveragePerVisit(
+  totalScored: number,
+  totalDarts: number,
+): number {
   if (totalDarts === 0) {
     return 0;
   }
@@ -164,7 +167,8 @@ function applyVisitToStats(
       totalDarts: stats.totalDarts + visit.darts.length,
       highestVisit: Math.max(stats.highestVisit, visit.totalScore),
       total180s: stats.total180s + (visit.totalScore === 180 ? 1 : 0),
-      total100PlusVisits: stats.total100PlusVisits + (visit.totalScore >= 100 ? 1 : 0),
+      total100PlusVisits:
+        stats.total100PlusVisits + (visit.totalScore >= 100 ? 1 : 0),
       firstNineScored,
       firstNineDarts,
       checkoutAttempts,
@@ -189,7 +193,8 @@ function applyLegWin(
   return {
     ...stats,
     legsWon: stats.legsWon + 1,
-    dartsToFinishTotal: stats.dartsToFinishTotal + (dartsToFinish > 0 ? dartsToFinish : 0),
+    dartsToFinishTotal:
+      stats.dartsToFinishTotal + (dartsToFinish > 0 ? dartsToFinish : 0),
     finishedLegs: stats.finishedLegs + (dartsToFinish > 0 ? 1 : 0),
   };
 }
@@ -244,14 +249,20 @@ function accumulateLegWinner(
 }
 
 function buildPlayerStats(player: PlayerAccumulator): PlayerStats {
-  const averagePerVisit = resolveAveragePerVisit(player.totalScored, player.totalDarts);
+  const averagePerVisit = resolveAveragePerVisit(
+    player.totalScored,
+    player.totalDarts,
+  );
   const averagePerDart = averagePerVisit / DARTS_PER_VISIT;
 
   return {
     name: player.name,
     matchesPlayed: player.matchesPlayed,
     matchesWon: player.matchesWon,
-    matchWinPercentage: calculatePercentage(player.matchesWon, player.matchesPlayed),
+    matchWinPercentage: calculatePercentage(
+      player.matchesWon,
+      player.matchesPlayed,
+    ),
     averageScore: Number(averagePerDart.toFixed(2)),
     averagePerVisit: Number(averagePerVisit.toFixed(2)),
     firstNineAverage: safeDivideAndRound(
@@ -262,7 +273,10 @@ function buildPlayerStats(player: PlayerAccumulator): PlayerStats {
     ),
     highestVisit: player.highestVisit,
     total180s: player.total180s,
-    oneEightiesPerMatch: safeDivideAndRound(player.total180s, player.matchesPlayed),
+    oneEightiesPerMatch: safeDivideAndRound(
+      player.total180s,
+      player.matchesPlayed,
+    ),
     total100PlusVisits: player.total100PlusVisits,
     checkoutAttempts: player.checkoutAttempts,
     checkoutSuccesses: player.checkoutSuccesses,
@@ -274,7 +288,10 @@ function buildPlayerStats(player: PlayerAccumulator): PlayerStats {
       player.dartsToFinishTotal,
       player.finishedLegs,
     ),
-    missedDoublesPerLeg: safeDivideAndRound(player.missedDoubles, player.legsPlayed),
+    missedDoublesPerLeg: safeDivideAndRound(
+      player.missedDoubles,
+      player.legsPlayed,
+    ),
     legsWon: player.legsWon,
     legsPlayed: player.legsPlayed,
     legWinPercentage: calculatePercentage(player.legsWon, player.legsPlayed),
@@ -300,7 +317,9 @@ function getThreeDartAverageForGame(
 /**
  * Calculate all-time statistics for each player from game history
  */
-export function calculatePlayerStats(gameHistory: GameHistory[]): PlayerStats[] {
+export function calculatePlayerStats(
+  gameHistory: GameHistory[],
+): PlayerStats[] {
   const playerMap = new Map<string, PlayerAccumulator>();
 
   gameHistory.forEach((game) => {
