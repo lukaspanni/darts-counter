@@ -116,6 +116,10 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
       setPlayers(players) {
         set((state) => {
+          // Guard: Only support 1-2 players
+          if (players.length < 1 || players.length > 2) {
+            console.warn(`Invalid player count in setPlayers: ${players.length}. Must be 1-2 players.`);
+          }
           state.players = createPlayers(
             players,
             state.gameSettings.startingScore,
@@ -138,6 +142,16 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
       restorePendingGame(snapshot) {
         set((state) => {
+          // Guard: Validate player count in restored game
+          if (snapshot.players.length < 1 || snapshot.players.length > 2) {
+            console.warn(`Invalid player count in restored game: ${snapshot.players.length}. Clamping to 1-2 players.`);
+            snapshot.players = snapshot.players.slice(0, 2);
+            if (snapshot.players.length === 0) {
+              // Cannot restore a game with no players
+              console.error("Cannot restore game with no players");
+              return;
+            }
+          }
           state.matchId = snapshot.matchId;
           state.players = snapshot.players;
           state.activePlayerId = snapshot.activePlayerId;
