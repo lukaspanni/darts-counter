@@ -39,6 +39,9 @@ export function GamePlay() {
     resetGame,
     legWinner,
     matchWinner,
+    getDartsInVisit,
+    getCurrentVisitScore,
+    getIsBust,
   } = useGameStore((state) => state);
 
   const { state: liveStreamState, sendEvent } = useLiveStream();
@@ -50,10 +53,12 @@ export function GamePlay() {
   const [checkoutSuggestion, setCheckoutSuggestion] = useState<string | null>(
     null,
   );
-  const [currentScore, setCurrentScore] = useState(0);
-  const [dartsInVisit, setDartsInVisit] = useState(0);
-  const [lastThrowBust, setLastThrowBust] = useState(false);
   const { isLargeScreen, settings } = useUiSettings();
+
+  // Derive visit stats from store
+  const dartsInVisit = getDartsInVisit();
+  const currentScore = getCurrentVisitScore();
+  const lastThrowBust = getIsBust();
 
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
   const canThrowMoreDarts =
@@ -169,11 +174,6 @@ export function GamePlay() {
       is_bust: result.isBust,
     });
 
-    // Update local component state
-    setDartsInVisit((prev) => prev + 1);
-    setCurrentScore((prev) => prev + result.validatedScore);
-    setLastThrowBust(result.isBust);
-
     if (result.isLegWin) {
       if (result.isMatchWin && result.matchWinner !== null) {
         if (isLiveStreamConnected) {
@@ -233,17 +233,12 @@ export function GamePlay() {
       darts_in_visit: dartsInVisit,
     });
     finishVisit();
-    setDartsInVisit(0);
-    setCurrentScore(0);
-    setLastThrowBust(false);
     setShow180(false);
   };
 
   const handleLegComplete = () => {
     setShowLegWonModal(false);
     startNextLeg();
-    setDartsInVisit(0);
-    setCurrentScore(0);
     setShow180(false);
   };
 
@@ -251,9 +246,6 @@ export function GamePlay() {
     const result = handleUndoThrow();
 
     if (result.success) {
-      setLastThrowBust(false);
-      setDartsInVisit((prev) => prev - 1);
-      setCurrentScore(result.newVisitTotal);
       setShow180(false);
     }
   };

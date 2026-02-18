@@ -42,6 +42,13 @@ export type GameStoreState = {
   matchWinner: number | null;
 };
 
+export type GameStoreSelectors = {
+  // Derived visit stats
+  getDartsInVisit(): number;
+  getCurrentVisitScore(): number;
+  getIsBust(): boolean;
+};
+
 export type DartThrowResult = {
   newScore: number;
   validatedScore: number;
@@ -81,7 +88,7 @@ export type GameStoreActions = {
   handleUndoThrow(): UndoResult;
 };
 
-export type GameStore = GameStoreState & GameStoreActions;
+export type GameStore = GameStoreState & GameStoreActions & GameStoreSelectors;
 
 const initialSettings: GameSettings = {
   startingScore: 501,
@@ -349,6 +356,24 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         });
 
         return { success: true, lastScore, newVisitTotal: prevTotal };
+      },
+
+      // Selectors
+      getDartsInVisit() {
+        const state = get();
+        return state.currentVisitDarts.length;
+      },
+
+      getCurrentVisitScore() {
+        const state = get();
+        return state.currentVisitScores.reduce((sum, score) => sum + score, 0);
+      },
+
+      getIsBust() {
+        const state = get();
+        if (state.currentVisitDarts.length === 0) return false;
+        const lastDart = state.currentVisitDarts[state.currentVisitDarts.length - 1];
+        return lastDart?.isBust ?? false;
       },
     })),
   );
