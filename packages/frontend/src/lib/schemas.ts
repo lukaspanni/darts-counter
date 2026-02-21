@@ -20,6 +20,13 @@ export type Player = z.infer<typeof playerSchema>;
 export const gameTypeSchema = sharedGameTypeSchema;
 export type GameType = z.infer<typeof gameTypeSchema>;
 
+/**
+ * Game settings schema
+ * 
+ * IMPORTANT: The semantics of `legsToWin` differ based on `gameMode`:
+ * - firstTo mode: legsToWin = target number of legs to win (e.g., "first to 3 legs")
+ * - bestOf mode: legsToWin = total legs in match (e.g., "best of 7 legs" = first to 4)
+ */
 export const gameSettingsSchema = z.object({
   startingScore: z.number(),
   outMode: outModeSchema,
