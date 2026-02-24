@@ -26,7 +26,8 @@
     "typeRoots": ["./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@darts-counter/shared": ["../shared/src/index.ts"]
     }
   },
   "include": [
