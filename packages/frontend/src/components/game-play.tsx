@@ -5,6 +5,12 @@ import { ScoreDisplay } from "@/components/score-display";
 import { ScoreKeypad } from "@/components/score-keypad";
 import { Button } from "@/components/ui/button";
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -26,23 +32,21 @@ import { useEffect, useState } from "react";
 const MAX_DARTS_PER_VISIT = 3;
 
 export function GamePlay() {
-  const {
-    players,
-    activePlayerId,
-    gameSettings,
-    gamePhase,
-    finishVisit,
-    startNextLeg,
-    currentLeg,
-    handleDartThrow,
-    handleUndoThrow,
-    resetGame,
-    legWinner,
-    matchWinner,
-    getDartsInVisit,
-    getCurrentVisitScore,
-    getIsBust,
-  } = useGameStore((state) => state);
+  const players = useGameStore((state) => state.players);
+  const activePlayerId = useGameStore((state) => state.activePlayerId);
+  const gameSettings = useGameStore((state) => state.gameSettings);
+  const gamePhase = useGameStore((state) => state.gamePhase);
+  const finishVisit = useGameStore((state) => state.finishVisit);
+  const startNextLeg = useGameStore((state) => state.startNextLeg);
+  const currentLeg = useGameStore((state) => state.currentLeg);
+  const handleDartThrow = useGameStore((state) => state.handleDartThrow);
+  const handleUndoThrow = useGameStore((state) => state.handleUndoThrow);
+  const resetGame = useGameStore((state) => state.resetGame);
+  const legWinner = useGameStore((state) => state.legWinner);
+  const matchWinner = useGameStore((state) => state.matchWinner);
+  const dartsInVisit = useGameStore((state) => state.getDartsInVisit());
+  const currentScore = useGameStore((state) => state.getCurrentVisitScore());
+  const lastThrowBust = useGameStore((state) => state.getIsBust());
 
   const { state: liveStreamState, sendEvent } = useLiveStream();
   const { clearPendingGame } = usePendingGame();
@@ -55,12 +59,7 @@ export function GamePlay() {
   );
   const { isLargeScreen, settings } = useUiSettings();
 
-  // Derive visit stats from store
-  const dartsInVisit = getDartsInVisit();
-  const currentScore = getCurrentVisitScore();
-  const lastThrowBust = getIsBust();
-
-  const activePlayer = players.find((p) => p.id === activePlayerId)!;
+  const activePlayer = players.find((p) => p.id === activePlayerId);
   const canThrowMoreDarts =
     dartsInVisit < MAX_DARTS_PER_VISIT && !lastThrowBust;
   const showEnhancedView = settings.enhancedView;
@@ -79,7 +78,7 @@ export function GamePlay() {
     }
   }, [
     activePlayer,
-    activePlayer.score,
+    activePlayer?.score,
     dartsInVisit,
     gameSettings.checkoutAssist,
     gameSettings.outMode,
@@ -155,6 +154,31 @@ export function GamePlay() {
     gamePhase,
     sendEvent,
   ]);
+
+  // Safety check: if no active player, render fallback
+  if (!activePlayer) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Card className="w-full lg:mx-auto lg:w-xl">
+          <CardHeader>
+            <CardTitle className="text-center">Game Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center">
+              Unable to find active player. Please restart the game.
+            </p>
+            <Button
+              variant="default"
+              className="mt-4 w-full"
+              onClick={resetGame}
+            >
+              Restart Game
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleScoreEntry = (
     scoreAfterModifier: number,
