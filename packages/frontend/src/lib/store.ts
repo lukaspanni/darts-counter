@@ -12,13 +12,28 @@ import type {
 import { computeDartThrow } from "./core/darts-score";
 import { createPlayers } from "./core/player-init";
 
-// Helper function to calculate required legs to win based on game mode
+/**
+ * Calculate required legs to win based on game mode and legsToWin setting.
+ * 
+ * IMPORTANT: The semantics of `legsToWin` differ based on `gameMode`:
+ * 
+ * - **firstTo mode**: `legsToWin` is the target number of legs to win the match
+ *   Example: firstTo 3 means "first player to win 3 legs wins the match"
+ * 
+ * - **bestOf mode**: `legsToWin` is the total number of legs in the match
+ *   Example: bestOf 7 means "best of 7 legs" = first to win 4 legs wins the match
+ *   Formula: Math.ceil(legsToWin / 2)
+ * 
+ * @param settings Game settings containing gameMode and legsToWin
+ * @returns The number of legs a player needs to win to win the match
+ */
 function calculateRequiredLegsToWin(settings: GameSettings): number {
   if (settings.gameMode === "firstTo") {
+    // In firstTo mode, legsToWin directly specifies the target
     return settings.legsToWin;
   }
-  // For "bestOf", calculate the first to X where X = (total + 1) / 2
-  // e.g., best of 7 means first to 4, best of 5 means first to 3
+  // In bestOf mode, legsToWin is the total legs, so we calculate the majority needed to win
+  // e.g., best of 7 means first to 4, best of 5 means first to 3, best of 3 means first to 2
   return Math.ceil(settings.legsToWin / 2);
 }
 
@@ -116,6 +131,10 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
       setPlayers(players) {
         set((state) => {
+          // Guard: Only support 1-2 players
+          if (players.length < 1 || players.length > 2) {
+            console.warn(`Invalid player count in setPlayers: ${players.length}. Must be 1-2 players.`);
+          }
           state.players = createPlayers(
             players,
             state.gameSettings.startingScore,
@@ -138,6 +157,16 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
       restorePendingGame(snapshot) {
         set((state) => {
+          // Guard: Validate player count in restored game
+          if (snapshot.players.length < 1 || snapshot.players.length > 2) {
+            console.warn(`Invalid player count in restored game: ${snapshot.players.length}. Clamping to 1-2 players.`);
+            snapshot.players = snapshot.players.slice(0, 2);
+            if (snapshot.players.length === 0) {
+              // Cannot restore a game with no players
+              console.error("Cannot restore game with no players");
+              return;
+            }
+          }
           state.matchId = snapshot.matchId;
           state.players = snapshot.players;
           state.activePlayerId = snapshot.activePlayerId;
@@ -176,10 +205,13 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           );
           if (activePlayer && state.currentVisitDarts.length > 0) {
             const currentLeg = state.historyLegs[state.currentLeg - 1];
-            const totalScore = state.currentVisitDarts.reduce(
-              (sum, dart) => sum + dart.validatedScore,
-              0,
-            );
+            const hasBust = state.currentVisitDarts.some((dart) => dart.isBust);
+            const totalScore = hasBust
+              ? 0
+              : state.currentVisitDarts.reduce(
+                  (sum, dart) => sum + dart.validatedScore,
+                  0,
+                );
             currentLeg?.visits.push({
               playerId: activePlayer.id,
               playerName: activePlayer.name,
