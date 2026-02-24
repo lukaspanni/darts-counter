@@ -1,6 +1,26 @@
 import { describe, expect, test } from "vitest";
 import { createGameStore } from "../src/lib/store";
 
+type GameState = ReturnType<ReturnType<typeof createGameStore>["getState"]>;
+
+const getFirstVisit = (state: GameState) => {
+  const visit = state.historyLegs[0]?.visits[0];
+  if (!visit) {
+    throw new Error("Expected a recorded visit in history");
+  }
+  return visit;
+};
+
+type Visit = ReturnType<typeof getFirstVisit>;
+
+const getVisitDart = (visit: Visit, index: number) => {
+  const dart = visit.darts[index];
+  if (!dart) {
+    throw new Error(`Expected dart at index ${index}`);
+  }
+  return dart;
+};
+
 describe("createGameStore bust visit recording", () => {
   test("records totalScore as 0 when bust occurs on first dart", () => {
     const store = createGameStore();
@@ -21,11 +41,10 @@ describe("createGameStore bust visit recording", () => {
     state.finishVisit();
 
     state = store.getState();
-    const visit = state.historyLegs[0].visits[0];
-    expect(visit).toBeDefined();
+    const visit = getFirstVisit(state);
     expect(visit.darts).toHaveLength(1);
-    expect(visit.darts[0].isBust).toBe(true);
-    expect(visit.darts[0].validatedScore).toBe(0);
+    expect(getVisitDart(visit, 0).isBust).toBe(true);
+    expect(getVisitDart(visit, 0).validatedScore).toBe(0);
     expect(visit.totalScore).toBe(0);
   });
 
@@ -50,13 +69,12 @@ describe("createGameStore bust visit recording", () => {
     state.finishVisit();
 
     state = store.getState();
-    const visit = state.historyLegs[0].visits[0];
-    expect(visit).toBeDefined();
+    const visit = getFirstVisit(state);
     expect(visit.darts).toHaveLength(2);
-    expect(visit.darts[0].isBust).toBe(false);
-    expect(visit.darts[0].validatedScore).toBe(20);
-    expect(visit.darts[1].isBust).toBe(true);
-    expect(visit.darts[1].validatedScore).toBe(0);
+    expect(getVisitDart(visit, 0).isBust).toBe(false);
+    expect(getVisitDart(visit, 0).validatedScore).toBe(20);
+    expect(getVisitDart(visit, 1).isBust).toBe(true);
+    expect(getVisitDart(visit, 1).validatedScore).toBe(0);
     expect(visit.totalScore).toBe(0); // Should be 0, not 20
   });
 
@@ -83,15 +101,14 @@ describe("createGameStore bust visit recording", () => {
     state.finishVisit();
 
     state = store.getState();
-    const visit = state.historyLegs[0].visits[0];
-    expect(visit).toBeDefined();
+    const visit = getFirstVisit(state);
     expect(visit.darts).toHaveLength(3);
-    expect(visit.darts[0].isBust).toBe(false);
-    expect(visit.darts[0].validatedScore).toBe(20);
-    expect(visit.darts[1].isBust).toBe(false);
-    expect(visit.darts[1].validatedScore).toBe(20);
-    expect(visit.darts[2].isBust).toBe(true);
-    expect(visit.darts[2].validatedScore).toBe(0);
+    expect(getVisitDart(visit, 0).isBust).toBe(false);
+    expect(getVisitDart(visit, 0).validatedScore).toBe(20);
+    expect(getVisitDart(visit, 1).isBust).toBe(false);
+    expect(getVisitDart(visit, 1).validatedScore).toBe(20);
+    expect(getVisitDart(visit, 2).isBust).toBe(true);
+    expect(getVisitDart(visit, 2).validatedScore).toBe(0);
     expect(visit.totalScore).toBe(0); // Should be 0, not 40
   });
 
@@ -116,12 +133,11 @@ describe("createGameStore bust visit recording", () => {
     state.finishVisit();
 
     state = store.getState();
-    const visit = state.historyLegs[0].visits[0];
-    expect(visit).toBeDefined();
+    const visit = getFirstVisit(state);
     expect(visit.darts).toHaveLength(3);
-    expect(visit.darts[0].isBust).toBe(false);
-    expect(visit.darts[1].isBust).toBe(false);
-    expect(visit.darts[2].isBust).toBe(false);
+    expect(getVisitDart(visit, 0).isBust).toBe(false);
+    expect(getVisitDart(visit, 1).isBust).toBe(false);
+    expect(getVisitDart(visit, 2).isBust).toBe(false);
     expect(visit.totalScore).toBe(180);
   });
 
@@ -144,11 +160,10 @@ describe("createGameStore bust visit recording", () => {
     state.finishVisit();
 
     state = store.getState();
-    const visit = state.historyLegs[0].visits[0];
-    expect(visit).toBeDefined();
+    const visit = getFirstVisit(state);
     expect(visit.darts).toHaveLength(1);
-    expect(visit.darts[0].isBust).toBe(true);
-    expect(visit.darts[0].validatedScore).toBe(0);
+    expect(getVisitDart(visit, 0).isBust).toBe(true);
+    expect(getVisitDart(visit, 0).validatedScore).toBe(0);
     expect(visit.totalScore).toBe(0);
   });
 
@@ -171,11 +186,10 @@ describe("createGameStore bust visit recording", () => {
     state.finishVisit();
 
     state = store.getState();
-    const visit = state.historyLegs[0].visits[0];
-    expect(visit).toBeDefined();
+    const visit = getFirstVisit(state);
     expect(visit.darts).toHaveLength(1);
-    expect(visit.darts[0].isBust).toBe(true);
-    expect(visit.darts[0].validatedScore).toBe(0);
+    expect(getVisitDart(visit, 0).isBust).toBe(true);
+    expect(getVisitDart(visit, 0).validatedScore).toBe(0);
     expect(visit.totalScore).toBe(0);
   });
 });
