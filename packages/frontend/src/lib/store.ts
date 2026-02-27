@@ -96,6 +96,67 @@ export type DartThrowResult = {
   matchWinner: number | null;
   isBust: boolean;
   currentVisitTotal: number;
+  events: GameActionEvent[];
+};
+
+export type VisitFinishedEvent = {
+  type: "visitFinished";
+  playerId: number;
+  playerName: string;
+  legNumber: number;
+  visitScore: number;
+  dartsInVisit: number;
+  isBust: boolean;
+};
+
+export type LegWonEvent = {
+  type: "legWon";
+  winnerId: number;
+  winnerName: string;
+  legNumber: number;
+  isMatchWin: boolean;
+};
+
+export type VisitMaxScoredEvent = {
+  type: "visitMaxScored";
+  playerId: number;
+  playerName: string;
+  legNumber: number;
+  score: 180;
+};
+
+export type LegStartedEvent = {
+  type: "legStarted";
+  legNumber: number;
+};
+
+export type DartThrownEvent = {
+  type: "dartThrown";
+  playerId: number;
+  playerName: string;
+  legNumber: number;
+  score: number;
+  modifier: ScoreModifier;
+  validatedScore: number;
+  isBust: boolean;
+  currentVisitTotal: number;
+};
+
+export type GameActionEvent =
+  | DartThrownEvent
+  | VisitMaxScoredEvent
+  | VisitFinishedEvent
+  | LegWonEvent
+  | LegStartedEvent;
+
+export type FinishVisitResult = {
+  completed: boolean;
+  events: GameActionEvent[];
+};
+
+export type StartNextLegResult = {
+  started: boolean;
+  events: GameActionEvent[];
 };
 
 export type UndoResult = {
@@ -118,8 +179,8 @@ export type GameStoreActions = {
 
   // Game play
   startGame(): void;
-  finishVisit(): void;
-  startNextLeg(): void;
+  finishVisit(): FinishVisitResult;
+  startNextLeg(): StartNextLegResult;
   resetGame(): void;
 
   // Logic
@@ -128,6 +189,22 @@ export type GameStoreActions = {
 };
 
 export type GameStore = GameStoreState & GameStoreActions & GameStoreSelectors;
+
+function getVisitStats(visitDarts: VisitDart[]) {
+  const dartsInVisit = visitDarts.length;
+  const hasBust = visitDarts.some((dart) => dart.isBust);
+  const currentVisitScore = hasBust
+    ? 0
+    : visitDarts.reduce((sum, dart) => sum + dart.validatedScore, 0);
+  const lastThrowBust = visitDarts.at(-1)?.isBust ?? false;
+
+  return {
+    dartsInVisit,
+    hasBust,
+    currentVisitScore,
+    lastThrowBust,
+  };
+}
 
 const initialSettings: GameSettings = {
   startingScore: 501,
@@ -230,6 +307,28 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
       },
 
       finishVisit() {
+        const state = get();
+        const activePlayer = state.players.find((p) => p.id === state.activePlayerId);
+        const { dartsInVisit, hasBust, currentVisitScore } = getVisitStats(
+          state.currentVisitDarts,
+        );
+
+        if (!activePlayer || dartsInVisit === 0) {
+          return { completed: false, events: [] };
+        }
+
+        const events: GameActionEvent[] = [
+          {
+            type: "visitFinished",
+            playerId: activePlayer.id,
+            playerName: activePlayer.name,
+            legNumber: state.currentLeg,
+            visitScore: currentVisitScore,
+            dartsInVisit,
+            isBust: hasBust,
+          },
+        ];
+
         set((state) => {
           const activePlayer = state.players.find(
             (p) => p.id === state.activePlayerId,
@@ -247,9 +346,21 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.currentVisitScores = [];
           state.currentVisitDarts = [];
         });
+
+        return {
+          completed: true,
+          events,
+        };
       },
 
       startNextLeg() {
+        const state = get();
+        if (state.legWinner === null) {
+          return { started: false, events: [] };
+        }
+
+        const nextLegNumber = state.currentLeg + 1;
+
         set((state) => {
           state.players.forEach((p) => {
             p.score = state.gameSettings.startingScore;
@@ -265,6 +376,11 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           });
           state.legWinner = null;
         });
+
+        return {
+          started: true,
+          events: [{ type: "legStarted", legNumber: nextLegNumber }],
+        };
       },
 
       resetGame() {
@@ -299,6 +415,40 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             (sum, s) => sum + s,
             0,
           ) ?? 0;
+        const currentVisitTotal = prevVisitTotal + validatedScore;
+        const events: GameActionEvent[] = [
+          {
+            type: "dartThrown",
+            playerId: player.id,
+            playerName: player.name,
+            legNumber: state.currentLeg,
+            score,
+            modifier,
+            validatedScore,
+            isBust,
+            currentVisitTotal,
+          },
+        ];
+
+        if (currentVisitTotal === 180) {
+          events.push({
+            type: "visitMaxScored",
+            playerId: player.id,
+            playerName: player.name,
+            legNumber: state.currentLeg,
+            score: 180,
+          });
+        }
+
+        if (isLegWin) {
+          events.push({
+            type: "legWon",
+            winnerId: player.id,
+            winnerName: player.name,
+            legNumber: state.currentLeg,
+            isMatchWin,
+          });
+        }
 
         set((state) => {
           const p = state.players.find((x) => x.id === state.activePlayerId);
@@ -349,7 +499,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           isLegWin,
           isMatchWin,
           matchWinner: isMatchWin ? player.id : null,
-          currentVisitTotal: prevVisitTotal + validatedScore,
+          currentVisitTotal,
+          events,
         };
       },
 
@@ -390,19 +541,17 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
       // Selectors
       getDartsInVisit() {
         const state = get();
-        return state.currentVisitDarts.length;
+        return getVisitStats(state.currentVisitDarts).dartsInVisit;
       },
 
       getCurrentVisitScore() {
         const state = get();
-        return state.currentVisitScores.reduce((sum, score) => sum + score, 0);
+        return getVisitStats(state.currentVisitDarts).currentVisitScore;
       },
 
       getIsBust() {
         const state = get();
-        if (state.currentVisitDarts.length === 0) return false;
-        const lastDart = state.currentVisitDarts[state.currentVisitDarts.length - 1];
-        return lastDart?.isBust ?? false;
+        return getVisitStats(state.currentVisitDarts).lastThrowBust;
       },
     })),
   );

@@ -23,6 +23,7 @@ import { useUiSettings } from "@/lib/hooks/use-ui-settings";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
 import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import type { ScoreModifier } from "@/lib/schemas";
+import type { GameActionEvent } from "@/lib/store";
 import { useGameStore } from "@/lib/store-provider";
 import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
@@ -63,6 +64,87 @@ export function GamePlay() {
   const canThrowMoreDarts =
     dartsInVisit < MAX_DARTS_PER_VISIT && !lastThrowBust;
   const showEnhancedView = settings.enhancedView;
+
+  const handleGameEvents = (events: GameActionEvent[]) => {
+    const isLiveStreamConnected =
+      liveStreamState.isActive && liveStreamState.status === "connected";
+
+    for (const event of events) {
+      if (event.type === "dartThrown") {
+        posthog.capture("dart_thrown", {
+          history_event: "dart_thrown",
+          leg_number: event.legNumber,
+          player_name: event.playerName,
+          score: event.score,
+          validated_score: event.validatedScore,
+          modifier: event.modifier,
+          is_bust: event.isBust,
+        });
+        continue;
+      }
+
+      if (event.type === "visitFinished") {
+        posthog.capture("visit_completed", {
+          history_event: "visit_completed",
+          leg_number: event.legNumber,
+          player_name: event.playerName,
+          visit_score: event.visitScore,
+          darts_in_visit: event.dartsInVisit,
+        });
+        setShow180(false);
+        continue;
+      }
+
+      if (event.type === "visitMaxScored") {
+        posthog.capture("180_scored", {
+          history_event: "180_scored",
+          leg_number: event.legNumber,
+        });
+        setShow180(true);
+        if (!settings.noBullshitMode) {
+          void confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+          });
+        }
+        continue;
+      }
+
+      if (event.type === "legWon") {
+        if (event.isMatchWin) {
+          if (isLiveStreamConnected) {
+            sendEvent({
+              type: "matchFinish",
+              winnerId: event.winnerId,
+            });
+          }
+
+          posthog.capture("match_won", {
+            history_event: "match_won",
+            leg_number: event.legNumber,
+            player_count: players.length,
+            player_name: event.winnerName,
+          });
+        } else {
+          posthog.capture("leg_won", {
+            history_event: "leg_won",
+            leg_number: event.legNumber,
+            player_count: players.length,
+          });
+        }
+
+        setShowLegWonModal(true);
+        if (!settings.noBullshitMode) {
+          void confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+          });
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     if (gameSettings.checkoutAssist && activePlayer) {
@@ -185,84 +267,18 @@ export function GamePlay() {
     modifier: ScoreModifier,
   ) => {
     const result = handleDartThrow(scoreAfterModifier, modifier);
-    const isLiveStreamConnected =
-      liveStreamState.isActive && liveStreamState.status === "connected";
-
-    posthog.capture("dart_thrown", {
-      history_event: "dart_thrown",
-      leg_number: currentLeg,
-      player_name: activePlayer.name,
-      score: scoreAfterModifier,
-      validated_score: result.validatedScore,
-      modifier,
-      is_bust: result.isBust,
-    });
-
-    if (result.isLegWin) {
-      if (result.isMatchWin && result.matchWinner !== null) {
-        if (isLiveStreamConnected) {
-          sendEvent({
-            type: "matchFinish",
-            winnerId: result.matchWinner,
-          });
-        }
-
-        posthog.capture("match_won", {
-          history_event: "match_won",
-          leg_number: currentLeg,
-          player_count: players.length,
-          player_name: activePlayer.name,
-        });
-      } else {
-        posthog.capture("leg_won", {
-          history_event: "leg_won",
-          leg_number: currentLeg,
-          player_count: players.length,
-        });
-      }
-
-      setShowLegWonModal(true);
-      if (!settings.noBullshitMode) {
-        void confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-      }
-      return;
-    }
-
-    if (result.currentVisitTotal === 180) {
-      posthog.capture("180_scored", {
-        history_event: "180_scored",
-        leg_number: currentLeg,
-      });
-      setShow180(true);
-      if (!settings.noBullshitMode) {
-        void confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-      }
-    }
+    handleGameEvents(result.events);
   };
 
   const endTurn = () => {
-    posthog.capture("visit_completed", {
-      history_event: "visit_completed",
-      leg_number: currentLeg,
-      player_name: activePlayer.name,
-      visit_score: currentScore,
-      darts_in_visit: dartsInVisit,
-    });
-    finishVisit();
-    setShow180(false);
+    const result = finishVisit();
+    handleGameEvents(result.events);
   };
 
   const handleLegComplete = () => {
     setShowLegWonModal(false);
-    startNextLeg();
+    const result = startNextLeg();
+    handleGameEvents(result.events);
     setShow180(false);
   };
 
