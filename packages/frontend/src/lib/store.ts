@@ -63,9 +63,6 @@ function recordVisit(
 
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
-function isDoubleCheckoutScore(score: number): boolean {
-  return score === 50 || (score > 0 && score <= 40 && score % 2 === 0);
-}
 
 export type GameStoreState = {
   gamePhase: GamePhase;
@@ -392,19 +389,20 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         const player = state.players.find((p) => p.id === state.activePlayerId);
         if (!player) throw new Error("Active player not found");
 
-        const { newScore, validatedScore, isBust, isLegWin } = computeDartThrow(
+        const {
+          newScore,
+          validatedScore,
+          isBust,
+          isLegWin,
+          isCheckoutAttempt,
+          isDoubleAttempt,
+          isMissedDouble,
+        } = computeDartThrow(
           player,
           score,
           modifier,
           state.gameSettings,
         );
-        const isCheckoutAttempt =
-          player.score <= 170 &&
-          player.score > 0 &&
-          (state.gameSettings.outMode === "single" || player.score !== 1);
-        const isDoubleAttempt =
-          modifier === "double" && isDoubleCheckoutScore(player.score);
-        const isMissedDouble = isDoubleAttempt && !isLegWin;
         const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
         const totalLegsAfterWin = player.legsWon + 1;
         const isMatchWin = isLegWin && totalLegsAfterWin >= requiredLegs;
