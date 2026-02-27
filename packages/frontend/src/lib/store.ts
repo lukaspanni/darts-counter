@@ -37,11 +37,32 @@ function calculateRequiredLegsToWin(settings: GameSettings): number {
   return Math.ceil(settings.legsToWin / 2);
 }
 
+function recordVisit(
+  state: GameStoreState,
+  player: Player,
+  darts: VisitDart[],
+): void {
+  if (darts.length === 0) return;
+  const currentLeg = state.historyLegs[state.currentLeg - 1];
+  if (!currentLeg) return;
+  const hasBust = darts.some((dart) => dart.isBust);
+  const totalScore = hasBust
+    ? 0
+    : darts.reduce((sum, dart) => sum + dart.validatedScore, 0);
+  currentLeg.visits.push({
+    playerId: player.id,
+    playerName: player.name,
+    legNumber: state.currentLeg,
+    darts: [...darts],
+    totalScore,
+    startedScore: player.score + totalScore,
+    endedScore: player.score,
+    timestamp: new Date().toISOString(),
+  });
+}
+
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
-function isDoubleCheckoutScore(score: number): boolean {
-  return score === 50 || (score > 0 && score <= 40 && score % 2 === 0);
-}
 
 export type GameStoreState = {
   gamePhase: GamePhase;
@@ -210,25 +231,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           const activePlayer = state.players.find(
             (p) => p.id === state.activePlayerId,
           );
-          if (activePlayer && state.currentVisitDarts.length > 0) {
-            const currentLeg = state.historyLegs[state.currentLeg - 1];
-            const hasBust = state.currentVisitDarts.some((dart) => dart.isBust);
-            const totalScore = hasBust
-              ? 0
-              : state.currentVisitDarts.reduce(
-                  (sum, dart) => sum + dart.validatedScore,
-                  0,
-                );
-            currentLeg?.visits.push({
-              playerId: activePlayer.id,
-              playerName: activePlayer.name,
-              legNumber: state.currentLeg,
-              darts: [...state.currentVisitDarts],
-              totalScore,
-              startedScore: activePlayer.score + totalScore,
-              endedScore: activePlayer.score,
-              timestamp: new Date().toISOString(),
-            });
+          if (activePlayer) {
+            recordVisit(state, activePlayer, state.currentVisitDarts);
           }
 
           if (state.players.length > 1) {
@@ -269,19 +273,20 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         const player = state.players.find((p) => p.id === state.activePlayerId);
         if (!player) throw new Error("Active player not found");
 
-        const { newScore, validatedScore, isBust, isLegWin } = computeDartThrow(
+        const {
+          newScore,
+          validatedScore,
+          isBust,
+          isLegWin,
+          isCheckoutAttempt,
+          isDoubleAttempt,
+          isMissedDouble,
+        } = computeDartThrow(
           player,
           score,
           modifier,
           state.gameSettings,
         );
-        const isCheckoutAttempt =
-          player.score <= 170 &&
-          player.score > 0 &&
-          (state.gameSettings.outMode === "single" || player.score !== 1);
-        const isDoubleAttempt =
-          modifier === "double" && isDoubleCheckoutScore(player.score);
-        const isMissedDouble = isDoubleAttempt && !isLegWin;
         const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
         const totalLegsAfterWin = player.legsWon + 1;
         const isMatchWin = isLegWin && totalLegsAfterWin >= requiredLegs;
@@ -320,23 +325,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
           if (isLegWin) {
             const currentLeg = state.historyLegs[state.currentLeg - 1];
-            const totalScore = state.currentVisitDarts.reduce(
-              (sum, dart) => sum + dart.validatedScore,
-              0,
-            );
-            currentLeg?.visits.push({
-              playerId: p.id,
-              playerName: p.name,
-              legNumber: state.currentLeg,
-              darts: [...state.currentVisitDarts],
-              totalScore,
-              startedScore: p.score + totalScore,
-              endedScore: p.score,
-              timestamp: new Date().toISOString(),
-            });
-            if (currentLeg) {
-              currentLeg.winnerPlayerId = p.id;
-            }
+            recordVisit(state, p, state.currentVisitDarts);
+            if (currentLeg) currentLeg.winnerPlayerId = p.id;
 
             state.currentVisitScores = [];
             state.currentVisitDarts = [];
