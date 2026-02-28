@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { GameType } from "@/lib/schemas";
 
 export default function StatsPage() {
   const { gameHistory } = useGameHistory();

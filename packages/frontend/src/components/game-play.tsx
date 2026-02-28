@@ -21,7 +21,6 @@ import {
 import { findCheckout } from "@/lib/core/checkout";
 import { subscribeToGameEvents } from "@/lib/game-events";
 import { useUiSettings } from "@/lib/hooks/use-ui-settings";
-import { useLiveStream } from "@/lib/hooks/use-live-stream";
 import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import type { ScoreModifier } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
@@ -35,7 +34,6 @@ export function GamePlay() {
   const players = useGameStore((state) => state.players);
   const activePlayerId = useGameStore((state) => state.activePlayerId);
   const gameSettings = useGameStore((state) => state.gameSettings);
-  const gamePhase = useGameStore((state) => state.gamePhase);
   const finishVisit = useGameStore((state) => state.finishVisit);
   const startNextLeg = useGameStore((state) => state.startNextLeg);
   const currentLeg = useGameStore((state) => state.currentLeg);
@@ -48,7 +46,6 @@ export function GamePlay() {
   const currentScore = useGameStore((state) => state.getCurrentVisitScore());
   const lastThrowBust = useGameStore((state) => state.getIsBust());
 
-  const { state: liveStreamState, sendEvent } = useLiveStream();
   const { clearPendingGame } = usePendingGame();
 
   const [showLegWonModal, setShowLegWonModal] = useState(false);
@@ -142,52 +139,6 @@ export function GamePlay() {
       return () => clearTimeout(timer);
     }
   }, [show180]);
-
-  // Send initial game state when live stream becomes active
-  useEffect(() => {
-    if (
-      liveStreamState.isActive &&
-      liveStreamState.status === "connected" &&
-      players.length > 0
-    ) {
-      // Send game update with current state
-      sendEvent({
-        type: "gameUpdate",
-        metadata: {
-          gameId: liveStreamState.connection?.gameId || "",
-          startingScore: gameSettings.startingScore,
-          outMode: gameSettings.outMode,
-          gameMode: gameSettings.gameMode,
-          legsToWin: gameSettings.legsToWin,
-          players: players.map((p) => ({
-            id: p.id,
-            name: p.name,
-            score: p.score,
-            legsWon: p.legsWon,
-            dartsThrown: p.dartsThrown,
-            totalScore: p.totalScore,
-          })),
-          currentLeg,
-          activePlayerId,
-          gamePhase,
-          legWinner,
-          matchWinner,
-        },
-      });
-    }
-  }, [
-    liveStreamState.isActive,
-    liveStreamState.status,
-    liveStreamState.connection,
-    players,
-    gameSettings,
-    currentLeg,
-    activePlayerId,
-    legWinner,
-    matchWinner,
-    gamePhase,
-    sendEvent,
-  ]);
 
   // Safety check: if no active player, render fallback
   if (!activePlayer) {

@@ -115,25 +115,25 @@ export type UndoResult = {
 
 export type GameStoreActions = {
   // Setup
-  setPlayers(players: Partial<Player>[]): void;
-  setGameSettings(settings: GameSettings): void;
+  setPlayers(this: void, players: Partial<Player>[]): void;
+  setGameSettings(this: void, settings: GameSettings): void;
 
   // Pre-game start
-  setActivePlayer(playerId: number): void;
+  setActivePlayer(this: void, playerId: number): void;
 
   // Game phase control
-  setGamePhase(phase: GamePhase): void;
-  restorePendingGame(snapshot: PendingGameSnapshot): void;
+  setGamePhase(this: void, phase: GamePhase): void;
+  restorePendingGame(this: void, snapshot: PendingGameSnapshot): void;
 
   // Game play
-  startGame(): void;
-  finishVisit(): FinishVisitResult;
-  startNextLeg(): StartNextLegResult;
-  resetGame(): void;
+  startGame(this: void): void;
+  finishVisit(this: void): FinishVisitResult;
+  startNextLeg(this: void): StartNextLegResult;
+  resetGame(this: void): void;
 
   // Logic
-  handleDartThrow(score: number, modifier: ScoreModifier): DartThrowResult;
-  handleUndoThrow(): UndoResult;
+  handleDartThrow(this: void, score: number, modifier: ScoreModifier): DartThrowResult;
+  handleUndoThrow(this: void): UndoResult;
 };
 
 export type GameStore = GameStoreState & GameStoreActions & GameStoreSelectors;

@@ -4,9 +4,61 @@ import { useEffect } from "react";
 import posthog from "posthog-js";
 import { subscribeToGameEvents } from "@/lib/game-events";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
+import { useGameStore } from "@/lib/store-provider";
 
 export function useGameEventEffects() {
   const { state: liveStreamState, sendEvent } = useLiveStream();
+  const players = useGameStore((state) => state.players);
+  const gameSettings = useGameStore((state) => state.gameSettings);
+  const currentLeg = useGameStore((state) => state.currentLeg);
+  const activePlayerId = useGameStore((state) => state.activePlayerId);
+  const gamePhase = useGameStore((state) => state.gamePhase);
+  const legWinner = useGameStore((state) => state.legWinner);
+  const matchWinner = useGameStore((state) => state.matchWinner);
+
+  useEffect(() => {
+    if (
+      liveStreamState.isActive &&
+      liveStreamState.status === "connected" &&
+      players.length > 0
+    ) {
+      sendEvent({
+        type: "gameUpdate",
+        metadata: {
+          gameId: liveStreamState.connection?.gameId || "",
+          startingScore: gameSettings.startingScore,
+          outMode: gameSettings.outMode,
+          gameMode: gameSettings.gameMode,
+          legsToWin: gameSettings.legsToWin,
+          players: players.map((player) => ({
+            id: player.id,
+            name: player.name,
+            score: player.score,
+            legsWon: player.legsWon,
+            dartsThrown: player.dartsThrown,
+            totalScore: player.totalScore,
+          })),
+          currentLeg,
+          activePlayerId,
+          gamePhase,
+          legWinner,
+          matchWinner,
+        },
+      });
+    }
+  }, [
+    liveStreamState.isActive,
+    liveStreamState.status,
+    liveStreamState.connection,
+    players,
+    gameSettings,
+    currentLeg,
+    activePlayerId,
+    gamePhase,
+    legWinner,
+    matchWinner,
+    sendEvent,
+  ]);
 
   useEffect(() => {
     const unsubscribe = subscribeToGameEvents((event) => {
