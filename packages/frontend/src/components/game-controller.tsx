@@ -4,13 +4,15 @@ import { GameSetup } from "@/components/game-setup";
 import { PreGameStart } from "@/components/pre-game-start";
 import { GamePlay } from "@/components/game-play";
 import { GameOver } from "@/components/game-over";
+import { useGameEventEffects } from "@/lib/hooks/use-game-event-effects";
 import { useGameHistory } from "@/lib/hooks/use-game-history";
 import { usePendingGame } from "@/lib/hooks/use-pending-game";
-import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/lib/store-provider";
 
 export function GameController() {
+  useGameEventEffects();
+
   const {
     gameSettings,
     currentLeg,
@@ -69,25 +71,6 @@ export function GameController() {
       clearPendingGame();
 
       const winnerPlayer = players.find((p) => p.id === matchWinner);
-      const winnerAverage =
-        winnerPlayer && winnerPlayer.dartsThrown > 0
-          ? Number(
-              (
-                (winnerPlayer.totalScore / winnerPlayer.dartsThrown) *
-                3
-              ).toFixed(2),
-            )
-          : 0;
-
-      posthog.capture("match_completed", {
-        history_event: "match_completed",
-        player_count: players.length,
-        legs_played: currentLeg,
-        starting_score: gameSettings.startingScore,
-        out_mode: gameSettings.outMode,
-        winner_average: winnerAverage,
-      });
-
       const newGameHistory = {
         id: matchId ?? crypto.randomUUID(),
         date: new Date().toISOString(),

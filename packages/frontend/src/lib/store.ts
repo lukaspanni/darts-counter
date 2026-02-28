@@ -9,6 +9,7 @@ import type {
   VisitDart,
   PendingGameSnapshot,
 } from "@/lib/schemas";
+import { emitGameEvent, type GameDomainEvent } from "./game-events";
 import { computeDartThrow } from "./core/darts-score";
 import { createPlayers } from "./core/player-init";
 
@@ -93,67 +94,17 @@ export type DartThrowResult = {
   matchWinner: number | null;
   isBust: boolean;
   currentVisitTotal: number;
-  events: GameActionEvent[];
+  events: GameDomainEvent[];
 };
-
-export type VisitFinishedEvent = {
-  type: "visitFinished";
-  playerId: number;
-  playerName: string;
-  legNumber: number;
-  visitScore: number;
-  dartsInVisit: number;
-  isBust: boolean;
-};
-
-export type LegWonEvent = {
-  type: "legWon";
-  winnerId: number;
-  winnerName: string;
-  legNumber: number;
-  isMatchWin: boolean;
-};
-
-export type VisitMaxScoredEvent = {
-  type: "visitMaxScored";
-  playerId: number;
-  playerName: string;
-  legNumber: number;
-  score: 180;
-};
-
-export type LegStartedEvent = {
-  type: "legStarted";
-  legNumber: number;
-};
-
-export type DartThrownEvent = {
-  type: "dartThrown";
-  playerId: number;
-  playerName: string;
-  legNumber: number;
-  score: number;
-  modifier: ScoreModifier;
-  validatedScore: number;
-  isBust: boolean;
-  currentVisitTotal: number;
-};
-
-export type GameActionEvent =
-  | DartThrownEvent
-  | VisitMaxScoredEvent
-  | VisitFinishedEvent
-  | LegWonEvent
-  | LegStartedEvent;
 
 export type FinishVisitResult = {
   completed: boolean;
-  events: GameActionEvent[];
+  events: GameDomainEvent[];
 };
 
 export type StartNextLegResult = {
   started: boolean;
-  events: GameActionEvent[];
+  events: GameDomainEvent[];
 };
 
 export type UndoResult = {
@@ -314,9 +265,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           return { completed: false, events: [] };
         }
 
-        const events: GameActionEvent[] = [
+        const events: GameDomainEvent[] = [
           {
-            type: "visitFinished",
+            type: "visitCompleted",
             playerId: activePlayer.id,
             playerName: activePlayer.name,
             legNumber: state.currentLeg,
@@ -343,6 +294,10 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.currentVisitScores = [];
           state.currentVisitDarts = [];
         });
+
+        for (const event of events) {
+          emitGameEvent(event);
+        }
 
         return {
           completed: true,
@@ -374,14 +329,35 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.legWinner = null;
         });
 
+        const events: GameDomainEvent[] = [
+          { type: "legStarted", legNumber: nextLegNumber },
+        ];
+
+        for (const event of events) {
+          emitGameEvent(event);
+        }
+
         return {
           started: true,
-          events: [{ type: "legStarted", legNumber: nextLegNumber }],
+          events,
         };
       },
 
       resetGame() {
+        const state = get();
+        const events: GameDomainEvent[] = [
+          {
+            type: "matchReset",
+            legNumber: state.currentLeg,
+            playerCount: state.players.length,
+          },
+        ];
+
         set(initialState);
+
+        for (const event of events) {
+          emitGameEvent(event);
+        }
       },
 
       handleDartThrow(score, modifier) {
@@ -406,6 +382,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
         const totalLegsAfterWin = player.legsWon + 1;
         const isMatchWin = isLegWin && totalLegsAfterWin >= requiredLegs;
+        const originalScore = player.score;
+        const playerCount = state.players.length;
 
         const currentLegIndex = state.currentLeg - 1;
         const prevVisitTotal =
@@ -414,7 +392,14 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             0,
           ) ?? 0;
         const currentVisitTotal = prevVisitTotal + validatedScore;
-        const events: GameActionEvent[] = [
+        const totalScoreAfter = player.totalScore + (originalScore - newScore);
+        const dartsThrownAfter = player.dartsThrown + 1;
+        const winnerAverage =
+          dartsThrownAfter > 0
+            ? Number(((totalScoreAfter / dartsThrownAfter) * 3).toFixed(2))
+            : 0;
+
+        const events: GameDomainEvent[] = [
           {
             type: "dartThrown",
             playerId: player.id,
@@ -445,6 +430,21 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             winnerName: player.name,
             legNumber: state.currentLeg,
             isMatchWin,
+            playerCount,
+          });
+        }
+
+        if (isMatchWin) {
+          events.push({
+            type: "matchWon",
+            winnerId: player.id,
+            winnerName: player.name,
+            legNumber: state.currentLeg,
+            playerCount,
+            winnerAverage,
+            legsPlayed: state.currentLeg,
+            startingScore: state.gameSettings.startingScore,
+            outMode: state.gameSettings.outMode,
           });
         }
 
@@ -453,7 +453,6 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           if (!p) return;
 
           const legIdx = state.currentLeg - 1;
-          const originalScore = p.score;
 
           p.score = newScore;
           p.totalScore += originalScore - newScore;
@@ -489,6 +488,10 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             }
           }
         });
+
+        for (const event of events) {
+          emitGameEvent(event);
+        }
 
         return {
           newScore,
