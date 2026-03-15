@@ -32,17 +32,27 @@ const featureFlags = parseFeatureFlags(
   featureFlagsElement?.textContent ?? null,
 );
 
-console.debug(
-  `Initializing Frontend PostHog client, bootstrapping with ${JSON.stringify(featureFlags)} `,
-);
+const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
-posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-  api_host: "/ph",
-  ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-  defaults: "2025-11-30",
-  capture_exceptions: true,
-  debug: process.env.NODE_ENV === "development",
-  bootstrap: {
-    featureFlags,
-  },
-});
+if (posthogKey) {
+  try {
+    console.debug(
+      `Initializing Frontend PostHog client, bootstrapping with ${JSON.stringify(featureFlags)} `,
+    );
+
+    posthog.init(posthogKey, {
+      api_host: "/ph",
+      ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+      defaults: "2025-11-30",
+      capture_exceptions: true,
+      debug: process.env.NODE_ENV === "development",
+      bootstrap: {
+        featureFlags,
+      },
+    });
+  } catch (error) {
+    console.warn("PostHog initialization failed:", error);
+  }
+} else {
+  console.debug("PostHog key not configured, skipping initialization");
+}
