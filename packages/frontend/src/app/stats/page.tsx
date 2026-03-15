@@ -30,20 +30,16 @@ function StatCard({
   subtitle,
   icon: Icon,
   accentClass,
-  delay = 0,
 }: {
   label: string;
   value: string | number;
   subtitle?: string;
   icon: React.ComponentType<{ className?: string }>;
   accentClass: string;
-  delay?: number;
 }) {
   return (
-    <div
-      className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-4 transition-all duration-300 hover:border-border hover:shadow-md"
-      style={{ animationDelay: `${delay}ms` }}
-    >
+    <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-4 transition-all duration-300 hover:border-border hover:shadow-md">
+
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -103,8 +99,13 @@ export default function StatsPage() {
     ].map((option) => [option.value, option.label]),
   );
 
+  const playerStats = useMemo(
+    () => calculatePlayerStats(filteredGameHistory),
+    [filteredGameHistory],
+  );
+
   const summaryStats = useMemo(() => {
-    const stats = calculatePlayerStats(filteredGameHistory);
+    const stats = playerStats;
     const totalGames = filteredGameHistory.length;
     const bestAvg = stats.reduce(
       (best, p) =>
@@ -130,7 +131,7 @@ export default function StatsPage() {
     );
 
     return { totalGames, bestAvg, mostWins, total180s, top180Player };
-  }, [filteredGameHistory]);
+  }, [filteredGameHistory, playerStats]);
 
   const seedMockData = () => {
     const mockData = generateMockGameHistory();
@@ -207,7 +208,7 @@ export default function StatsPage() {
             value={summaryStats.totalGames}
             icon={Target}
             accentClass="bg-primary/10 text-primary"
-            delay={0}
+
           />
           <StatCard
             label="Best Average"
@@ -215,7 +216,7 @@ export default function StatsPage() {
             subtitle={summaryStats.bestAvg.name}
             icon={TrendingUp}
             accentClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            delay={50}
+
           />
           <StatCard
             label="Most Wins"
@@ -223,7 +224,7 @@ export default function StatsPage() {
             subtitle={summaryStats.mostWins.name}
             icon={Trophy}
             accentClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
-            delay={100}
+
           />
           <StatCard
             label="Total 180s"
@@ -235,14 +236,14 @@ export default function StatsPage() {
             }
             icon={Flame}
             accentClass="bg-rose-500/10 text-rose-600 dark:text-rose-400"
-            delay={150}
+
           />
         </div>
 
         {/* Player Averages Section */}
         <section>
           <PlayerAverages
-            gameHistory={filteredGameHistory}
+            playerStats={playerStats}
             onPlayerSelect={handlePlayerSelect}
             selectedPlayer={selectedPlayer}
           />

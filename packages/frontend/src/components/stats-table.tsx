@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   ArrowUpDown,
@@ -30,7 +30,7 @@ function GameCard({
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-card p-4 transition-all duration-200 hover:border-border hover:shadow-sm">
+    <div className="group rounded-xl border border-border/50 bg-card p-4 transition-all duration-200 hover:border-border hover:shadow-sm">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -45,8 +45,9 @@ function GameCard({
         <Button
           variant="ghost"
           size="icon-xs"
-          className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/row:opacity-100 [.group\/row:hover_&]:opacity-100"
+          className="text-muted-foreground hover:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"
           onClick={() => onDelete(game.id)}
+          aria-label={`Delete game from ${format(new Date(game.date), "dd MMM yyyy")}`}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
@@ -117,7 +118,7 @@ export function StatsTable({
     );
   };
 
-  const filteredAndSortedGames = history
+  const filteredAndSortedGames = useMemo(() => history
     .filter((game) =>
       game.players.some((player) =>
         player.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -138,7 +139,7 @@ export function StatsTable({
         default:
           return 0;
       }
-    });
+    }), [history, searchTerm, sortField, sortDirection]);
 
   return (
     <div className="space-y-4">
@@ -150,9 +151,10 @@ export function StatsTable({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
+            aria-label="Search players"
           />
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-muted/30 p-0.5">
+        <div className="flex shrink-0 items-center gap-1 rounded-lg border border-border/50 bg-muted/30 p-0.5">
           {(
             [
               { field: "date" as SortField, label: "Date" },
@@ -163,8 +165,9 @@ export function StatsTable({
             <button
               key={field}
               onClick={() => handleSort(field)}
+              aria-label={`Sort by ${label}`}
               className={cn(
-                "flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                "flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors",
                 sortField === field
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowUpDown,
   ChevronDown,
@@ -8,15 +8,14 @@ import {
   Crown,
   ChevronRight,
 } from "lucide-react";
-import { calculatePlayerStats, type PlayerStats } from "@/lib/player-stats";
-import type { GameHistory } from "@/lib/schemas";
+import type { PlayerStats } from "@/lib/player-stats";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type SortField = "name" | "matchesPlayed" | "matchesWon" | "averagePerVisit";
 
 interface PlayerAveragesProps {
-  gameHistory: GameHistory[];
+  playerStats: PlayerStats[];
   onPlayerSelect?: (playerName: string) => void;
   selectedPlayer?: string;
 }
@@ -65,6 +64,8 @@ function PlayerCard({
   return (
     <button
       onClick={onClick}
+      aria-pressed={isSelected}
+      aria-label={`View ${player.name}'s progression`}
       className={cn(
         "group w-full cursor-pointer rounded-xl border p-4 text-left transition-all duration-200",
         isSelected
@@ -159,15 +160,13 @@ function PlayerCard({
 }
 
 export function PlayerAverages({
-  gameHistory,
+  playerStats,
   onPlayerSelect,
   selectedPlayer,
 }: PlayerAveragesProps) {
   const [sortField, setSortField] = useState<SortField>("matchesWon");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showAdvancedStats, setShowAdvancedStats] = useState(false);
-
-  const playerStats = calculatePlayerStats(gameHistory);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -188,7 +187,7 @@ export function PlayerAverages({
     );
   };
 
-  const sortedStats = [...playerStats].sort((a, b) => {
+  const sortedStats = useMemo(() => [...playerStats].sort((a, b) => {
     const multiplier = sortDirection === "asc" ? 1 : -1;
     switch (sortField) {
       case "name":
@@ -202,7 +201,7 @@ export function PlayerAverages({
       default:
         return 0;
     }
-  });
+  }), [playerStats, sortField, sortDirection]);
 
   const handlePlayerClick = (player: PlayerStats) => {
     if (onPlayerSelect) {
@@ -227,15 +226,16 @@ export function PlayerAverages({
             Click a player to view their progression
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto">
           <Button
             variant={showAdvancedStats ? "secondary" : "outline"}
             size="sm"
             onClick={() => setShowAdvancedStats((prev) => !prev)}
+            className="shrink-0"
           >
             {showAdvancedStats ? "Simple" : "Detailed"}
           </Button>
-          <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-muted/30 p-0.5">
+          <div className="flex shrink-0 items-center gap-1 rounded-lg border border-border/50 bg-muted/30 p-0.5">
             {(
               [
                 { field: "matchesWon" as SortField, label: "Wins" },
@@ -247,8 +247,9 @@ export function PlayerAverages({
               <button
                 key={field}
                 onClick={() => handleSort(field)}
+                aria-label={`Sort by ${label}`}
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                  "flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors",
                   sortField === field
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
