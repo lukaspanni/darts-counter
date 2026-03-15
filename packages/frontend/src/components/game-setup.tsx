@@ -1,31 +1,16 @@
 import "client-only";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Switch } from "@/components/ui/switch";
 import { gameSettingsSchema } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import posthog from "posthog-js";
 import { z } from "zod";
+import { ArrowRight, RotateCcw } from "lucide-react";
 
 const gameSetupSchema = gameSettingsSchema.extend({
   startingScore: z.enum(["301", "501"]),
@@ -51,11 +36,11 @@ const outModeOptions = [
 ];
 
 const gameModeOptions = [
-  { value: "bestOf", label: "Best of X legs" },
-  { value: "firstTo", label: "First to X legs" },
+  { value: "bestOf", label: "Best of" },
+  { value: "firstTo", label: "First to" },
 ];
 
-const legsToWinOptions = [
+const legsOptions = [
   { value: "3", label: "3" },
   { value: "5", label: "5" },
   { value: "6", label: "6" },
@@ -82,19 +67,16 @@ export function GameSetup() {
     },
   });
 
-  // Watch the gameMode to provide contextual help text
   const gameMode = form.watch("gameMode");
   const legsToWin = form.watch("legsToWin");
 
-  // Calculate description based on game mode to clarify semantics
   const getLegsDescription = () => {
     const legs = Number.parseInt(legsToWin || "3");
     if (gameMode === "firstTo") {
       return `First player to win ${legs} legs wins the match`;
-    } else {
-      const required = Math.ceil(legs / 2);
-      return `Best of ${legs} legs (first to ${required} wins the match)`;
     }
+    const required = Math.ceil(legs / 2);
+    return `Best of ${legs} legs — first to ${required} wins`;
   };
 
   const onSubmit = (data: GameSetupFormValues) => {
@@ -131,218 +113,192 @@ export function GameSetup() {
   };
 
   const hasPendingGame = pendingGame?.status === "pending";
+  const player1Error = form.formState.errors.player1?.message;
 
   return (
-    <Card className="w-full lg:mx-auto lg:w-xl">
-      <CardHeader>
-        <CardTitle className="text-center">New Match Setup</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {hasPendingGame && (
-          <div className="mb-6 rounded-lg border p-4">
-            <p className="mb-3 text-sm font-medium">Pending game found</p>
-            <p className="text-muted-foreground mb-4 text-sm">
-              Continue your previous game or discard it and start a new match.
+    <div className="w-full lg:mx-auto lg:max-w-xl">
+      {hasPendingGame && (
+        <div className="border-primary/20 dark:border-primary/30 bg-primary/5 dark:bg-primary/10 mb-6 flex items-center justify-between gap-4 rounded-lg border px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">You have an unfinished game</p>
+            <p className="text-muted-foreground text-xs">
+              Pick up where you left off, or start fresh.
             </p>
-            <div className="flex gap-2">
-              <Button
-                className="flex-1"
-                onClick={() => restorePendingGame(pendingGame.snapshot)}
-              >
-                Continue game
-              </Button>
-              <Button
-                className="flex-1"
-                variant="outline"
-                onClick={clearPendingGame}
-              >
-                Discard pending game
-              </Button>
-            </div>
           </div>
-        )}
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
+          <div className="flex shrink-0 gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={clearPendingGame}
+              className="text-muted-foreground"
+            >
+              Discard
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => restorePendingGame(pendingGame.snapshot)}
+            >
+              <RotateCcw className="size-3.5" />
+              Resume
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <h2 className="mb-6 text-2xl font-bold tracking-tight">New Match</h2>
+
+        {/* Game Rules */}
+        <div className="space-y-5">
+          <fieldset>
+            <legend className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+              Starting Score
+            </legend>
+            <Controller
               control={form.control}
               name="startingScore"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Starting Score</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value) => field.onChange(value ?? "")}
-                    items={startingScoreOptions}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select starting score" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {startingScoreOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+                <SegmentedControl
+                  options={startingScoreOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
               )}
             />
+          </fieldset>
 
-            <FormField
+          <fieldset>
+            <legend className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+              Out Mode
+            </legend>
+            <Controller
               control={form.control}
               name="outMode"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Game Mode</FormLabel>
-                  <Select
+                <SegmentedControl
+                  options={outModeOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
+              )}
+            />
+          </fieldset>
+
+          <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+            <fieldset>
+              <legend className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+                Match Format
+              </legend>
+              <Controller
+                control={form.control}
+                name="gameMode"
+                render={({ field }) => (
+                  <SegmentedControl
+                    options={gameModeOptions}
                     value={field.value}
-                    onValueChange={(value) => field.onChange(value ?? "")}
-                    items={outModeOptions}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select game mode" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {outModeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    onValueChange={field.onChange}
+                  />
+                )}
+              />
+            </fieldset>
 
-            <FormField
-              control={form.control}
-              name="gameMode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Match Format</FormLabel>
-                  <Select
+            <fieldset>
+              <legend className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+                Legs
+              </legend>
+              <Controller
+                control={form.control}
+                name="legsToWin"
+                render={({ field }) => (
+                  <SegmentedControl
+                    options={legsOptions}
                     value={field.value}
-                    onValueChange={(value) => field.onChange(value ?? "")}
-                    items={gameModeOptions}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select match format" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {gameModeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    onValueChange={field.onChange}
+                  />
+                )}
+              />
+            </fieldset>
+          </div>
 
-            <FormField
-              control={form.control}
-              name="legsToWin"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Number of Legs</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value) => field.onChange(value ?? "")}
-                    items={legsToWinOptions}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select number of legs" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {legsToWinOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>{getLegsDescription()}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <p className="text-muted-foreground text-xs">
+            {getLegsDescription()}
+          </p>
+        </div>
 
-            <FormField
-              control={form.control}
-              name="player1"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Player 1 Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter name"
-                      className="w-full"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {/* Divider */}
+        <div className="border-border my-6 border-t" />
 
-            <FormField
-              control={form.control}
-              name="player2"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Player 2 Name (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter name for 2-player mode"
-                      className="w-full"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {/* Players */}
+        <fieldset className="space-y-5">
+          <legend className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+            Players
+          </legend>
 
-            <FormField
-              control={form.control}
-              name="checkoutAssist"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>Checkout Assist</FormLabel>
-                    <FormMessage />
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={(checked: boolean) =>
-                        field.onChange(checked)
-                      }
-                    />
-                  </FormControl>
-                </FormItem>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="player1"
+                className="mb-1.5 block text-sm font-medium"
+              >
+                Player 1
+              </label>
+              <Input
+                id="player1"
+                placeholder="Name"
+                aria-invalid={!!player1Error}
+                aria-describedby={player1Error ? "player1-error" : undefined}
+                {...form.register("player1")}
+              />
+              {player1Error && (
+                <p id="player1-error" className="text-destructive mt-1 text-xs">
+                  {player1Error}
+                </p>
               )}
-            />
+            </div>
+            <div>
+              <label
+                htmlFor="player2"
+                className="text-muted-foreground mb-1.5 block text-sm font-medium"
+              >
+                Player 2
+                <span className="ml-1 font-normal">(optional)</span>
+              </label>
+              <Input
+                id="player2"
+                placeholder="Leave empty for solo"
+                {...form.register("player2")}
+              />
+            </div>
+          </div>
+        </fieldset>
 
-            <Button type="submit" className="w-full">
-              Continue
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        {/* Divider */}
+        <div className="border-border my-6 border-t" />
+
+        {/* Footer: checkout assist + submit */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Controller
+            control={form.control}
+            name="checkoutAssist"
+            render={({ field }) => (
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                <span className="text-sm font-medium select-none">
+                  Checkout assist
+                </span>
+              </label>
+            )}
+          />
+
+          <Button type="submit" size="lg">
+            Continue
+            <ArrowRight className="size-4" />
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }
