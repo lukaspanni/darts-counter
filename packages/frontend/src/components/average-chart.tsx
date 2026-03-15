@@ -15,23 +15,60 @@ import {
 import { calculatePlayerAverageHistory } from "@/lib/player-stats";
 import type { GameHistory } from "@/lib/schemas";
 import { format } from "date-fns";
+import { TrendingUp } from "lucide-react";
 
 interface AverageChartProps {
   gameHistory: GameHistory[];
   selectedPlayer?: string;
 }
 
-// Color palette for different players
 const COLORS = [
-  "#3b82f6", // blue
-  "#ef4444", // red
-  "#10b981", // green
-  "#f59e0b", // amber
-  "#8b5cf6", // violet
-  "#ec4899", // pink
-  "#06b6d4", // cyan
-  "#f97316", // orange
+  "hsl(260, 80%, 55%)", // purple (matches primary)
+  "hsl(350, 75%, 55%)", // rose
+  "hsl(160, 60%, 45%)", // emerald
+  "hsl(40, 90%, 55%)",  // amber
+  "hsl(200, 80%, 55%)", // sky
+  "hsl(320, 70%, 55%)", // pink
+  "hsl(180, 60%, 45%)", // teal
+  "hsl(25, 90%, 55%)",  // orange
 ];
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number; color?: string }>;
+  label?: number;
+}) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-popover px-3 py-2 shadow-lg">
+      <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+        {format(new Date(label ?? 0), "dd MMM yyyy")}
+      </p>
+      {payload.map((entry) => (
+        <div
+          key={entry.name}
+          className="flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-1.5">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-xs">{entry.name}</span>
+          </div>
+          <span className="text-xs font-semibold tabular-nums">
+            {typeof entry.value === "number" ? entry.value.toFixed(1) : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function AverageChart({
   gameHistory,
@@ -41,7 +78,6 @@ export function AverageChart({
     const history = calculatePlayerAverageHistory(gameHistory, selectedPlayer);
 
     if (selectedPlayer) {
-      // Single player view - simple format with date
       return {
         chartData: history.map((item) => ({
           date: new Date(item.date).getTime(),
@@ -52,7 +88,6 @@ export function AverageChart({
       };
     }
 
-    // Multi-player view - group by date, using all game dates for x-axis
     const allDates = new Set<number>();
     const playerDataByDate = new Map<string, Map<number, number>>();
 
@@ -66,7 +101,6 @@ export function AverageChart({
       playerDataByDate.get(item.name)!.set(dateTime, item.average);
     });
 
-    // Create chart data with all dates, filling in player values where they exist
     const chartData = Array.from(allDates)
       .sort((a, b) => a - b)
       .map((dateTime) => {
@@ -76,11 +110,9 @@ export function AverageChart({
         };
 
         playerDataByDate.forEach((dateMap, playerName) => {
-          // Only set value if player has data for this date
           if (dateMap.has(dateTime)) {
             dataPoint[playerName] = dateMap.get(dateTime)!;
           }
-          // Otherwise leave undefined for connectNulls to interpolate
         });
 
         return dataPoint;
@@ -94,57 +126,73 @@ export function AverageChart({
 
   if (chartData.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-md border">
-        <p className="text-muted-foreground">No data available for the chart</p>
+      <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border/50">
+        <TrendingUp className="mb-2 h-8 w-8 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground">
+          Not enough data for the chart
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-4">
-      <h3 className="text-xl font-semibold">
-        {selectedPlayer
-          ? `Average Progression - ${selectedPlayer}`
-          : "Average Progression"}
-      </h3>
-      <div className="rounded-md border p-4">
-        <ResponsiveContainer width="100%" height={400}>
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold tracking-tight">
+          {selectedPlayer
+            ? `${selectedPlayer}'s Progression`
+            : "Average Progression"}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Running 3-dart average over time
+        </p>
+      </div>
+      <div className="rounded-xl border border-border/50 bg-card p-3 sm:p-4">
+        <ResponsiveContainer width="100%" height={350}>
           <LineChart
             data={chartData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="hsl(var(--border))"
+              strokeOpacity={0.5}
+            />
             <XAxis
               dataKey="date"
               type="number"
               domain={["auto", "auto"]}
               scale="time"
               tickFormatter={(timestamp: number) =>
-                format(new Date(timestamp), "dd.MM.yy")
+                format(new Date(timestamp), "dd MMM")
               }
-              label={{ value: "Date", position: "insideBottom", offset: -5 }}
+              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis
-              label={{
-                value: "Average (per visit)",
-                angle: -90,
-                position: "insideLeft",
-              }}
+              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tickLine={false}
+              axisLine={false}
+              width={48}
             />
-            <Tooltip
-              labelFormatter={(timestamp) =>
-                format(new Date(timestamp as number), "dd.MM.yyyy")
-              }
+            <Tooltip content={<CustomTooltip />} />
+            <Legend
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
             />
-            <Legend />
-            <Brush
-              dataKey="date"
-              height={30}
-              stroke="#8884d8"
-              tickFormatter={(timestamp: number) =>
-                format(new Date(timestamp), "dd.MM")
-              }
-            />
+            {chartData.length > 10 && (
+              <Brush
+                dataKey="date"
+                height={24}
+                stroke="hsl(var(--border))"
+                fill="hsl(var(--muted))"
+                tickFormatter={(timestamp: number) =>
+                  format(new Date(timestamp), "dd.MM")
+                }
+              />
+            )}
             {players.map((player, index) => (
               <Line
                 key={player}
@@ -152,8 +200,12 @@ export function AverageChart({
                 dataKey={player}
                 stroke={COLORS[index % COLORS.length]}
                 strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
+                dot={{ r: 3, strokeWidth: 0, fill: COLORS[index % COLORS.length] }}
+                activeDot={{
+                  r: 5,
+                  strokeWidth: 2,
+                  stroke: "hsl(var(--background))",
+                }}
                 connectNulls
               />
             ))}
