@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { getViewerManager } from "@/lib/live-stream-manager";
+import { getViewerManager, removeViewerManager } from "@/lib/live-stream-manager";
 import type {
   ServerEvent,
   LiveStreamGameMetadata,
@@ -237,8 +237,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
       unsubscribe();
       unsubscribeState();
       clearStaleTimeout();
-      // Don't disconnect on cleanup - the singleton handles this
-      // Only remove if navigating away from this game entirely
+      removeViewerManager(gameId);
     };
   }, [gameId]);
 

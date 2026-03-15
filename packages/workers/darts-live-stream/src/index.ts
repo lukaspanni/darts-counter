@@ -8,6 +8,7 @@
 
 export { GameRegistry } from './game-registry';
 export { Game } from './game';
+export { RateLimiter } from './rate-limiter';
 
 const GAME_REGISTRY_DO_NAME = 'GameRegistry';
 const PATH_REGEX = /^\/game(\/([a-z0-9-]{36}))?\/?$/i;
@@ -67,6 +68,22 @@ const withCors = (response: Response, request: Request): Response => {
  * @returns a Response object with the game ID and host secret needed to initialize the websocket connection
  */
 const handleCreateGame = async (request: Request, env: Env, ctx: ExecutionContext): Promise<Response> => {
+	// Rate limit by client IP
+	const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+	const rateLimiterId = env.RATE_LIMITER.idFromName(clientIp);
+	const rateLimiter = env.RATE_LIMITER.get(rateLimiterId);
+	const { allowed, retryAfter } = await rateLimiter.checkLimit();
+
+	if (!allowed) {
+		return new Response(JSON.stringify({ error: 'Too many games created, try again later' }), {
+			status: 429,
+			headers: {
+				'Content-Type': 'application/json',
+				'Retry-After': String(retryAfter),
+			},
+		});
+	}
+
 	const gameId = crypto.randomUUID();
 	const hostSecret = Array.from(crypto.getRandomValues(new Uint8Array(16)))
 		.map((b) => b.toString(16).padStart(2, '0'))

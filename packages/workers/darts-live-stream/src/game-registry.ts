@@ -17,7 +17,12 @@ export class GameRegistry extends DurableObject<Env> {
 	async registerGame(gameId: string): Promise<void> {
 		const timestamp = Date.now();
 
-		const games = (await this.ctx.storage.get<GameRegistryEntry[]>('games')) || [];
+		let games = (await this.ctx.storage.get<GameRegistryEntry[]>('games')) || [];
+
+		// Clean up old entries on registration to prevent unbounded growth
+		const cutoffTime = timestamp - 24 * 60 * 60 * 1000;
+		games = games.filter((g) => g.createdAt > cutoffTime);
+
 		games.push({ gameId, createdAt: timestamp });
 
 		// Store the updated list
