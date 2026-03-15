@@ -110,7 +110,7 @@ export function StatsTable({
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field)
-      return <ArrowUpDown className="inline h-3.5 w-3.5 opacity-40" />;
+      return <ArrowUpDown className="inline h-3.5 w-3.5 opacity-60" />;
     return sortDirection === "asc" ? (
       <ChevronUp className="inline h-3.5 w-3.5" />
     ) : (

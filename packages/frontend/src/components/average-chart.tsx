@@ -23,14 +23,14 @@ interface AverageChartProps {
 }
 
 const COLORS = [
-  "hsl(260, 80%, 55%)", // purple (matches primary)
-  "hsl(350, 75%, 55%)", // rose
-  "hsl(160, 60%, 45%)", // emerald
-  "hsl(40, 90%, 55%)",  // amber
-  "hsl(200, 80%, 55%)", // sky
-  "hsl(320, 70%, 55%)", // pink
-  "hsl(180, 60%, 45%)", // teal
-  "hsl(25, 90%, 55%)",  // orange
+  "hsl(260, 80%, 70%)", // purple
+  "hsl(350, 80%, 65%)", // rose
+  "hsl(160, 60%, 55%)", // emerald
+  "hsl(40, 90%, 60%)",  // amber
+  "hsl(200, 80%, 65%)", // sky
+  "hsl(320, 70%, 65%)", // pink
+  "hsl(180, 60%, 55%)", // teal
+  "hsl(25, 90%, 60%)",  // orange
 ];
 
 function CustomTooltip({
@@ -127,7 +127,7 @@ export function AverageChart({
   if (chartData.length === 0) {
     return (
       <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-dashed border-border/50">
-        <TrendingUp className="mb-2 h-8 w-8 text-muted-foreground/40" />
+        <TrendingUp className="mb-2 h-8 w-8 text-muted-foreground/70" />
         <p className="text-sm text-muted-foreground">
           Not enough data for the chart
         </p>

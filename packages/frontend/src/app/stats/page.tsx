@@ -205,7 +205,7 @@ export default function StatsPage() {
             label="Total Games"
             value={summaryStats.totalGames}
             icon={Target}
-            accentClass="bg-primary/10 text-primary"
+            accentClass="bg-purple-500/10 text-purple-600 dark:text-purple-400"
 
           />
           <StatCard

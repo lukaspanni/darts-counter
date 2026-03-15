@@ -38,7 +38,7 @@ function PlayerStatBadge({
       <span
         className={cn(
           "text-sm font-semibold tabular-nums",
-          highlight && "text-primary",
+          highlight && "text-purple-600 dark:text-purple-400",
         )}
       >
         {value}
@@ -72,7 +72,7 @@ function PlayerCard({
       className={cn(
         "group w-full cursor-pointer rounded-xl border p-4 text-left transition-all duration-200",
         isSelected
-          ? "border-primary/50 bg-primary/5 shadow-sm ring-1 ring-primary/20"
+          ? "border-purple-500/60 bg-primary/5 shadow-sm ring-1 ring-purple-500/40 dark:border-purple-400/50 dark:ring-purple-400/30"
           : "border-border/50 bg-card hover:border-border hover:shadow-sm",
       )}
     >
@@ -85,10 +85,10 @@ function PlayerCard({
               showRankStyle && rank === 1
                 ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
                 : showRankStyle && rank === 2
-                  ? "bg-gray-300/20 text-gray-500 dark:text-gray-400"
+                  ? "bg-gray-300/20 text-gray-500 dark:text-gray-300"
                   : showRankStyle && rank === 3
                     ? "bg-orange-400/15 text-orange-600 dark:text-orange-400"
-                    : "bg-muted text-muted-foreground",
+                    : "bg-muted text-foreground/70",
             )}
           >
             {showRankStyle && rank === 1 ? (
@@ -107,7 +107,7 @@ function PlayerCard({
         <ChevronRight
           className={cn(
             "h-4 w-4 text-muted-foreground transition-transform duration-200",
-            isSelected && "rotate-90 text-primary",
+            isSelected && "rotate-90 text-purple-600 dark:text-purple-400",
           )}
         />
       </div>
@@ -183,7 +183,7 @@ export function PlayerAverages({
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field)
-      return <ArrowUpDown className="inline h-3.5 w-3.5 opacity-40" />;
+      return <ArrowUpDown className="inline h-3.5 w-3.5 opacity-60" />;
     return sortDirection === "asc" ? (
       <ChevronUp className="inline h-3.5 w-3.5" />
     ) : (
