@@ -63,8 +63,9 @@ export class Game extends DurableObject<Env> {
 		if (!idOk) return new Response(`Invalid session ID: ${idError.message}`, { status: 400 });
 
 		// Check if this is a host connection
+		// Require non-empty hostSecret to prevent empty-string match edge cases
 		const hostSecret = request.headers.get('X-DO-Host-Secret');
-		const isHost = hostSecret === this.state.hostSecret;
+		const isHost = !!hostSecret && hostSecret === this.state.hostSecret;
 		const role = isHost ? 'host' : 'viewer';
 
 		const { 0: client, 1: server } = new WebSocketPair();
@@ -192,15 +193,20 @@ export class Game extends DurableObject<Env> {
 
 			const event = result.data;
 
-			// Handle gameUpdate to store metadata
+			// Handle gameUpdate to store metadata and persist activity
 			if (event.type === 'gameUpdate') {
 				this.state.metadata = event.metadata;
 				await this.ctx.storage.put('state', this.state);
 			}
 
+			// Heartbeat only needs to persist lastActivity (already updated above)
 			if (event.type === 'heartbeat') {
-				this.state.lastActivity = Date.now();
 				await this.ctx.storage.put('state', this.state);
+			}
+
+			// Don't broadcast heartbeats to viewers — they're only for keeping the DO alive
+			if (event.type === 'heartbeat') {
+				return;
 			}
 
 			// Broadcast to all viewers (and other host connections)
@@ -213,6 +219,7 @@ export class Game extends DurableObject<Env> {
 			let broadcastSuccessCount = 0;
 			let broadcastFailCount = 0;
 			const broadcastErrors: string[] = [];
+			const deadSockets: WebSocket[] = [];
 
 			this.ctx.getWebSockets().forEach((client) => {
 				const clientSession = this.sessions.get(client);
@@ -224,9 +231,20 @@ export class Game extends DurableObject<Env> {
 					} catch (sendError) {
 						broadcastFailCount++;
 						broadcastErrors.push(`${clientSession.id}:${String(sendError)}`);
+						deadSockets.push(client);
 					}
 				}
 			});
+
+			// Clean up dead sockets that failed to receive broadcasts
+			for (const deadSocket of deadSockets) {
+				this.sessions.delete(deadSocket);
+				try {
+					deadSocket.close(1011, 'Send failed');
+				} catch {
+					// Socket already closed
+				}
+			}
 
 			console.log(
 				'[Game:EventReceived]',
