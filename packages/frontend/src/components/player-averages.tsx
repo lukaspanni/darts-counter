@@ -7,9 +7,10 @@ import {
   ChevronUp,
   Crown,
   ChevronRight,
+  Search,
 } from "lucide-react";
 import type { PlayerStats } from "@/lib/player-stats";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type SortField = "name" | "matchesPlayed" | "matchesWon" | "averagePerVisit";
@@ -169,6 +170,7 @@ export function PlayerAverages({
   const [sortField, setSortField] = useState<SortField>("matchesWon");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [showAdvancedStats, setShowAdvancedStats] = useState(false);
+  const [nameFilter, setNameFilter] = useState("");
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -189,21 +191,28 @@ export function PlayerAverages({
     );
   };
 
-  const sortedStats = useMemo(() => [...playerStats].sort((a, b) => {
-    const multiplier = sortDirection === "asc" ? 1 : -1;
-    switch (sortField) {
-      case "name":
-        return a.name.localeCompare(b.name) * multiplier;
-      case "matchesPlayed":
-        return (a.matchesPlayed - b.matchesPlayed) * multiplier;
-      case "matchesWon":
-        return (a.matchesWon - b.matchesWon) * multiplier;
-      case "averagePerVisit":
-        return (a.averagePerVisit - b.averagePerVisit) * multiplier;
-      default:
-        return 0;
-    }
-  }), [playerStats, sortField, sortDirection]);
+  const sortedStats = useMemo(() => {
+    const filtered = nameFilter
+      ? playerStats.filter((p) =>
+          p.name.toLowerCase().includes(nameFilter.toLowerCase()),
+        )
+      : playerStats;
+    return [...filtered].sort((a, b) => {
+      const multiplier = sortDirection === "asc" ? 1 : -1;
+      switch (sortField) {
+        case "name":
+          return a.name.localeCompare(b.name) * multiplier;
+        case "matchesPlayed":
+          return (a.matchesPlayed - b.matchesPlayed) * multiplier;
+        case "matchesWon":
+          return (a.matchesWon - b.matchesWon) * multiplier;
+        case "averagePerVisit":
+          return (a.averagePerVisit - b.averagePerVisit) * multiplier;
+        default:
+          return 0;
+      }
+    });
+  }, [playerStats, sortField, sortDirection, nameFilter]);
 
   const handlePlayerClick = (player: PlayerStats) => {
     if (onPlayerSelect) {
@@ -221,47 +230,84 @@ export function PlayerAverages({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-start 2xl:flex-row 2xl:items-center">
-        <div>
-          <h3 className="text-lg font-semibold tracking-tight">Players</h3>
-          <p className="text-sm text-muted-foreground">
-            Click a player to view their progression
-          </p>
-        </div>
-        <div className="flex items-center gap-2 overflow-x-auto">
-          <Button
-            variant={showAdvancedStats ? "secondary" : "outline"}
-            size="sm"
-            onClick={() => setShowAdvancedStats((prev) => !prev)}
-            className="shrink-0"
-          >
-            {showAdvancedStats ? "Simple" : "Detailed"}
-          </Button>
-          <div className="flex shrink-0 items-center gap-1 rounded-lg border border-border/50 bg-muted/30 p-0.5">
-            {(
-              [
-                { field: "matchesWon" as SortField, label: "Wins" },
-                { field: "averagePerVisit" as SortField, label: "Avg" },
-                { field: "matchesPlayed" as SortField, label: "Games" },
-                { field: "name" as SortField, label: "Name" },
-              ] as const
-            ).map(({ field, label }) => (
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-start 2xl:flex-row 2xl:items-center">
+          <div>
+            <h3 className="text-lg font-semibold tracking-tight">Players</h3>
+            <p className="text-sm text-muted-foreground">
+              Click a player to view their progression
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View mode toggle - segmented control */}
+            <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-border/50 bg-muted/30 p-0.5">
               <button
-                key={field}
-                onClick={() => handleSort(field)}
-                aria-label={`Sort by ${label}`}
+                onClick={() => setShowAdvancedStats(false)}
+                aria-label="Simple view"
+                aria-pressed={!showAdvancedStats}
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors",
-                  sortField === field
+                  "rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors",
+                  !showAdvancedStats
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {label} {getSortIcon(field)}
+                Simple
               </button>
-            ))}
+              <button
+                onClick={() => setShowAdvancedStats(true)}
+                aria-label="Detailed view"
+                aria-pressed={showAdvancedStats}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors",
+                  showAdvancedStats
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Detailed
+              </button>
+            </div>
+            {/* Sort controls */}
+            <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-border/50 bg-muted/30 p-0.5">
+              {(
+                [
+                  { field: "matchesWon" as SortField, label: "Wins" },
+                  { field: "averagePerVisit" as SortField, label: "Avg" },
+                  { field: "matchesPlayed" as SortField, label: "Games" },
+                  { field: "name" as SortField, label: "Name" },
+                ] as const
+              ).map(({ field, label }) => (
+                <button
+                  key={field}
+                  onClick={() => handleSort(field)}
+                  aria-label={`Sort by ${label}`}
+                  className={cn(
+                    "flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors",
+                    sortField === field
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {label} {getSortIcon(field)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
+        {/* Name filter */}
+        {playerStats.length > 3 && (
+          <div className="relative sm:max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Filter players..."
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              className="pl-9"
+              aria-label="Filter players by name"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
