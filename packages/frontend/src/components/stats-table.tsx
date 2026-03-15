@@ -143,6 +143,10 @@ export function StatsTable({
 
   return (
     <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold tracking-tight">Match History</h3>
+        <p className="text-sm text-muted-foreground">All recorded matches</p>
+      </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

@@ -258,14 +258,6 @@ export default function StatsPage() {
 
         {/* Game History Section */}
         <section>
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold tracking-tight">
-              Match History
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              All recorded matches
-            </p>
-          </div>
           <StatsTable gameHistory={filteredGameHistory} />
         </section>
       </div>

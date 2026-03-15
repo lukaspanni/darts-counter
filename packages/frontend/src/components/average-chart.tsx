@@ -126,7 +126,7 @@ export function AverageChart({
 
   if (chartData.length === 0) {
     return (
-      <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border/50">
+      <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-dashed border-border/50">
         <TrendingUp className="mb-2 h-8 w-8 text-muted-foreground/40" />
         <p className="text-sm text-muted-foreground">
           Not enough data for the chart
