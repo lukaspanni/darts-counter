@@ -58,7 +58,7 @@ export function GameSetup() {
     resolver: zodResolver(gameSetupSchema),
     defaultValues: {
       startingScore: "501",
-      outMode: "single",
+      outMode: "double",
       gameMode: "bestOf",
       legsToWin: "3",
       player1: "",
