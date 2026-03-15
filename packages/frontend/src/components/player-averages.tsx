@@ -49,12 +49,14 @@ function PlayerStatBadge({
 function PlayerCard({
   player,
   rank,
+  showRankStyle,
   isSelected,
   onClick,
   showAdvanced,
 }: {
   player: PlayerStats;
   rank: number;
+  showRankStyle: boolean;
   isSelected: boolean;
   onClick: () => void;
   showAdvanced: boolean;
@@ -79,16 +81,16 @@ function PlayerCard({
           <div
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
-              rank === 1
+              showRankStyle && rank === 1
                 ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                : rank === 2
+                : showRankStyle && rank === 2
                   ? "bg-gray-300/20 text-gray-500 dark:text-gray-400"
-                  : rank === 3
+                  : showRankStyle && rank === 3
                     ? "bg-orange-400/15 text-orange-600 dark:text-orange-400"
                     : "bg-muted text-muted-foreground",
             )}
           >
-            {rank === 1 ? (
+            {showRankStyle && rank === 1 ? (
               <Crown className="h-4 w-4" />
             ) : (
               `#${rank}`
@@ -268,6 +270,7 @@ export function PlayerAverages({
             key={player.name}
             player={player}
             rank={index + 1}
+            showRankStyle={sortField !== "name"}
             isSelected={selectedPlayer === player.name}
             onClick={() => handlePlayerClick(player)}
             showAdvanced={showAdvancedStats}

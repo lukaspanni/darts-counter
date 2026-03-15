@@ -84,19 +84,12 @@ export default function StatsPage() {
     setSelectedPlayer(selectedPlayer === playerName ? undefined : playerName);
   };
 
-  const filteredGameHistory =
-    selectedGameMode === "all"
-      ? gameHistory
-      : gameHistory.filter((game) => game.gameMode === selectedGameMode);
-
-  const gameModeItems = Object.fromEntries(
-    [
-      { value: "all", label: "All game modes" },
-      ...gameModes.map((gameMode) => ({
-        value: gameMode,
-        label: gameMode,
-      })),
-    ].map((option) => [option.value, option.label]),
+  const filteredGameHistory = useMemo(
+    () =>
+      selectedGameMode === "all"
+        ? gameHistory
+        : gameHistory.filter((game) => game.gameMode === selectedGameMode),
+    [gameHistory, selectedGameMode],
   );
 
   const playerStats = useMemo(
@@ -184,7 +177,6 @@ export default function StatsPage() {
             <Select
               value={selectedGameMode}
               onValueChange={(value) => setSelectedGameMode(value ?? "all")}
-              items={gameModeItems}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Filter by game mode" />
