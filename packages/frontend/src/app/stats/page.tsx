@@ -168,7 +168,7 @@ export default function StatsPage() {
 
   return (
     <main className="flex grow flex-col items-center px-4 pb-8 pt-6">
-      <div className="w-full max-w-6xl space-y-8">
+      <div className="w-full max-w-7xl space-y-8">
         {/* Page Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -240,22 +240,23 @@ export default function StatsPage() {
           />
         </div>
 
-        {/* Player Averages Section */}
-        <section>
-          <PlayerAverages
-            playerStats={playerStats}
-            onPlayerSelect={handlePlayerSelect}
-            selectedPlayer={selectedPlayer}
-          />
-        </section>
+        {/* Players + Chart - side by side on wide screens */}
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+          <section>
+            <PlayerAverages
+              playerStats={playerStats}
+              onPlayerSelect={handlePlayerSelect}
+              selectedPlayer={selectedPlayer}
+            />
+          </section>
 
-        {/* Average Chart Section */}
-        <section>
-          <AverageChart
-            gameHistory={filteredGameHistory}
-            selectedPlayer={selectedPlayer}
-          />
-        </section>
+          <section>
+            <AverageChart
+              gameHistory={filteredGameHistory}
+              selectedPlayer={selectedPlayer}
+            />
+          </section>
+        </div>
 
         {/* Game History Section */}
         <section>

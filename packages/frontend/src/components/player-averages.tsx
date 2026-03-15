@@ -219,7 +219,7 @@ export function PlayerAverages({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-start 2xl:flex-row 2xl:items-center">
         <div>
           <h3 className="text-lg font-semibold tracking-tight">Players</h3>
           <p className="text-sm text-muted-foreground">
@@ -262,7 +262,7 @@ export function PlayerAverages({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
         {sortedStats.map((player, index) => (
           <PlayerCard
             key={player.name}

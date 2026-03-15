@@ -148,7 +148,7 @@ export function AverageChart({
         </p>
       </div>
       <div className="rounded-xl border border-border/50 bg-card p-3 sm:p-4">
-        <ResponsiveContainer width="100%" height={350}>
+        <ResponsiveContainer width="100%" height={320} minHeight={280}>
           <LineChart
             data={chartData}
             margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
