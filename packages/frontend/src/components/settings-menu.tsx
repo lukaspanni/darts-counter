@@ -4,6 +4,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -47,19 +48,21 @@ export const SettingsMenu = () => {
         <span className="sr-only sm:hidden">Open settings</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Settings</DropdownMenuLabel>
-        <DropdownMenuCheckboxItem
-          checked={settings.enhancedView}
-          onCheckedChange={handleEnhancedViewChange}
-        >
-          Darts Board Entry
-        </DropdownMenuCheckboxItem>
-        <DropdownMenuCheckboxItem
-          checked={settings.noBullshitMode}
-          onCheckedChange={handleNoBullshitModeChange}
-        >
-          No-bullshit mode
-        </DropdownMenuCheckboxItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Settings</DropdownMenuLabel>
+          <DropdownMenuCheckboxItem
+            checked={settings.enhancedView}
+            onCheckedChange={handleEnhancedViewChange}
+          >
+            Darts Board Entry
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={settings.noBullshitMode}
+            onCheckedChange={handleNoBullshitModeChange}
+          >
+            No-bullshit mode
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
