@@ -68,7 +68,7 @@ function updateRoundFinishMetadata(
   metadata: LiveStreamGameMetadata,
   event: Extract<ClientEvent, { type: "roundFinish" }>,
 ): LiveStreamGameMetadata {
-  if (!event.winnerId) return metadata;
+  if (event.winnerId === null) return metadata;
 
   return {
     ...metadata,
@@ -360,7 +360,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
         ))}
 
         {/* Match Over */}
-        {metadata.gamePhase === "gameOver" && metadata.matchWinner && (
+        {metadata.gamePhase === "gameOver" && metadata.matchWinner !== null && (
           <Card className="border-primary bg-primary/5">
             <CardHeader>
               <CardTitle className="text-center text-2xl">
