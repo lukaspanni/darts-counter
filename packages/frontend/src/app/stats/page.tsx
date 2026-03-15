@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { StatsTable } from "@/components/stats-table";
 import { PlayerAverages } from "@/components/player-averages";
 import { AverageChart } from "@/components/average-chart";
@@ -38,7 +38,6 @@ function StatCard({
 }) {
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-card p-4 transition-all duration-300 hover:border-border hover:shadow-md">
-
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -66,8 +65,9 @@ export default function StatsPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<string | undefined>(
     undefined,
   );
-  const gameModes = Array.from(
-    new Set(gameHistory.map((game) => game.gameMode)),
+  const gameModes = useMemo(
+    () => Array.from(new Set(gameHistory.map((game) => game.gameMode))),
+    [gameHistory],
   );
   const [selectedGameMode, setSelectedGameMode] = useState<string>("all");
 
@@ -79,9 +79,9 @@ export default function StatsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally only fire on page load
   }, []);
 
-  const handlePlayerSelect = (playerName: string) => {
-    setSelectedPlayer(selectedPlayer === playerName ? undefined : playerName);
-  };
+  const handlePlayerSelect = useCallback((playerName: string) => {
+    setSelectedPlayer((prev) => (prev === playerName ? undefined : playerName));
+  }, []);
 
   const filteredGameHistory = useMemo(
     () =>
@@ -97,24 +97,23 @@ export default function StatsPage() {
   );
 
   const summaryStats = useMemo(() => {
-    const stats = playerStats;
     const totalGames = filteredGameHistory.length;
-    const bestAvg = stats.reduce(
+    const bestAvg = playerStats.reduce(
       (best, p) =>
         p.averagePerVisit > best.value
           ? { value: p.averagePerVisit, name: p.name }
           : best,
       { value: 0, name: "-" },
     );
-    const mostWins = stats.reduce(
+    const mostWins = playerStats.reduce(
       (best, p) =>
         p.matchesWon > best.value
           ? { value: p.matchesWon, name: p.name }
           : best,
       { value: 0, name: "-" },
     );
-    const total180s = stats.reduce((sum, p) => sum + p.total180s, 0);
-    const top180Player = stats.reduce(
+    const total180s = playerStats.reduce((sum, p) => sum + p.total180s, 0);
+    const top180Player = playerStats.reduce(
       (best, p) =>
         p.total180s > best.value
           ? { value: p.total180s, name: p.name }
@@ -173,7 +172,7 @@ export default function StatsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Filter className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Select
               value={selectedGameMode}
               onValueChange={(value) => setSelectedGameMode(value ?? "all")}
@@ -206,7 +205,6 @@ export default function StatsPage() {
             value={summaryStats.totalGames}
             icon={Target}
             accentClass="bg-purple-500/10 text-purple-600 dark:text-purple-400"
-
           />
           <StatCard
             label="Best Average"
@@ -214,7 +212,6 @@ export default function StatsPage() {
             subtitle={summaryStats.bestAvg.name}
             icon={TrendingUp}
             accentClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-
           />
           <StatCard
             label="Most Wins"
@@ -222,7 +219,6 @@ export default function StatsPage() {
             subtitle={summaryStats.mostWins.name}
             icon={Trophy}
             accentClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
-
           />
           <StatCard
             label="Total 180s"
@@ -234,7 +230,6 @@ export default function StatsPage() {
             }
             icon={Flame}
             accentClass="bg-rose-500/10 text-rose-600 dark:text-rose-400"
-
           />
         </div>
 

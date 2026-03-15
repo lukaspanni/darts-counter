@@ -55,7 +55,7 @@ function GameCard({
 
       <div className="mt-3 flex items-center gap-3">
         {game.players.map((player, i) => (
-          <div key={player.name} className="flex items-center gap-2">
+          <div key={player.id} className="flex items-center gap-2">
             {i > 0 && (
               <span className="text-xs font-medium text-muted-foreground">
                 vs
@@ -158,7 +158,11 @@ export function StatsTable({
             aria-label="Search players"
           />
         </div>
-        <div className="flex shrink-0 items-center gap-1 rounded-lg border border-border/50 bg-muted/30 p-0.5">
+        <div
+          role="group"
+          aria-label="Sort matches"
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-border/50 bg-muted/30 p-0.5"
+        >
           {(
             [
               { field: "date" as SortField, label: "Date" },

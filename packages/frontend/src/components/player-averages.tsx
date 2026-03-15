@@ -62,8 +62,6 @@ function PlayerCard({
   onClick: () => void;
   showAdvanced: boolean;
 }) {
-  const winRate = player.matchWinPercentage;
-
   return (
     <button
       onClick={onClick}
@@ -121,7 +119,7 @@ function PlayerCard({
         />
         <PlayerStatBadge
           label="Win %"
-          value={`${winRate}%`}
+          value={`${player.matchWinPercentage}%`}
         />
         <PlayerStatBadge label="Wins" value={player.matchesWon} />
         <PlayerStatBadge label="180s" value={player.total180s} />
@@ -240,11 +238,16 @@ export function PlayerAverages({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {/* View mode toggle - segmented control */}
-            <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-border/50 bg-muted/30 p-0.5">
+            <div
+              role="radiogroup"
+              aria-label="Stats detail level"
+              className="flex shrink-0 items-center gap-0.5 rounded-lg border border-border/50 bg-muted/30 p-0.5"
+            >
               <button
+                role="radio"
                 onClick={() => setShowAdvancedStats(false)}
+                aria-checked={!showAdvancedStats}
                 aria-label="Simple view"
-                aria-pressed={!showAdvancedStats}
                 className={cn(
                   "rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors",
                   !showAdvancedStats
@@ -255,9 +258,10 @@ export function PlayerAverages({
                 Simple
               </button>
               <button
+                role="radio"
                 onClick={() => setShowAdvancedStats(true)}
+                aria-checked={showAdvancedStats}
                 aria-label="Detailed view"
-                aria-pressed={showAdvancedStats}
                 className={cn(
                   "rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors",
                   showAdvancedStats
@@ -269,7 +273,11 @@ export function PlayerAverages({
               </button>
             </div>
             {/* Sort controls */}
-            <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-border/50 bg-muted/30 p-0.5">
+            <div
+              role="group"
+              aria-label="Sort players"
+              className="flex shrink-0 items-center gap-0.5 rounded-lg border border-border/50 bg-muted/30 p-0.5"
+            >
               {(
                 [
                   { field: "matchesWon" as SortField, label: "Wins" },
