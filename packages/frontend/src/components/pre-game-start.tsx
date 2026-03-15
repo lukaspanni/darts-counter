@@ -1,24 +1,17 @@
 import "client-only";
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { LiveStreamControl } from "@/components/live-stream-control";
 import { useGameStore } from "@/lib/store-provider";
 import posthog from "posthog-js";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function PreGameStart() {
   const { players, setActivePlayer, setGamePhase, startGame, gameSettings } =
     useGameStore((state) => state);
   const [startingPlayerId, setStartingPlayerId] = useState<number>(
-    players[0]?.id || 1,
+    players[0]?.id ?? 1,
   );
 
   const handleStartGame = useCallback(() => {
@@ -51,42 +44,56 @@ export function PreGameStart() {
   }, [handleStartGame, players.length]);
 
   return (
-    <div className="flex w-full flex-col gap-4 lg:mx-auto lg:w-xl">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">Who starts?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup
-            value={startingPlayerId.toString()}
-            onValueChange={(value) =>
-              setStartingPlayerId(Number.parseInt(String(value)))
-            }
-            className="space-y-4"
-          >
-            {players.map((player) => (
-              <div key={player.id} className="flex items-center space-x-2">
-                <RadioGroupItem
-                  value={player.id.toString()}
-                  id={`player-${player.id}`}
-                />
-                <Label
-                  htmlFor={`player-${player.id}`}
-                  className="text-lg font-medium"
-                >
-                  {player.name}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleBack}>
-            Back
-          </Button>
-          <Button onClick={handleStartGame}>Start Match</Button>
-        </CardFooter>
-      </Card>
+    <div className="flex w-full flex-col gap-6 lg:mx-auto lg:max-w-xl">
+      <div>
+        <h2 className="mb-1 text-2xl font-bold tracking-tight">
+          Who throws first?
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          {gameSettings.startingScore} ·{" "}
+          {gameSettings.outMode === "single" ? "Single" : "Double"} out ·{" "}
+          {gameSettings.gameMode === "firstTo" ? "First to" : "Best of"}{" "}
+          {gameSettings.legsToWin} legs
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {players.map((player) => {
+          const isSelected = startingPlayerId === player.id;
+          return (
+            <button
+              key={player.id}
+              type="button"
+              onClick={() => setStartingPlayerId(player.id)}
+              aria-pressed={isSelected}
+              className={cn(
+                "relative rounded-lg border-2 px-4 py-6 text-center outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]",
+                isSelected
+                  ? "border-primary bg-primary/5 dark:bg-primary/10"
+                  : "border-border hover:border-foreground/20 bg-transparent",
+              )}
+            >
+              {isSelected && (
+                <span className="bg-primary text-primary-foreground absolute top-2 right-2 flex size-5 items-center justify-center rounded-full">
+                  <Check className="size-3" />
+                </span>
+              )}
+              <span className="text-lg font-semibold">{player.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={handleBack}>
+          <ArrowLeft className="size-4" />
+          Back
+        </Button>
+        <Button size="lg" onClick={handleStartGame}>
+          Start Match
+          <ArrowRight className="size-4" />
+        </Button>
+      </div>
 
       <LiveStreamControl />
     </div>
