@@ -12,6 +12,10 @@
 			"new_sqlite_classes": ["Game", "GameRegistry"],
 			"tag": "v1",
 		},
+		{
+			"new_sqlite_classes": ["RateLimiter"],
+			"tag": "v2",
+		},
 	],
 	"durable_objects": {
 		"bindings": [
@@ -22,6 +26,10 @@
 			{
 				"class_name": "GameRegistry",
 				"name": "GAME_REGISTRY",
+			},
+			{
+				"class_name": "RateLimiter",
+				"name": "RATE_LIMITER",
 			},
 		],
 	},
