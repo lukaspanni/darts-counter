@@ -21,7 +21,6 @@ import {
   TrendingUp,
   Filter,
 } from "lucide-react";
-import { generateMockGameHistory } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 
 function StatCard({
@@ -126,7 +125,8 @@ export default function StatsPage() {
     return { totalGames, bestAvg, mostWins, total180s, top180Player };
   }, [filteredGameHistory, playerStats]);
 
-  const seedMockData = () => {
+  const seedMockData = async () => {
+    const { generateMockGameHistory } = await import("@/lib/mock-data");
     const mockData = generateMockGameHistory();
     const serialized = JSON.stringify(mockData);
     window.localStorage.setItem("game-history-v2", serialized);
@@ -182,7 +182,7 @@ export default function StatsPage() {
                   ["all", "All game modes"],
                   ...gameModes.map((m) => [m, m]),
                 ],
-              )}
+              ) as Record<string, string>}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Filter by game mode" />

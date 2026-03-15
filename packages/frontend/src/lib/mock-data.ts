@@ -15,32 +15,6 @@ function randomModifier(): "single" | "double" | "triple" {
   return "triple";
 }
 
-function generateVisitDarts(targetTotal: number) {
-  const darts = [];
-  let remaining = targetTotal;
-
-  for (let i = 0; i < 3 && remaining > 0; i++) {
-    const isLast = i === 2 || remaining <= 20;
-    const score = isLast
-      ? remaining
-      : randomBetween(1, Math.min(remaining, 20));
-    const modifier = randomModifier();
-    const validatedScore = score;
-    darts.push({
-      score,
-      modifier,
-      validatedScore,
-      isBust: false,
-      isCheckoutAttempt: false,
-      isCheckoutSuccess: false,
-      isDoubleAttempt: false,
-      isMissedDouble: false,
-    });
-    remaining -= score;
-  }
-  return darts;
-}
-
 function generateLeg(
   legNumber: number,
   players: { id: number; name: string }[],
