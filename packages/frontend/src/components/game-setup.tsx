@@ -7,7 +7,7 @@ import { gameSettingsSchema } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import posthog from "posthog-js";
 import { z } from "zod";
 import { ArrowRight, RotateCcw } from "lucide-react";
@@ -67,8 +67,8 @@ export function GameSetup() {
     },
   });
 
-  const gameMode = form.watch("gameMode");
-  const legsToWin = form.watch("legsToWin");
+  const gameMode = useWatch({ control: form.control, name: "gameMode" });
+  const legsToWin = useWatch({ control: form.control, name: "legsToWin" });
 
   const getLegsDescription = () => {
     const legs = Number.parseInt(legsToWin || "3");
