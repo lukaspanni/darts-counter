@@ -193,16 +193,13 @@ export class Game extends DurableObject<Env> {
 
 			const event = result.data;
 
-			// Handle gameUpdate to store metadata and persist activity
+			// Handle gameUpdate to store metadata
 			if (event.type === 'gameUpdate') {
 				this.state.metadata = event.metadata;
-				await this.ctx.storage.put('state', this.state);
 			}
 
-			// Heartbeat only needs to persist lastActivity (already updated above)
-			if (event.type === 'heartbeat') {
-				await this.ctx.storage.put('state', this.state);
-			}
+			// Persist state (including lastActivity) for all events
+			await this.ctx.storage.put('state', this.state);
 
 			// Don't broadcast heartbeats to viewers — they're only for keeping the DO alive
 			if (event.type === 'heartbeat') {
