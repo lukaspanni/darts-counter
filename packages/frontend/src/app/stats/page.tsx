@@ -177,6 +177,12 @@ export default function StatsPage() {
             <Select
               value={selectedGameMode}
               onValueChange={(value) => setSelectedGameMode(value ?? "all")}
+              items={Object.fromEntries(
+                [
+                  ["all", "All game modes"],
+                  ...gameModes.map((m) => [m, m]),
+                ],
+              )}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Filter by game mode" />
