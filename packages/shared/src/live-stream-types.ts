@@ -51,6 +51,7 @@ export const scoreEventSchema = z.object({
 	playerId: z.number(),
 	score: z.number(),
 	modifier: scoreModifierSchema,
+	segment: z.number(),
 	newScore: z.number(),
 	validatedScore: z.number(),
 	isLegWin: z.boolean(),

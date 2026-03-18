@@ -8,7 +8,9 @@ export type DartThrownEvent = {
   score: number;
   modifier: ScoreModifier;
   validatedScore: number;
+  newScore: number;
   isBust: boolean;
+  isLegWin: boolean;
   currentVisitTotal: number;
 };
 
@@ -62,8 +64,16 @@ export type LegStartedEvent = {
   legNumber: number;
 };
 
+export type DartUndoneEvent = {
+  type: "dartUndone";
+  playerId: number;
+  lastScore: number;
+  newVisitTotal: number;
+};
+
 export type GameDomainEvent =
   | DartThrownEvent
+  | DartUndoneEvent
   | VisitCompletedEvent
   | VisitMaxScoredEvent
   | LegWonEvent

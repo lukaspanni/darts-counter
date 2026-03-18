@@ -408,7 +408,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             score,
             modifier,
             validatedScore,
+            newScore,
             isBust,
+            isLegWin,
             currentVisitTotal,
           },
         ];
@@ -534,6 +536,13 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           p.scoreHistory[currentLegIndex]?.pop();
           state.currentVisitScores.pop();
           state.currentVisitDarts.pop();
+        });
+
+        emitGameEvent({
+          type: "dartUndone",
+          playerId: player.id,
+          lastScore,
+          newVisitTotal: prevTotal,
         });
 
         return { success: true, lastScore, newVisitTotal: prevTotal };

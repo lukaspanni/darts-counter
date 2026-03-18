@@ -5,6 +5,13 @@ import posthog from "posthog-js";
 import { subscribeToGameEvents } from "@/lib/game-events";
 import { useLiveStream } from "@/lib/hooks/use-live-stream";
 import { useGameStore } from "@/lib/store-provider";
+import type { ScoreModifier } from "@/lib/schemas";
+
+const MODIFIER_MULTIPLIER: Record<ScoreModifier, number> = {
+  single: 1,
+  double: 2,
+  triple: 3,
+};
 
 export function useGameEventEffects() {
   const { state: liveStreamState, sendEvent } = useLiveStream();
@@ -66,6 +73,20 @@ export function useGameEventEffects() {
         liveStreamState.isActive && liveStreamState.status === "connected";
 
       if (event.type === "dartThrown") {
+        if (isLiveStreamConnected) {
+          sendEvent({
+            type: "score",
+            playerId: event.playerId,
+            score: event.score,
+            modifier: event.modifier,
+            segment: event.score / MODIFIER_MULTIPLIER[event.modifier],
+            newScore: event.newScore,
+            validatedScore: event.validatedScore,
+            isLegWin: event.isLegWin,
+            isBust: event.isBust,
+            currentVisitTotal: event.currentVisitTotal,
+          });
+        }
         posthog.capture("dart_thrown", {
           history_event: "dart_thrown",
           leg_number: event.legNumber,
@@ -75,6 +96,18 @@ export function useGameEventEffects() {
           modifier: event.modifier,
           is_bust: event.isBust,
         });
+        return;
+      }
+
+      if (event.type === "dartUndone") {
+        if (isLiveStreamConnected) {
+          sendEvent({
+            type: "undo",
+            playerId: event.playerId,
+            lastScore: event.lastScore,
+            newVisitTotal: event.newVisitTotal,
+          });
+        }
         return;
       }
 
@@ -99,6 +132,13 @@ export function useGameEventEffects() {
       }
 
       if (event.type === "legWon") {
+        if (isLiveStreamConnected) {
+          sendEvent({
+            type: "roundFinish",
+            legNumber: event.legNumber,
+            winnerId: event.winnerId,
+          });
+        }
         if (!event.isMatchWin) {
           posthog.capture("leg_won", {
             history_event: "leg_won",
