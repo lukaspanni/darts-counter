@@ -17,6 +17,7 @@ import {
 } from "@/lib/live-stream-utils";
 import { formatTimeAgo } from "@/lib/debug-utils";
 import { useFeatureFlagEnabled } from "posthog-js/react";
+import { DartboardViewer, type DartHit } from "@/components/dartboard-viewer";
 
 const WORKER_URL =
   process.env.NEXT_PUBLIC_LIVE_STREAM_WORKER_URL || "http://localhost:8787";
@@ -101,6 +102,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
   const [lastEventTime, setLastEventTime] = useState<string | null>(null);
   const lastEventAtRef = useRef<number>(Date.now());
   const staleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [currentVisitHits, setCurrentVisitHits] = useState<DartHit[]>([]);
 
   const debugEnabled = useFeatureFlagEnabled("enableDebugLogs");
 
@@ -183,6 +185,7 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
         case "sync":
           // Initial state - sets all values absolutely
           setMetadata(event.metadata);
+          setCurrentVisitHits([]);
           setStatus("connected");
           setError(null);
           break;
@@ -193,8 +196,9 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
           // Handle each event type with proper typing
           switch (clientEvent.type) {
             case "gameUpdate":
-              // Full game state update
+              // Full game state update - reset visit tracking
               setMetadata(clientEvent.metadata);
+              setCurrentVisitHits([]);
               setStatus("connected");
               setError(null);
               break;
@@ -203,18 +207,28 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
               setMetadata((prev) =>
                 prev ? updateScoreMetadata(prev, clientEvent) : prev,
               );
+              setCurrentVisitHits((prev) => [
+                ...prev,
+                {
+                  dartNumber: prev.length + 1,
+                  segment: clientEvent.segment,
+                  modifier: clientEvent.modifier,
+                },
+              ]);
               break;
 
             case "undo":
               setMetadata((prev) =>
                 prev ? undoScoreMetadata(prev, clientEvent) : prev,
               );
+              setCurrentVisitHits((prev) => prev.slice(0, -1));
               break;
 
             case "roundFinish":
               setMetadata((prev) =>
                 prev ? updateRoundFinishMetadata(prev, clientEvent) : prev,
               );
+              setCurrentVisitHits([]);
               break;
 
             case "matchFinish":
@@ -317,6 +331,13 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
               {metadata.legsToWin}
             </CardTitle>
           </CardHeader>
+        </Card>
+
+        {/* Dartboard */}
+        <Card>
+          <CardContent className="flex justify-center pt-6">
+            <DartboardViewer hits={currentVisitHits} />
+          </CardContent>
         </Card>
 
         {/* Players */}
