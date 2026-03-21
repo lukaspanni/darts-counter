@@ -115,6 +115,9 @@ export function GameController() {
           return (
             <GameOver
               winner={winner}
+              players={players}
+              gameSettings={gameSettings}
+              historyLegs={historyLegs}
               gameHistory={gameHistory}
               onNewGame={resetGame}
             />
