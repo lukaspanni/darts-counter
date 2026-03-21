@@ -22,6 +22,7 @@ export interface PlayerStats {
   legsWon: number;
   legsPlayed: number;
   legWinPercentage: number;
+  averageVisitTimeMs: number | null;
 }
 
 export interface PlayerAverageHistory {
@@ -49,6 +50,8 @@ type PlayerAccumulator = {
   legsPlayed: number;
   dartsToFinishTotal: number;
   finishedLegs: number;
+  totalVisitTimeMs: number;
+  visitsWithTime: number;
 };
 
 function createPlayerAccumulator(name: string): PlayerAccumulator {
@@ -70,6 +73,8 @@ function createPlayerAccumulator(name: string): PlayerAccumulator {
     legsPlayed: 0,
     dartsToFinishTotal: 0,
     finishedLegs: 0,
+    totalVisitTimeMs: 0,
+    visitsWithTime: 0,
   };
 }
 
@@ -174,6 +179,8 @@ function applyVisitToStats(
       checkoutAttempts,
       checkoutSuccesses,
       missedDoubles,
+      totalVisitTimeMs: stats.totalVisitTimeMs + (visit.visitDurationMs ?? 0),
+      visitsWithTime: stats.visitsWithTime + (visit.visitDurationMs != null ? 1 : 0),
     },
     nextDartsThrownInLeg,
   };
@@ -295,6 +302,10 @@ function buildPlayerStats(player: PlayerAccumulator): PlayerStats {
     legsWon: player.legsWon,
     legsPlayed: player.legsPlayed,
     legWinPercentage: calculatePercentage(player.legsWon, player.legsPlayed),
+    averageVisitTimeMs:
+      player.visitsWithTime > 0
+        ? Math.round(player.totalVisitTimeMs / player.visitsWithTime)
+        : null,
   };
 }
 
