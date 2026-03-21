@@ -109,7 +109,7 @@ export type PendingGame = z.infer<typeof pendingGameSchema>;
 export type PendingGameSnapshot = z.infer<typeof pendingGameSnapshotSchema>;
 export const uiSettingsSchema = z.object({
   enhancedView: z.boolean(),
-  noBullshitMode: z.boolean().default(false),
+  visualGimmicks: z.boolean().default(false),
 });
 
 export type UiSettings = z.infer<typeof uiSettingsSchema>;
