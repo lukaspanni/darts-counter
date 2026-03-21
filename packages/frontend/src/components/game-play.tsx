@@ -70,7 +70,7 @@ export function GamePlay() {
 
       if (event.type === "visitMaxScored") {
         setShow180(true);
-        if (!settings.noBullshitMode) {
+        if (settings.visualGimmicks) {
           void confetti({
             particleCount: 100,
             spread: 70,
@@ -82,7 +82,7 @@ export function GamePlay() {
 
       if (event.type === "legWon") {
         setShowLegWonModal(true);
-        if (!settings.noBullshitMode) {
+        if (settings.visualGimmicks) {
           void confetti({
             particleCount: 100,
             spread: 70,
@@ -93,7 +93,7 @@ export function GamePlay() {
     });
 
     return unsubscribe;
-  }, [settings.noBullshitMode]);
+  }, [settings.visualGimmicks]);
 
   useEffect(() => {
     if (gameSettings.checkoutAssist && activePlayer) {
@@ -203,7 +203,7 @@ export function GamePlay() {
       )}
     >
       {/* 180 Celebration */}
-      {show180 && !settings.noBullshitMode && (
+      {show180 && settings.visualGimmicks && (
         <>
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <div className="animate-bounce rounded-lg bg-black/70 px-8 py-4 text-4xl font-bold text-white">

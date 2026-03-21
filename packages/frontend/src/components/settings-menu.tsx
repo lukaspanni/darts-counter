@@ -33,9 +33,9 @@ export const SettingsMenu = () => {
     updateSettings({ enhancedView: checked });
   };
 
-  const handleNoBullshitModeChange = (checked: boolean) => {
-    captureSettingsEvent("no_bullshit_mode", checked);
-    updateSettings({ noBullshitMode: checked });
+  const handleVisualGimmicksChange = (checked: boolean) => {
+    captureSettingsEvent("visual_gimmicks", checked);
+    updateSettings({ visualGimmicks: checked });
   };
 
   return (
@@ -57,10 +57,10 @@ export const SettingsMenu = () => {
             Darts Board Entry
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={settings.noBullshitMode}
-            onCheckedChange={handleNoBullshitModeChange}
+            checked={settings.visualGimmicks}
+            onCheckedChange={handleVisualGimmicksChange}
           >
-            No-bullshit mode
+            Visual gimmicks
           </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
