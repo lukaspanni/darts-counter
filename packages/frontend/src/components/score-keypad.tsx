@@ -2,25 +2,17 @@ import "client-only";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { ScoreModifier } from "@/lib/schemas";
-import { RotateCcw, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
 interface ScoreKeypadProps {
   onScoreEntry: (scoreAfterModifier: number, modifier: ScoreModifier) => void;
-  onUndo: () => void;
-  onFinishVisit: () => void;
-  dartsInVisit: number;
   canThrowMoreDarts: boolean;
-  canUndo?: boolean;
 }
 
 export function ScoreKeypad({
   onScoreEntry,
-  onUndo,
-  onFinishVisit,
-  dartsInVisit,
   canThrowMoreDarts,
-  canUndo = true,
 }: ScoreKeypadProps) {
   const [modifier, setModifier] = useState<ScoreModifier>("single");
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -119,26 +111,7 @@ export function ScoreKeypad({
           </Button>
         </div>
 
-        {/* Control buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            variant="outline"
-            onClick={onUndo}
-            disabled={dartsInVisit === 0 || !canUndo}
-            className="h-12"
-          >
-            <RotateCcw className="mr-2 h-4 w-4" /> Undo
-          </Button>
-          <Button
-            onClick={onFinishVisit}
-            disabled={dartsInVisit === 0}
-            className="h-12"
-            variant={!canThrowMoreDarts ? "default" : "outline"}
-          >
-            <Check className="mr-2 h-4 w-4" />
-            {!canThrowMoreDarts ? "Confirm Visit" : "Finish Visit"}
-          </Button>
-        </div>
+
       </CardContent>
     </Card>
   );
