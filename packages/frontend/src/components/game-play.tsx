@@ -4,6 +4,7 @@ import { Dartboard } from "@/components/dartboard";
 import { ScoreDisplay } from "@/components/score-display";
 import { ScoreKeypad } from "@/components/score-keypad";
 import { Button } from "@/components/ui/button";
+import { RotateCcw, Check } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -224,43 +225,75 @@ export function GamePlay() {
       />
 
       {showEnhancedView ? (
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          <div className="flex flex-col gap-4 lg:w-1/2">
-            <ScoreKeypad
-              onScoreEntry={handleScoreEntry}
-              onUndo={handleUndo}
-              onFinishVisit={endTurn}
-              dartsInVisit={dartsInVisit}
-              canThrowMoreDarts={canThrowMoreDarts}
-              canUndo={legWinner === null && matchWinner === null}
-            />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <div className="lg:w-1/2">
+              <ScoreKeypad
+                onScoreEntry={handleScoreEntry}
+                canThrowMoreDarts={canThrowMoreDarts}
+              />
+            </div>
             {!isLargeScreen && <Dartboard {...dartboardProps} />}
+            {isLargeScreen && (
+              <div className="w-1/2">
+                <Dartboard {...dartboardProps} />
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <Button
-              variant={"destructive"}
-              onClick={() => setShowConfirmDialog(true)}
+              variant="outline"
+              onClick={handleUndo}
+              disabled={dartsInVisit === 0 || legWinner !== null || matchWinner !== null}
+              className="h-12"
             >
-              Reset Match
+              <RotateCcw className="mr-2 h-4 w-4" /> Undo
+            </Button>
+            <Button
+              onClick={endTurn}
+              disabled={dartsInVisit === 0}
+              className="h-12"
+              variant={!canThrowMoreDarts ? "default" : "outline"}
+            >
+              <Check className="mr-2 h-4 w-4" />
+              {!canThrowMoreDarts ? "Confirm Visit" : "Finish Visit"}
             </Button>
           </div>
-          {isLargeScreen && (
-            <div className="w-1/2">
-              <Dartboard {...dartboardProps} />
-            </div>
-          )}
+          <Button
+            variant={"destructive"}
+            onClick={() => setShowConfirmDialog(true)}
+          >
+            Reset Match
+          </Button>
         </div>
       ) : (
         <>
           <ScoreKeypad
             onScoreEntry={handleScoreEntry}
-            onUndo={handleUndo}
-            onFinishVisit={endTurn}
-            dartsInVisit={dartsInVisit}
             canThrowMoreDarts={canThrowMoreDarts}
-            canUndo={legWinner === null && matchWinner === null}
           />
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <Button
+              variant="outline"
+              onClick={handleUndo}
+              disabled={dartsInVisit === 0 || legWinner !== null || matchWinner !== null}
+              className="h-12"
+            >
+              <RotateCcw className="mr-2 h-4 w-4" /> Undo
+            </Button>
+            <Button
+              onClick={endTurn}
+              disabled={dartsInVisit === 0}
+              className="h-12"
+              variant={!canThrowMoreDarts ? "default" : "outline"}
+            >
+              <Check className="mr-2 h-4 w-4" />
+              {!canThrowMoreDarts ? "Confirm Visit" : "Finish Visit"}
+            </Button>
+          </div>
           <Button
             variant={"destructive"}
-            className="mt-6"
+            className="mt-4"
             onClick={() => setShowConfirmDialog(true)}
           >
             Reset Game
