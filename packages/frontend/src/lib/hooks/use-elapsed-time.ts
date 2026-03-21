@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 
-export function useElapsedTime(startTime: number | null): number {
+export function useElapsedTime(
+  startTime: number | null,
+  pausedAt?: number | null,
+): number {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     if (startTime === null) {
       setElapsed(0);
+      return;
+    }
+
+    if (pausedAt) {
+      setElapsed(Math.floor((pausedAt - startTime) / 1000));
       return;
     }
 
@@ -16,7 +24,7 @@ export function useElapsedTime(startTime: number | null): number {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime]);
+  }, [startTime, pausedAt]);
 
   return elapsed;
 }

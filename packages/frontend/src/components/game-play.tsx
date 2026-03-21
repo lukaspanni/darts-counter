@@ -45,6 +45,7 @@ export function GamePlay() {
   const matchWinner = useGameStore((state) => state.matchWinner);
   const matchStartTime = useGameStore((state) => state.matchStartTime);
   const visitStartTime = useGameStore((state) => state.visitStartTime);
+  const matchPausedAt = useGameStore((state) => state.matchPausedAt);
   const dartsInVisit = useGameStore((state) => state.getDartsInVisit());
   const currentScore = useGameStore((state) => state.getCurrentVisitScore());
   const lastThrowBust = useGameStore((state) => state.getIsBust());
@@ -226,6 +227,7 @@ export function GamePlay() {
         bust={lastThrowBust}
         matchStartTime={matchStartTime}
         visitStartTime={visitStartTime}
+        matchPausedAt={matchPausedAt}
       />
 
       {showEnhancedView ? (

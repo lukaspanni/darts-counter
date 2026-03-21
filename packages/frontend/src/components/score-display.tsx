@@ -18,6 +18,7 @@ interface ScoreDisplayProps {
   bust: boolean;
   matchStartTime: number | null;
   visitStartTime: number | null;
+  matchPausedAt: number | null;
 }
 
 export function ScoreDisplay({
@@ -30,9 +31,10 @@ export function ScoreDisplay({
   bust,
   matchStartTime,
   visitStartTime,
+  matchPausedAt,
 }: ScoreDisplayProps) {
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
-  const matchElapsed = useElapsedTime(matchStartTime);
+  const matchElapsed = useElapsedTime(matchStartTime, matchPausedAt);
   const visitElapsed = useElapsedTime(visitStartTime);
 
   // Calculate average score - fixed formula with 2 decimal places

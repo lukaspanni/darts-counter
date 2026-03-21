@@ -83,6 +83,7 @@ export type GameStoreState = {
   matchWinner: number | null;
   matchStartTime: number | null;
   visitStartTime: number | null;
+  matchPausedAt: number | null;
 };
 
 export type GameStoreSelectors = {
@@ -182,6 +183,7 @@ const initialState: GameStoreState = {
   matchWinner: null,
   matchStartTime: null,
   visitStartTime: null,
+  matchPausedAt: null,
 };
 
 export const createGameStore = (initState: GameStoreState = initialState) => {
@@ -341,7 +343,12 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             visits: [],
           });
           state.legWinner = null;
-          state.visitStartTime = Date.now();
+          const now = Date.now();
+          if (state.matchPausedAt && state.matchStartTime) {
+            state.matchStartTime += now - state.matchPausedAt;
+          }
+          state.matchPausedAt = null;
+          state.visitStartTime = now;
         });
 
         const events: GameDomainEvent[] = [
@@ -498,6 +505,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             state.currentVisitDarts = [];
             p.legsWon += 1;
             state.legWinner = p.id;
+            state.visitStartTime = null;
+            state.matchPausedAt = Date.now();
 
             if (isMatchWin) {
               state.matchWinner = p.id;
