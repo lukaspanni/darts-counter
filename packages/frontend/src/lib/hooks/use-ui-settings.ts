@@ -1,5 +1,6 @@
 import { type UiSettings, uiSettingsSchema } from "@/lib/schemas";
 import { loadFromLocalStorage, saveToLocalStorage } from "@/lib/local-storage";
+import { Effect, pipe } from "effect";
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "ui-settings";
@@ -26,17 +27,21 @@ export function useUiSettings() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
     const syncSettings = () => {
-      const { ok, result } = loadFromLocalStorage(
-        STORAGE_KEY,
-        uiSettingsSchema,
+      Effect.runSync(
+        pipe(
+          loadFromLocalStorage(STORAGE_KEY, uiSettingsSchema),
+          Effect.matchEffect({
+            onSuccess: (result) => Effect.sync(() => setSettings(result)),
+            onFailure: () =>
+              pipe(
+                saveToLocalStorage(STORAGE_KEY, defaultSettings),
+                Effect.andThen(Effect.sync(() => setSettings(defaultSettings))),
+              ),
+          }),
+        ),
       );
-      if (ok) {
-        setSettings(result);
-      } else {
-        saveToLocalStorage(STORAGE_KEY, defaultSettings);
-        setSettings(defaultSettings);
-      }
     };
 
     syncSettings();
@@ -54,7 +59,7 @@ export function useUiSettings() {
   const updateSettings = (updates: Partial<UiSettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...updates };
-      saveToLocalStorage(STORAGE_KEY, next);
+      Effect.runSync(Effect.ignore(saveToLocalStorage(STORAGE_KEY, next)));
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
       }

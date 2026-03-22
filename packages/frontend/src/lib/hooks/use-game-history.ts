@@ -1,5 +1,6 @@
 import { type GameHistory, gameHistorySchema } from "@/lib/schemas";
 import { loadFromLocalStorage, saveToLocalStorage } from "@/lib/local-storage";
+import { Effect, pipe } from "effect";
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "game-history-v2";
@@ -8,17 +9,20 @@ export function useGameHistory() {
   const [gameHistory, setGameHistory] = useState<GameHistory[]>([]);
 
   useEffect(() => {
-    const { ok, result } = loadFromLocalStorage(STORAGE_KEY, gameHistorySchema);
-    if (!ok) {
-      updateGameHistory([]);
-      return;
-    }
-    setGameHistory(result);
+    Effect.runSync(
+      pipe(
+        loadFromLocalStorage(STORAGE_KEY, gameHistorySchema),
+        Effect.match({
+          onSuccess: setGameHistory,
+          onFailure: () => updateGameHistory([]),
+        }),
+      ),
+    );
   }, []);
 
   const updateGameHistory = (newHistory: GameHistory[]) => {
     setGameHistory(newHistory);
-    saveToLocalStorage(STORAGE_KEY, newHistory);
+    Effect.runSync(Effect.ignore(saveToLocalStorage(STORAGE_KEY, newHistory)));
   };
 
   const addGame = (game: GameHistory) => {

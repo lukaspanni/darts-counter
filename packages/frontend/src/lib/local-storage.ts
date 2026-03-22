@@ -1,32 +1,32 @@
 import "client-only";
 
-import { type Result, errorResult, okResult } from "@/types/result";
+import { Effect, pipe } from "effect";
 import type { z } from "zod";
 
-export const saveToLocalStorage = <T>(key: string, data: T): Result<true> => {
-  try {
-    const serializedData = JSON.stringify(data);
-    window.localStorage.setItem(key, serializedData);
-    return okResult(true);
-  } catch (error) {
-    console.error("Error saving to localStorage:", error);
-    return errorResult(error);
-  }
-};
+export const saveToLocalStorage = <T>(key: string, data: T): Effect.Effect<void, Error> =>
+  pipe(
+    Effect.try({
+      try: () => window.localStorage.setItem(key, JSON.stringify(data)),
+      catch: (error) =>
+        error instanceof Error ? error : new Error("Unknown error", { cause: error }),
+    }),
+    Effect.tapError((e) => Effect.sync(() => console.error("Error saving to localStorage:", e))),
+  );
 
 export const loadFromLocalStorage = <T>(
   key: string,
   schema: z.ZodType<T>,
-): Result<T> => {
-  try {
-    const serializedData = window.localStorage.getItem(key);
-    if (!serializedData) return errorResult(new Error("No data found"));
+): Effect.Effect<T, Error> =>
+  Effect.try({
+    try: () => {
+      const serializedData = window.localStorage.getItem(key);
+      if (!serializedData) throw new Error("No data found");
 
-    const parsed = schema.safeParse(JSON.parse(serializedData));
-    if (!parsed.success) return errorResult(parsed.error);
+      const parsed = schema.safeParse(JSON.parse(serializedData));
+      if (!parsed.success) throw parsed.error;
 
-    return okResult(parsed.data);
-  } catch (error) {
-    return errorResult(error);
-  }
-};
+      return parsed.data;
+    },
+    catch: (error) =>
+      error instanceof Error ? error : new Error("Unknown error", { cause: error }),
+  });
