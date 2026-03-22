@@ -63,6 +63,7 @@ export const visitHistorySchema = z.object({
   startedScore: z.number(),
   endedScore: z.number(),
   timestamp: z.string(),
+  visitDurationMs: z.number().optional(),
 });
 
 export const legHistorySchema = z.object({
@@ -98,6 +99,7 @@ export const gameHistorySchema = z.array(
     legsPlayed: z.number(),
     settings: gameSettingsSchema,
     legs: z.array(legHistorySchema),
+    totalDurationMs: z.number().optional(),
   }),
 );
 

@@ -24,6 +24,8 @@ export function GameController() {
     currentVisitDarts,
     historyLegs,
     matchWinner,
+    matchStartTime,
+    matchPausedAt,
     resetGame,
   } = useGameStore((state) => state);
 
@@ -71,6 +73,9 @@ export function GameController() {
       clearPendingGame();
 
       const winnerPlayer = players.find((p) => p.id === matchWinner);
+      const totalDurationMs = matchStartTime
+        ? (matchPausedAt ?? Date.now()) - matchStartTime
+        : undefined;
       const newGameHistory = {
         id: matchId ?? crypto.randomUUID(),
         date: new Date().toISOString(),
@@ -84,6 +89,7 @@ export function GameController() {
         legsPlayed: currentLeg,
         settings: gameSettings,
         legs: historyLegs,
+        totalDurationMs,
       };
       addGame(newGameHistory);
     }
@@ -93,6 +99,8 @@ export function GameController() {
     clearPendingGame,
     players,
     matchId,
+    matchStartTime,
+    matchPausedAt,
     gameSettings,
     currentLeg,
     historyLegs,

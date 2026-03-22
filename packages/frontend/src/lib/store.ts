@@ -50,6 +50,9 @@ function recordVisit(
   const totalScore = hasBust
     ? 0
     : darts.reduce((sum, dart) => sum + dart.validatedScore, 0);
+  const visitDurationMs = state.visitStartTime
+    ? Date.now() - state.visitStartTime
+    : undefined;
   currentLeg.visits.push({
     playerId: player.id,
     playerName: player.name,
@@ -59,6 +62,7 @@ function recordVisit(
     startedScore: player.score + totalScore,
     endedScore: player.score,
     timestamp: new Date().toISOString(),
+    visitDurationMs,
   });
 }
 
@@ -77,6 +81,9 @@ export type GameStoreState = {
   historyLegs: LegHistory[];
   legWinner: number | null;
   matchWinner: number | null;
+  matchStartTime: number | null;
+  visitStartTime: number | null;
+  matchPausedAt: number | null;
 };
 
 export type GameStoreSelectors = {
@@ -174,6 +181,9 @@ const initialState: GameStoreState = {
   historyLegs: [],
   legWinner: null,
   matchWinner: null,
+  matchStartTime: null,
+  visitStartTime: null,
+  matchPausedAt: null,
 };
 
 export const createGameStore = (initState: GameStoreState = initialState) => {
@@ -234,10 +244,13 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.legWinner = null;
           state.matchWinner = null;
           state.gamePhase = "playing";
+          state.matchStartTime = Date.now();
+          state.visitStartTime = Date.now();
         });
       },
 
       startGame() {
+        const now = Date.now();
         set((state) => {
           state.gamePhase = "playing";
           state.matchId = crypto.randomUUID();
@@ -251,6 +264,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
               visits: [],
             },
           ];
+          state.matchStartTime = now;
+          state.visitStartTime = now;
         });
       },
 
@@ -293,6 +308,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           }
           state.currentVisitScores = [];
           state.currentVisitDarts = [];
+          state.visitStartTime = Date.now();
         });
 
         for (const event of events) {
@@ -327,6 +343,12 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             visits: [],
           });
           state.legWinner = null;
+          const now = Date.now();
+          if (state.matchPausedAt && state.matchStartTime) {
+            state.matchStartTime += now - state.matchPausedAt;
+          }
+          state.matchPausedAt = null;
+          state.visitStartTime = now;
         });
 
         const events: GameDomainEvent[] = [
@@ -483,6 +505,8 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             state.currentVisitDarts = [];
             p.legsWon += 1;
             state.legWinner = p.id;
+            state.visitStartTime = null;
+            state.matchPausedAt = Date.now();
 
             if (isMatchWin) {
               state.matchWinner = p.id;
