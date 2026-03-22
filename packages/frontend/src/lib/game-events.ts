@@ -29,7 +29,7 @@ export type VisitMaxScoredEvent = {
   playerId: number;
   playerName: string;
   legNumber: number;
-  score: 180;
+  score: number;
 };
 
 export type LegWonEvent = {

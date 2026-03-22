@@ -10,33 +10,8 @@ import type {
   PendingGameSnapshot,
 } from "@/lib/schemas";
 import { emitGameEvent, type GameDomainEvent } from "./game-events";
-import { computeDartThrow } from "./core/darts-score";
+import { createX01Engine } from "./core/x01-match-engine";
 import { createPlayers } from "./core/player-init";
-
-/**
- * Calculate required legs to win based on game mode and legsToWin setting.
- * 
- * IMPORTANT: The semantics of `legsToWin` differ based on `gameMode`:
- * 
- * - **firstTo mode**: `legsToWin` is the target number of legs to win the match
- *   Example: firstTo 3 means "first player to win 3 legs wins the match"
- * 
- * - **bestOf mode**: `legsToWin` is the total number of legs in the match
- *   Example: bestOf 7 means "best of 7 legs" = first to win 4 legs wins the match
- *   Formula: Math.ceil(legsToWin / 2)
- * 
- * @param settings Game settings containing gameMode and legsToWin
- * @returns The number of legs a player needs to win to win the match
- */
-function calculateRequiredLegsToWin(settings: GameSettings): number {
-  if (settings.gameMode === "firstTo") {
-    // In firstTo mode, legsToWin directly specifies the target
-    return settings.legsToWin;
-  }
-  // In bestOf mode, legsToWin is the total legs, so we calculate the majority needed to win
-  // e.g., best of 7 means first to 4, best of 5 means first to 3, best of 3 means first to 2
-  return Math.ceil(settings.legsToWin / 2);
-}
 
 function recordVisit(
   state: GameStoreState,
@@ -365,23 +340,17 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         const player = state.players.find((p) => p.id === state.activePlayerId);
         if (!player) throw new Error("Active player not found");
 
+        const engine = createX01Engine(state.gameSettings);
         const {
           newScore,
           validatedScore,
           isBust,
-          isLegWin,
+          isRoundWin: isLegWin,
           isCheckoutAttempt,
           isDoubleAttempt,
           isMissedDouble,
-        } = computeDartThrow(
-          player,
-          score,
-          modifier,
-          state.gameSettings,
-        );
-        const requiredLegs = calculateRequiredLegsToWin(state.gameSettings);
-        const totalLegsAfterWin = player.legsWon + 1;
-        const isMatchWin = isLegWin && totalLegsAfterWin >= requiredLegs;
+        } = engine.processThrow(player.score, score, modifier);
+        const isMatchWin = isLegWin && engine.isMatchWon(player.legsWon + 1);
         const originalScore = player.score;
         const playerCount = state.players.length;
 
@@ -415,13 +384,13 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           },
         ];
 
-        if (currentVisitTotal === 180) {
+        if (currentVisitTotal === engine.maxVisitScore) {
           events.push({
             type: "visitMaxScored",
             playerId: player.id,
             playerName: player.name,
             legNumber: state.currentLeg,
-            score: 180,
+            score: engine.maxVisitScore,
           });
         }
 
