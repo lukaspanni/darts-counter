@@ -116,3 +116,17 @@ export type UiSettings = z.infer<typeof uiSettingsSchema>;
 export type Dart = string;
 export type Checkout = Dart[];
 export type { ScoreModifier, OutMode } from "@darts-counter/shared";
+
+export const practiceSessionSchema = z.object({
+  id: z.string().uuid(),
+  date: z.string(),
+  playerName: z.string(),
+  mode: z.enum(["aroundTheClock", "checkoutPractice", "cricket"]),
+  durationMs: z.number(),
+  dartsThrown: z.number(),
+  result: z.record(z.string(), z.unknown()),
+});
+
+export const practiceHistorySchema = z.array(practiceSessionSchema);
+export type PracticeSession = z.infer<typeof practiceSessionSchema>;
+export type PracticeHistory = z.infer<typeof practiceHistorySchema>;
