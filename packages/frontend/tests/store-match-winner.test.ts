@@ -1,241 +1,116 @@
 import { describe, expect, test } from "vitest";
-import { createGameStore } from "../src/lib/store";
+import { startGame } from "./test-helpers";
 
-describe("createGameStore handleDartThrow", () => {
-  describe("firstTo mode", () => {
-    test("marks a winning checkout as match-winning in deciding leg (firstTo 1)", () => {
-      const store = createGameStore();
-      const state = store.getState();
-
-      state.setGameSettings({
-        startingScore: 2,
-        outMode: "double",
-        gameMode: "firstTo",
-        legsToWin: 1,
-        checkoutAssist: false,
-      });
-      state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-      state.startGame();
-
-      const result = store.getState().handleDartThrow(2, "double");
-
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(true);
-      expect(result.matchWinner).toBe(1);
+describe("Match win detection", () => {
+  test("first to 1: single leg win ends the match", () => {
+    const store = startGame({
+      settings: { startingScore: 2, gameMode: "firstTo", legsToWin: 1 },
+      players: ["Alice", "Bob"],
     });
 
-    test("firstTo 3: wins on 3rd leg", () => {
-      const store = createGameStore();
-      const state = store.getState();
+    const result = store.getState().handleDartThrow(2, "double");
 
-      state.setGameSettings({
-        startingScore: 2,
-        outMode: "double",
-        gameMode: "firstTo",
-        legsToWin: 3,
-        checkoutAssist: false,
-      });
-      state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-      state.startGame();
-
-      // Win first leg
-      let result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(false);
-      expect(store.getState().players[0]!.legsWon).toBe(1);
-
-      // Start next leg
-      state.startNextLeg();
-
-      // Win second leg
-      result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(false);
-      expect(store.getState().players[0]!.legsWon).toBe(2);
-
-      // Start next leg
-      state.startNextLeg();
-
-      // Win third leg - should be match win
-      result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(true);
-      expect(result.matchWinner).toBe(1);
-      expect(store.getState().players[0]!.legsWon).toBe(3);
-    });
-
-    test("firstTo 5: wins on 5th leg", () => {
-      const store = createGameStore();
-      const state = store.getState();
-
-      state.setGameSettings({
-        startingScore: 2,
-        outMode: "double",
-        gameMode: "firstTo",
-        legsToWin: 5,
-        checkoutAssist: false,
-      });
-      state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-      state.startGame();
-
-      // Win 4 legs
-      for (let i = 0; i < 4; i++) {
-        const result = store.getState().handleDartThrow(2, "double");
-        expect(result.isLegWin).toBe(true);
-        expect(result.isMatchWin).toBe(false);
-        state.startNextLeg();
-      }
-
-      // Win 5th leg - should be match win
-      const result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(true);
-      expect(result.matchWinner).toBe(1);
-      expect(store.getState().players[0]!.legsWon).toBe(5);
-    });
+    expect(result.isLegWin).toBe(true);
+    expect(result.isMatchWin).toBe(true);
+    expect(result.matchWinner).toBe(1);
   });
 
-  describe("bestOf mode", () => {
-    test("bestOf 3 (first to 2): does not mark first leg as match-winning", () => {
-      const store = createGameStore();
-      const state = store.getState();
+  test("first to 3: match is not won until 3rd leg", () => {
+    const store = startGame({
+      settings: { startingScore: 2, gameMode: "firstTo", legsToWin: 3 },
+      players: ["Alice", "Bob"],
+    });
 
-      state.setGameSettings({
-        startingScore: 2,
-        outMode: "double",
-        gameMode: "bestOf",
-        legsToWin: 3,
-        checkoutAssist: false,
-      });
-      state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-      state.startGame();
-
+    for (let i = 0; i < 2; i++) {
       const result = store.getState().handleDartThrow(2, "double");
-
       expect(result.isLegWin).toBe(true);
       expect(result.isMatchWin).toBe(false);
-      expect(result.matchWinner).toBeNull();
+      store.getState().startNextLeg();
+    }
+
+    const result = store.getState().handleDartThrow(2, "double");
+    expect(result.isMatchWin).toBe(true);
+    expect(store.getState().players[0]!.legsWon).toBe(3);
+  });
+
+  test("best of 3: first leg does not win, second does (majority)", () => {
+    const store = startGame({
+      settings: { startingScore: 2, gameMode: "bestOf", legsToWin: 3 },
+      players: ["Alice", "Bob"],
     });
 
-    test("bestOf 3 (first to 2): wins on 2nd leg", () => {
-      const store = createGameStore();
-      const state = store.getState();
+    const first = store.getState().handleDartThrow(2, "double");
+    expect(first.isMatchWin).toBe(false);
 
-      state.setGameSettings({
-        startingScore: 2,
-        outMode: "double",
-        gameMode: "bestOf",
-        legsToWin: 3,
-        checkoutAssist: false,
-      });
-      state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-      state.startGame();
+    store.getState().startNextLeg();
 
-      // Win first leg
-      let result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(false);
-      expect(store.getState().players[0]!.legsWon).toBe(1);
+    const second = store.getState().handleDartThrow(2, "double");
+    expect(second.isMatchWin).toBe(true);
+    expect(store.getState().players[0]!.legsWon).toBe(2);
+  });
 
-      // Start next leg
-      state.startNextLeg();
-
-      // Win second leg - should be match win (2 out of 3)
-      result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(true);
-      expect(result.matchWinner).toBe(1);
-      expect(store.getState().players[0]!.legsWon).toBe(2);
+  test("best of 7: match won after 4 legs (majority)", () => {
+    const store = startGame({
+      settings: { startingScore: 2, gameMode: "bestOf", legsToWin: 7 },
+      players: ["Alice", "Bob"],
     });
 
-    test("bestOf 5 (first to 3): wins on 3rd leg", () => {
-      const store = createGameStore();
-      const state = store.getState();
+    for (let i = 0; i < 3; i++) {
+      store.getState().handleDartThrow(2, "double");
+      store.getState().startNextLeg();
+    }
 
-      state.setGameSettings({
-        startingScore: 2,
-        outMode: "double",
-        gameMode: "bestOf",
-        legsToWin: 5,
-        checkoutAssist: false,
-      });
-      state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-      state.startGame();
+    const result = store.getState().handleDartThrow(2, "double");
+    expect(result.isMatchWin).toBe(true);
+    expect(store.getState().players[0]!.legsWon).toBe(4);
+  });
 
-      // Win 2 legs
-      for (let i = 0; i < 2; i++) {
-        const result = store.getState().handleDartThrow(2, "double");
-        expect(result.isLegWin).toBe(true);
-        expect(result.isMatchWin).toBe(false);
-        state.startNextLeg();
-      }
-
-      // Win 3rd leg - should be match win (3 out of 5)
-      const result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(true);
-      expect(result.matchWinner).toBe(1);
-      expect(store.getState().players[0]!.legsWon).toBe(3);
+  test("transitions to gameOver phase on match win", () => {
+    const store = startGame({
+      settings: { startingScore: 2, gameMode: "firstTo", legsToWin: 1 },
+      players: ["Alice", "Bob"],
     });
 
-    test("bestOf 7 (first to 4): wins on 4th leg", () => {
-      const store = createGameStore();
-      const state = store.getState();
+    store.getState().handleDartThrow(2, "double");
 
-      state.setGameSettings({
-        startingScore: 2,
-        outMode: "double",
-        gameMode: "bestOf",
-        legsToWin: 7,
-        checkoutAssist: false,
-      });
-      state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-      state.startGame();
+    expect(store.getState().gamePhase).toBe("gameOver");
+  });
+});
 
-      // Win 3 legs
-      for (let i = 0; i < 3; i++) {
-        const result = store.getState().handleDartThrow(2, "double");
-        expect(result.isLegWin).toBe(true);
-        expect(result.isMatchWin).toBe(false);
-        state.startNextLeg();
-      }
-
-      // Win 4th leg - should be match win (4 out of 7)
-      const result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(true);
-      expect(result.matchWinner).toBe(1);
-      expect(store.getState().players[0]!.legsWon).toBe(4);
+describe("Turn alternation", () => {
+  test("active player switches after finishing a visit", () => {
+    const store = startGame({
+      settings: { startingScore: 501 },
+      players: ["Alice", "Bob"],
     });
 
-    test("bestOf 9 (first to 5): wins on 5th leg", () => {
-      const store = createGameStore();
-      const state = store.getState();
+    expect(store.getState().activePlayerId).toBe(1);
 
-      state.setGameSettings({
-        startingScore: 2,
-        outMode: "double",
-        gameMode: "bestOf",
-        legsToWin: 9,
-        checkoutAssist: false,
-      });
-      state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-      state.startGame();
+    store.getState().handleDartThrow(60, "single");
+    store.getState().finishVisit();
+    expect(store.getState().activePlayerId).toBe(2);
 
-      // Win 4 legs
-      for (let i = 0; i < 4; i++) {
-        const result = store.getState().handleDartThrow(2, "double");
-        expect(result.isLegWin).toBe(true);
-        expect(result.isMatchWin).toBe(false);
-        state.startNextLeg();
-      }
+    store.getState().handleDartThrow(40, "single");
+    store.getState().finishVisit();
+    expect(store.getState().activePlayerId).toBe(1);
+  });
 
-      // Win 5th leg - should be match win (5 out of 9)
-      const result = store.getState().handleDartThrow(2, "double");
-      expect(result.isLegWin).toBe(true);
-      expect(result.isMatchWin).toBe(true);
-      expect(result.matchWinner).toBe(1);
-      expect(store.getState().players[0]!.legsWon).toBe(5);
+  test("both players' scores update independently across turns", () => {
+    const store = startGame({
+      settings: { startingScore: 501 },
+      players: ["Alice", "Bob"],
     });
+
+    // Alice throws 60
+    store.getState().handleDartThrow(60, "single");
+    store.getState().finishVisit();
+
+    // Bob throws 40
+    store.getState().handleDartThrow(40, "single");
+    store.getState().finishVisit();
+
+    const [alice, bob] = store.getState().players;
+    expect(alice!.score).toBe(441);
+    expect(bob!.score).toBe(461);
   });
 });

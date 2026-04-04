@@ -154,6 +154,12 @@ function PlayerCard({
             label="Legs"
             value={`${player.legsWon}/${player.legsPlayed}`}
           />
+          {player.averageVisitTimeMs != null && (
+            <PlayerStatBadge
+              label="Avg Visit"
+              value={`${(player.averageVisitTimeMs / 1000).toFixed(1)}s`}
+            />
+          )}
         </div>
       )}
     </button>

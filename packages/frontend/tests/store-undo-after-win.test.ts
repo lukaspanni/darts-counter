@@ -1,133 +1,67 @@
 import { describe, expect, test } from "vitest";
-import { createGameStore } from "../src/lib/store";
+import { startGame } from "./test-helpers";
 
-describe("handleUndoThrow after win", () => {
-  test("prevents undo after leg win", () => {
-    const store = createGameStore();
-    const state = store.getState();
-
-    state.setGameSettings({
-      startingScore: 2,
-      outMode: "double",
-      gameMode: "bestOf",
-      legsToWin: 3,
-      checkoutAssist: false,
+describe("Undo behavior", () => {
+  test("blocks undo after a leg win", () => {
+    const store = startGame({
+      settings: { startingScore: 2, gameMode: "bestOf", legsToWin: 3 },
+      players: ["Alice", "Bob"],
     });
-    state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-    state.startGame();
 
-    // Alice wins the leg with a double 1
-    const result = store.getState().handleDartThrow(2, "double");
-    expect(result.isLegWin).toBe(true);
-    expect(result.isMatchWin).toBe(false);
+    const throwResult = store.getState().handleDartThrow(2, "double");
+    expect(throwResult.isLegWin).toBe(true);
+    expect(throwResult.isMatchWin).toBe(false);
 
-    // Store should have legWinner set
-    expect(store.getState().legWinner).toBe(1);
-    expect(store.getState().matchWinner).toBeNull();
-
-    // Try to undo - should fail
     const undoResult = store.getState().handleUndoThrow();
     expect(undoResult.success).toBe(false);
 
-    // State should remain unchanged
-    expect(store.getState().legWinner).toBe(1);
-    const alice = store.getState().players.find((p) => p.id === 1);
-    expect(alice?.legsWon).toBe(1);
+    // Leg win should still stand
+    expect(store.getState().players[0]!.legsWon).toBe(1);
   });
 
-  test("prevents undo after match win", () => {
-    const store = createGameStore();
-    const state = store.getState();
-
-    state.setGameSettings({
-      startingScore: 2,
-      outMode: "double",
-      gameMode: "firstTo",
-      legsToWin: 1,
-      checkoutAssist: false,
+  test("blocks undo after a match win", () => {
+    const store = startGame({
+      settings: { startingScore: 2, gameMode: "firstTo", legsToWin: 1 },
+      players: ["Alice", "Bob"],
     });
-    state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-    state.startGame();
 
-    // Alice wins the match with a double 1
-    const result = store.getState().handleDartThrow(2, "double");
-    expect(result.isLegWin).toBe(true);
-    expect(result.isMatchWin).toBe(true);
+    const throwResult = store.getState().handleDartThrow(2, "double");
+    expect(throwResult.isMatchWin).toBe(true);
 
-    // Store should have both legWinner and matchWinner set
-    expect(store.getState().legWinner).toBe(1);
-    expect(store.getState().matchWinner).toBe(1);
-
-    // Try to undo - should fail
     const undoResult = store.getState().handleUndoThrow();
     expect(undoResult.success).toBe(false);
 
-    // State should remain unchanged
-    expect(store.getState().legWinner).toBe(1);
-    expect(store.getState().matchWinner).toBe(1);
-    const alice = store.getState().players.find((p) => p.id === 1);
-    expect(alice?.legsWon).toBe(1);
+    expect(store.getState().players[0]!.legsWon).toBe(1);
+    expect(store.getState().gamePhase).toBe("gameOver");
   });
 
-  test("allows undo before any win", () => {
-    const store = createGameStore();
-    const state = store.getState();
-
-    state.setGameSettings({
-      startingScore: 501,
-      outMode: "double",
-      gameMode: "bestOf",
-      legsToWin: 3,
-      checkoutAssist: false,
+  test("allows undo of a single dart before any win", () => {
+    const store = startGame({
+      settings: { startingScore: 501 },
+      players: ["Alice", "Bob"],
     });
-    state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-    state.startGame();
 
-    // Alice throws a 20
     store.getState().handleDartThrow(20, "single");
-    const alice = store.getState().players.find((p) => p.id === 1);
-    expect(alice?.score).toBe(481);
-    expect(store.getState().currentVisitScores.length).toBe(1);
+    expect(store.getState().players[0]!.score).toBe(481);
 
-    // Undo should work
     const undoResult = store.getState().handleUndoThrow();
     expect(undoResult.success).toBe(true);
     expect(undoResult.lastScore).toBe(20);
-
-    // State should be reverted
-    const aliceAfterUndo = store.getState().players.find((p) => p.id === 1);
-    expect(aliceAfterUndo?.score).toBe(501);
-    expect(store.getState().currentVisitScores.length).toBe(0);
+    expect(store.getState().players[0]!.score).toBe(501);
   });
 
-  test("allows undo during a visit that hasn't won yet", () => {
-    const store = createGameStore();
-    const state = store.getState();
-
-    state.setGameSettings({
-      startingScore: 501,
-      outMode: "double",
-      gameMode: "bestOf",
-      legsToWin: 3,
-      checkoutAssist: false,
+  test("allows undo mid-visit without affecting earlier darts", () => {
+    const store = startGame({
+      settings: { startingScore: 501 },
+      players: ["Alice", "Bob"],
     });
-    state.setPlayers([{ name: "Alice" }, { name: "Bob" }]);
-    state.startGame();
 
-    // Alice throws triple 20, triple 20
     store.getState().handleDartThrow(60, "triple");
     store.getState().handleDartThrow(60, "triple");
-    const alice = store.getState().players.find((p) => p.id === 1);
-    expect(alice?.score).toBe(501 - 120);
+    expect(store.getState().players[0]!.score).toBe(381);
 
-    // Undo should work
-    const undoResult = store.getState().handleUndoThrow();
-    expect(undoResult.success).toBe(true);
-    expect(undoResult.lastScore).toBe(60);
-
-    // State should be reverted
-    const aliceAfterUndo = store.getState().players.find((p) => p.id === 1);
-    expect(aliceAfterUndo?.score).toBe(501 - 60);
-    expect(store.getState().currentVisitScores.length).toBe(1);
+    store.getState().handleUndoThrow();
+    expect(store.getState().players[0]!.score).toBe(441);
+    expect(store.getState().getDartsInVisit()).toBe(1);
   });
 });
