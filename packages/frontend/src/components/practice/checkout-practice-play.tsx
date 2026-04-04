@@ -83,7 +83,9 @@ export function CheckoutPracticePlay() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold">{successRate}%</p>
+                  <p className="text-3xl font-bold">
+                    {successRate !== "—" ? `${successRate}%` : "—"}
+                  </p>
                   <p className="text-muted-foreground mt-1 text-xs">
                     Success Rate
                   </p>
