@@ -5,17 +5,34 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Player, GameHistory } from "@/lib/schemas";
+import { Button } from "@/components/ui/button";
+import type { Player, GameHistory, GameSettings, LegHistory } from "@/lib/schemas";
 import { StartNewGameButton } from "./start-new-game-button";
+import { MatchResultCard } from "./match-result-card";
+import { captureAndShare } from "@/lib/share-result";
 import { calculatePlayerStats } from "@/lib/player-stats";
+import { Share2, Download } from "lucide-react";
+import { useRef, useState } from "react";
 
 interface GameOverProps {
   winner: Player;
+  players: Player[];
+  gameSettings: GameSettings;
+  historyLegs: LegHistory[];
   gameHistory: GameHistory[];
   onNewGame: () => void;
 }
 
-export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
+export function GameOver({
+  winner,
+  players,
+  gameSettings,
+  historyLegs,
+  gameHistory,
+  onNewGame,
+}: GameOverProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isSharing, setIsSharing] = useState(false);
   const winnerStats = calculatePlayerStats(gameHistory).find(
     (stats) => stats.name === winner.name,
   );
@@ -28,6 +45,18 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
   const isAboveAverage =
     currentAverage > (winnerStats?.averagePerVisit ?? 0) &&
     (winnerStats?.matchesPlayed ?? 0) > 0;
+
+  const handleShare = async () => {
+    if (!cardRef.current || isSharing) return;
+    setIsSharing(true);
+    try {
+      await captureAndShare(cardRef.current);
+    } catch {
+      // User cancelled share or capture failed — silently ignore
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   return (
     <div>
@@ -70,11 +99,41 @@ export function GameOver({ winner, gameHistory, onNewGame }: GameOverProps) {
               )}
             </div>
           </div>
+
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleShare}
+            disabled={isSharing}
+          >
+            {"canShare" in navigator ? (
+              <>
+                <Share2 className="mr-2 h-4 w-4" />
+                {isSharing ? "Generating..." : "Share Result"}
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                {isSharing ? "Generating..." : "Download Result"}
+              </>
+            )}
+          </Button>
         </CardContent>
         <CardFooter>
           <StartNewGameButton onNewGame={onNewGame} />
         </CardFooter>
       </Card>
+
+      {/* Off-screen card for image capture */}
+      <div className="fixed left-[-9999px] top-0" aria-hidden="true">
+        <MatchResultCard
+          ref={cardRef}
+          players={players}
+          winnerId={winner.id}
+          gameSettings={gameSettings}
+          historyLegs={historyLegs}
+        />
+      </div>
     </div>
   );
 }
