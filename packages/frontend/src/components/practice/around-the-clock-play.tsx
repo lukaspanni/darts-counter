@@ -14,7 +14,7 @@ export function AroundTheClockPlay() {
   const resetPractice = usePracticeStore((s) => s.resetPractice);
   const phase = usePracticeStore((s) => s.phase);
 
-  if (!modeState || modeState.mode !== "aroundTheClock") return null;
+  if (modeState?.mode !== "aroundTheClock") return null;
 
   const {
     currentTarget,
@@ -30,41 +30,41 @@ export function AroundTheClockPlay() {
 
   if (sessionComplete || phase === "sessionComplete") {
     return (
-      <main className="flex grow flex-col items-center px-4 pb-8 pt-6">
+      <main className="flex grow flex-col items-center px-4 pt-6 pb-8">
         <div className="w-full max-w-lg space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-bold tracking-tight">
               Session Complete!
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-sm">
               You finished Around the Clock
             </p>
           </div>
 
           <Card>
-            <CardHeader className="pb-2 pt-4">
+            <CardHeader className="pt-4 pb-2">
               <CardTitle className="text-base">Results</CardTitle>
             </CardHeader>
             <CardContent className="pb-4">
               <div className="mb-4 text-center">
                 <p className="text-4xl font-bold">{totalDarts}</p>
-                <p className="text-sm text-muted-foreground">Total Darts</p>
+                <p className="text-muted-foreground text-sm">Total Darts</p>
               </div>
 
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="py-1 text-left font-medium text-muted-foreground">
+                    <th className="text-muted-foreground py-1 text-left font-medium">
                       Target
                     </th>
-                    <th className="py-1 text-right font-medium text-muted-foreground">
+                    <th className="text-muted-foreground py-1 text-right font-medium">
                       Darts
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {dartsPerSegment.map((darts, idx) => (
-                    <tr key={idx} className="border-b border-border/50">
+                    <tr key={idx} className="border-border/50 border-b">
                       <td className="py-1">{idx + 1}</td>
                       <td className="py-1 text-right">{darts}</td>
                     </tr>
@@ -83,12 +83,10 @@ export function AroundTheClockPlay() {
   }
 
   return (
-    <main className="flex grow flex-col items-center px-4 pb-8 pt-6">
+    <main className="flex grow flex-col items-center px-4 pt-6 pb-8">
       <div className="w-full max-w-2xl space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight">
-            Around the Clock
-          </h2>
+          <h2 className="text-xl font-bold tracking-tight">Around the Clock</h2>
           <Button
             variant="outline"
             size="sm"
@@ -103,26 +101,26 @@ export function AroundTheClockPlay() {
         <Card>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
-              <div className="text-center flex-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="flex-1 text-center">
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                   Current Target
                 </p>
-                <p className="text-6xl font-bold text-primary">
+                <p className="text-primary text-6xl font-bold">
                   {currentTarget}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Target {currentTarget} / 20
                 </p>
               </div>
-              <div className="flex flex-col gap-3 text-center flex-1">
+              <div className="flex flex-1 flex-col gap-3 text-center">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                     Darts at Target
                   </p>
                   <p className="text-2xl font-bold">{currentSegmentDarts}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                     Total Darts
                   </p>
                   <p className="text-2xl font-bold">{totalDarts}</p>

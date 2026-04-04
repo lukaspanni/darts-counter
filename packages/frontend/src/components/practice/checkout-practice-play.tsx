@@ -28,7 +28,7 @@ export function CheckoutPracticePlay() {
   const resetPractice = usePracticeStore((s) => s.resetPractice);
   const phase = usePracticeStore((s) => s.phase);
 
-  if (!modeState || modeState.mode !== "checkoutPractice") return null;
+  if (modeState?.mode !== "checkoutPractice") return null;
 
   const {
     currentTarget,
@@ -58,13 +58,13 @@ export function CheckoutPracticePlay() {
 
   if (phase === "sessionComplete") {
     return (
-      <main className="flex grow flex-col items-center px-4 pb-8 pt-6">
+      <main className="flex grow flex-col items-center px-4 pt-6 pb-8">
         <div className="w-full max-w-lg space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-bold tracking-tight">
               Session Complete
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-sm">
               Checkout Practice results
             </p>
           </div>
@@ -74,19 +74,17 @@ export function CheckoutPracticePlay() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-3xl font-bold">{attemptsCompleted}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Attempts
-                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">Attempts</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{attemptsSucceeded}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-muted-foreground mt-1 text-xs">
                     Successes
                   </p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{successRate}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-muted-foreground mt-1 text-xs">
                     Success Rate
                   </p>
                 </div>
@@ -103,17 +101,13 @@ export function CheckoutPracticePlay() {
   }
 
   return (
-    <main className="flex grow flex-col items-center px-4 pb-8 pt-6">
+    <main className="flex grow flex-col items-center px-4 pt-6 pb-8">
       <div className="w-full max-w-2xl space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold tracking-tight">
             Checkout Practice
           </h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => endSession()}
-          >
+          <Button variant="outline" size="sm" onClick={() => endSession()}>
             End Session
           </Button>
         </div>
@@ -121,22 +115,22 @@ export function CheckoutPracticePlay() {
         <Card>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-start justify-between gap-4">
-              <div className="text-center flex-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="flex-1 text-center">
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                   Target
                 </p>
-                <p className="text-5xl font-bold text-primary">
+                <p className="text-primary text-5xl font-bold">
                   {currentTarget}
                 </p>
               </div>
-              <div className="text-center flex-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="flex-1 text-center">
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                   Remaining
                 </p>
                 <p className="text-5xl font-bold">{currentScore}</p>
               </div>
-              <div className="flex flex-col items-center gap-2 flex-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="flex flex-1 flex-col items-center gap-2">
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                   Darts
                 </p>
                 <div className="flex gap-1.5">
@@ -149,13 +143,13 @@ export function CheckoutPracticePlay() {
 
             <div className="mt-4 flex items-center justify-between border-t pt-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   {attemptsSucceeded}/{attemptsCompleted}
                 </span>
                 <span className="text-xs font-medium">
                   {successRate !== "—" ? `${successRate}%` : "—"}
                 </span>
-                <span className="text-xs text-muted-foreground">success</span>
+                <span className="text-muted-foreground text-xs">success</span>
               </div>
 
               {lastAttemptResult && (
@@ -175,8 +169,8 @@ export function CheckoutPracticePlay() {
             </div>
 
             {checkoutSuggestion && (
-              <div className="mt-3 rounded-md bg-muted/50 px-3 py-2">
-                <p className="text-xs text-muted-foreground">Suggestion</p>
+              <div className="bg-muted/50 mt-3 rounded-md px-3 py-2">
+                <p className="text-muted-foreground text-xs">Suggestion</p>
                 <p className="text-sm font-medium">{checkoutSuggestion}</p>
               </div>
             )}

@@ -37,7 +37,7 @@ export function CricketPlay() {
   const resetPractice = usePracticeStore((s) => s.resetPractice);
   const phase = usePracticeStore((s) => s.phase);
 
-  if (!modeState || modeState.mode !== "cricket") return null;
+  if (modeState?.mode !== "cricket") return null;
 
   const {
     players,
@@ -56,13 +56,15 @@ export function CricketPlay() {
 
   if (gameComplete || phase === "sessionComplete") {
     return (
-      <main className="flex grow flex-col items-center px-4 pb-8 pt-6">
+      <main className="flex grow flex-col items-center px-4 pt-6 pb-8">
         <div className="w-full max-w-lg space-y-6">
           <div className="text-center">
             {winnerIndex !== null ? (
               <>
-                <h2 className="text-2xl font-bold tracking-tight">Game Over!</h2>
-                <p className="mt-2 text-muted-foreground">
+                <h2 className="text-2xl font-bold tracking-tight">
+                  Game Over!
+                </h2>
+                <p className="text-muted-foreground mt-2">
                   {isMultiplayer
                     ? `Player ${winnerIndex + 1} wins!`
                     : "You closed the board!"}
@@ -70,27 +72,31 @@ export function CricketPlay() {
               </>
             ) : (
               <>
-                <h2 className="text-2xl font-bold tracking-tight">Session Complete</h2>
-                <p className="mt-2 text-muted-foreground">Cricket session ended early</p>
+                <h2 className="text-2xl font-bold tracking-tight">
+                  Session Complete
+                </h2>
+                <p className="text-muted-foreground mt-2">
+                  Cricket session ended early
+                </p>
               </>
             )}
           </div>
 
           <Card>
-            <CardHeader className="pb-2 pt-4">
+            <CardHeader className="pt-4 pb-2">
               <CardTitle className="text-base">Final Scores</CardTitle>
             </CardHeader>
             <CardContent className="pb-4">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="py-1.5 text-left font-medium text-muted-foreground">
+                    <th className="text-muted-foreground py-1.5 text-left font-medium">
                       Segment
                     </th>
                     {players.map((_, i) => (
                       <th
                         key={i}
-                        className="py-1.5 text-center font-medium text-muted-foreground"
+                        className="text-muted-foreground py-1.5 text-center font-medium"
                       >
                         {isMultiplayer ? `P${i + 1}` : "Marks"}
                       </th>
@@ -99,7 +105,7 @@ export function CricketPlay() {
                 </thead>
                 <tbody>
                   {CRICKET_SEGMENTS.map((seg) => (
-                    <tr key={seg} className="border-b border-border/50">
+                    <tr key={seg} className="border-border/50 border-b">
                       <td className="py-1.5 font-medium">
                         {seg === 25 ? "Bull" : seg}
                       </td>
@@ -132,7 +138,7 @@ export function CricketPlay() {
   }
 
   return (
-    <main className="flex grow flex-col items-center px-4 pb-8 pt-6">
+    <main className="flex grow flex-col items-center px-4 pt-6 pb-8">
       <div className="w-full max-w-2xl space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold tracking-tight">Cricket</h2>
@@ -147,11 +153,7 @@ export function CricketPlay() {
                 Finish Visit
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => endSession()}
-            >
+            <Button variant="outline" size="sm" onClick={() => endSession()}>
               End Session
             </Button>
           </div>
@@ -175,7 +177,7 @@ export function CricketPlay() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="py-1.5 text-left font-medium text-muted-foreground">
+                  <th className="text-muted-foreground py-1.5 text-left font-medium">
                     Segment
                   </th>
                   {players.map((_, i) => (
@@ -195,7 +197,7 @@ export function CricketPlay() {
               </thead>
               <tbody>
                 {CRICKET_SEGMENTS.map((seg) => (
-                  <tr key={seg} className="border-b border-border/50">
+                  <tr key={seg} className="border-border/50 border-b">
                     <td className="py-1.5 font-medium">
                       {seg === 25 ? "Bull" : seg}
                     </td>
@@ -207,7 +209,7 @@ export function CricketPlay() {
                   </tr>
                 ))}
                 <tr>
-                  <td className="py-1.5 font-bold text-xs uppercase tracking-wide text-muted-foreground">
+                  <td className="text-muted-foreground py-1.5 text-xs font-bold tracking-wide uppercase">
                     Points
                   </td>
                   {players.map((player, i) => (
@@ -229,7 +231,7 @@ export function CricketPlay() {
 
             {!isMultiplayer && (
               <div className="mt-3 flex items-center gap-2 border-t pt-3">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   Darts thrown:
                 </span>
                 <div className="flex gap-1">
