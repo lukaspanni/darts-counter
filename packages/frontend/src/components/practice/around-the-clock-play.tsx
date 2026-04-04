@@ -37,7 +37,9 @@ export function AroundTheClockPlay() {
               Session Complete!
             </h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              You finished Around the Clock
+              {sessionComplete
+                ? "You finished Around the Clock!"
+                : "Session ended early"}
             </p>
           </div>
 
