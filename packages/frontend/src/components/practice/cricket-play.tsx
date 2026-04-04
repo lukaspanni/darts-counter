@@ -54,17 +54,26 @@ export function CricketPlay() {
     handleDartThrow(score, modifier);
   };
 
-  if ((gameComplete || phase === "sessionComplete") && winnerIndex !== null) {
+  if (gameComplete || phase === "sessionComplete") {
     return (
       <main className="flex grow flex-col items-center px-4 pb-8 pt-6">
         <div className="w-full max-w-lg space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl font-bold tracking-tight">Game Over!</h2>
-            <p className="mt-2 text-muted-foreground">
-              {isMultiplayer
-                ? `Player ${winnerIndex + 1} wins!`
-                : "You closed the board!"}
-            </p>
+            {winnerIndex !== null ? (
+              <>
+                <h2 className="text-2xl font-bold tracking-tight">Game Over!</h2>
+                <p className="mt-2 text-muted-foreground">
+                  {isMultiplayer
+                    ? `Player ${winnerIndex + 1} wins!`
+                    : "You closed the board!"}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold tracking-tight">Session Complete</h2>
+                <p className="mt-2 text-muted-foreground">Cricket session ended early</p>
+              </>
+            )}
           </div>
 
           <Card>
@@ -133,7 +142,7 @@ export function CricketPlay() {
                 variant="outline"
                 size="sm"
                 onClick={finishVisit}
-                disabled={gameComplete}
+                disabled={gameComplete || currentVisitDarts === 0}
               >
                 Finish Visit
               </Button>
