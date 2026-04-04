@@ -1,8 +1,12 @@
 import "client-only";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Clock } from "lucide-react";
 import type { Player } from "@/lib/schemas";
+import {
+  useElapsedTime,
+  formatElapsed,
+} from "@/lib/hooks/use-elapsed-time";
 
 interface ScoreDisplayProps {
   players: Player[];
@@ -12,6 +16,9 @@ interface ScoreDisplayProps {
   currentVisitScore: number;
   checkoutSuggestion: string | null;
   bust: boolean;
+  matchStartTime: number | null;
+  visitStartTime: number | null;
+  matchPausedAt: number | null;
 }
 
 export function ScoreDisplay({
@@ -22,8 +29,13 @@ export function ScoreDisplay({
   currentVisitScore,
   checkoutSuggestion,
   bust,
+  matchStartTime,
+  visitStartTime,
+  matchPausedAt,
 }: ScoreDisplayProps) {
   const activePlayer = players.find((p) => p.id === activePlayerId)!;
+  const matchElapsed = useElapsedTime(matchStartTime, matchPausedAt);
+  const visitElapsed = useElapsedTime(visitStartTime);
 
   // Calculate average score - fixed formula with 2 decimal places
   const calculateAverage = (player: Player) => {
@@ -34,8 +46,11 @@ export function ScoreDisplay({
     <div className="mb-4 space-y-4">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-center text-xl">
-            {activePlayer.name}&apos;s Turn
+          <CardTitle className="flex items-center justify-center gap-2 text-xl">
+            <span>{activePlayer.name}&apos;s Turn</span>
+            <span className="text-muted-foreground text-sm font-normal tabular-nums">
+              {formatElapsed(visitElapsed)}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -118,7 +133,7 @@ export function ScoreDisplay({
             )}
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
+          <div className="mt-4 grid grid-cols-4 gap-2 text-center text-sm">
             <div>
               <p className="text-muted-foreground">Leg</p>
               <p className="font-medium">{currentLeg}</p>
@@ -130,6 +145,14 @@ export function ScoreDisplay({
             <div>
               <p className="text-muted-foreground">Average</p>
               <p className="font-medium">{calculateAverage(activePlayer)}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground flex items-center justify-center gap-1">
+                <Clock className="h-3 w-3" /> Time
+              </p>
+              <p className="font-medium tabular-nums">
+                {formatElapsed(matchElapsed)}
+              </p>
             </div>
           </div>
         </CardContent>

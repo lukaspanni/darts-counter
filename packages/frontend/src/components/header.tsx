@@ -30,6 +30,9 @@ export const Header = () => {
         <Link href="/stats" className="font-bold">
           Stats
         </Link>
+        <Link href="/practice" className="ml-4 font-bold">
+          Practice
+        </Link>
       </div>
       <div className="flex items-center gap-2">
         <SettingsMenu />

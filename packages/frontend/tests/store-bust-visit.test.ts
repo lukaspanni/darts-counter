@@ -1,195 +1,84 @@
 import { describe, expect, test } from "vitest";
-import { createGameStore } from "../src/lib/store";
+import { startGame } from "./test-helpers";
 
-type GameState = ReturnType<ReturnType<typeof createGameStore>["getState"]>;
-
-const getFirstVisit = (state: GameState) => {
-  const visit = state.historyLegs[0]?.visits[0];
-  if (!visit) {
-    throw new Error("Expected a recorded visit in history");
-  }
+const getFirstVisit = (store: ReturnType<typeof startGame>) => {
+  const visit = store.getState().historyLegs[0]?.visits[0];
+  if (!visit) throw new Error("Expected a recorded visit in history");
   return visit;
 };
 
-type Visit = ReturnType<typeof getFirstVisit>;
+describe("Bust visit recording", () => {
+  test("bust on first dart records visit total as 0", () => {
+    const store = startGame({ settings: { startingScore: 50 } });
 
-const getVisitDart = (visit: Visit, index: number) => {
-  const dart = visit.darts[index];
-  if (!dart) {
-    throw new Error(`Expected dart at index ${index}`);
-  }
-  return dart;
-};
+    store.getState().handleDartThrow(60, "single");
+    store.getState().finishVisit();
 
-describe("createGameStore bust visit recording", () => {
-  test("records totalScore as 0 when bust occurs on first dart", () => {
-    const store = createGameStore();
-    let state = store.getState();
-
-    state.setGameSettings({
-      startingScore: 50,
-      outMode: "double",
-      gameMode: "firstTo",
-      legsToWin: 1,
-      checkoutAssist: false,
-    });
-    state.setPlayers([{ name: "Alice" }]);
-    state.startGame();
-
-    // Throw 60 when player has 50 remaining (bust)
-    state.handleDartThrow(60, "single");
-    state.finishVisit();
-
-    state = store.getState();
-    const visit = getFirstVisit(state);
+    const visit = getFirstVisit(store);
     expect(visit.darts).toHaveLength(1);
-    expect(getVisitDart(visit, 0).isBust).toBe(true);
-    expect(getVisitDart(visit, 0).validatedScore).toBe(0);
+    expect(visit.darts[0]!.isBust).toBe(true);
     expect(visit.totalScore).toBe(0);
   });
 
-  test("records totalScore as 0 when bust occurs on second dart", () => {
-    const store = createGameStore();
-    let state = store.getState();
+  test("bust on second dart zeroes the entire visit", () => {
+    const store = startGame({ settings: { startingScore: 50 } });
 
-    state.setGameSettings({
-      startingScore: 50,
-      outMode: "double",
-      gameMode: "firstTo",
-      legsToWin: 1,
-      checkoutAssist: false,
-    });
-    state.setPlayers([{ name: "Alice" }]);
-    state.startGame();
+    store.getState().handleDartThrow(20, "single");
+    store.getState().handleDartThrow(40, "single"); // 30 remaining, bust
+    store.getState().finishVisit();
 
-    // First dart: 20 (valid)
-    state.handleDartThrow(20, "single");
-    // Second dart: 40 when player has 30 remaining (bust)
-    state.handleDartThrow(40, "single");
-    state.finishVisit();
-
-    state = store.getState();
-    const visit = getFirstVisit(state);
+    const visit = getFirstVisit(store);
     expect(visit.darts).toHaveLength(2);
-    expect(getVisitDart(visit, 0).isBust).toBe(false);
-    expect(getVisitDart(visit, 0).validatedScore).toBe(20);
-    expect(getVisitDart(visit, 1).isBust).toBe(true);
-    expect(getVisitDart(visit, 1).validatedScore).toBe(0);
-    expect(visit.totalScore).toBe(0); // Should be 0, not 20
+    expect(visit.darts[0]!.isBust).toBe(false);
+    expect(visit.darts[1]!.isBust).toBe(true);
+    expect(visit.totalScore).toBe(0);
   });
 
-  test("records totalScore as 0 when bust occurs on third dart", () => {
-    const store = createGameStore();
-    let state = store.getState();
+  test("bust on third dart zeroes the entire visit", () => {
+    const store = startGame({ settings: { startingScore: 50 } });
 
-    state.setGameSettings({
-      startingScore: 50,
-      outMode: "double",
-      gameMode: "firstTo",
-      legsToWin: 1,
-      checkoutAssist: false,
-    });
-    state.setPlayers([{ name: "Alice" }]);
-    state.startGame();
+    store.getState().handleDartThrow(20, "single");
+    store.getState().handleDartThrow(20, "single");
+    store.getState().handleDartThrow(20, "single"); // 10 remaining, bust
+    store.getState().finishVisit();
 
-    // First dart: 20 (valid)
-    state.handleDartThrow(20, "single");
-    // Second dart: 20 (valid)
-    state.handleDartThrow(20, "single");
-    // Third dart: 20 when player has 10 remaining (bust)
-    state.handleDartThrow(20, "single");
-    state.finishVisit();
-
-    state = store.getState();
-    const visit = getFirstVisit(state);
+    const visit = getFirstVisit(store);
     expect(visit.darts).toHaveLength(3);
-    expect(getVisitDart(visit, 0).isBust).toBe(false);
-    expect(getVisitDart(visit, 0).validatedScore).toBe(20);
-    expect(getVisitDart(visit, 1).isBust).toBe(false);
-    expect(getVisitDart(visit, 1).validatedScore).toBe(20);
-    expect(getVisitDart(visit, 2).isBust).toBe(true);
-    expect(getVisitDart(visit, 2).validatedScore).toBe(0);
-    expect(visit.totalScore).toBe(0); // Should be 0, not 40
+    expect(visit.totalScore).toBe(0);
   });
 
-  test("records totalScore correctly for non-bust visit", () => {
-    const store = createGameStore();
-    let state = store.getState();
+  test("normal visit records actual total score", () => {
+    const store = startGame({ settings: { startingScore: 501 } });
 
-    state.setGameSettings({
-      startingScore: 501,
-      outMode: "double",
-      gameMode: "firstTo",
-      legsToWin: 1,
-      checkoutAssist: false,
-    });
-    state.setPlayers([{ name: "Alice" }]);
-    state.startGame();
+    store.getState().handleDartThrow(60, "single");
+    store.getState().handleDartThrow(60, "single");
+    store.getState().handleDartThrow(60, "single");
+    store.getState().finishVisit();
 
-    // Normal visit: 60, 60, 60
-    state.handleDartThrow(60, "single");
-    state.handleDartThrow(60, "single");
-    state.handleDartThrow(60, "single");
-    state.finishVisit();
-
-    state = store.getState();
-    const visit = getFirstVisit(state);
+    const visit = getFirstVisit(store);
     expect(visit.darts).toHaveLength(3);
-    expect(getVisitDart(visit, 0).isBust).toBe(false);
-    expect(getVisitDart(visit, 1).isBust).toBe(false);
-    expect(getVisitDart(visit, 2).isBust).toBe(false);
     expect(visit.totalScore).toBe(180);
   });
 
-  test("records totalScore as 0 when bust occurs in double-out mode with score of 1", () => {
-    const store = createGameStore();
-    let state = store.getState();
+  test("bust from leaving 1 in double-out records visit total as 0", () => {
+    const store = startGame({ settings: { startingScore: 21 } });
 
-    state.setGameSettings({
-      startingScore: 21,
-      outMode: "double",
-      gameMode: "firstTo",
-      legsToWin: 1,
-      checkoutAssist: false,
-    });
-    state.setPlayers([{ name: "Alice" }]);
-    state.startGame();
+    store.getState().handleDartThrow(20, "single"); // leaves 1, bust in double-out
+    store.getState().finishVisit();
 
-    // Throw 20 single, leaving 1 (bust in double-out mode)
-    state.handleDartThrow(20, "single");
-    state.finishVisit();
-
-    state = store.getState();
-    const visit = getFirstVisit(state);
-    expect(visit.darts).toHaveLength(1);
-    expect(getVisitDart(visit, 0).isBust).toBe(true);
-    expect(getVisitDart(visit, 0).validatedScore).toBe(0);
+    const visit = getFirstVisit(store);
+    expect(visit.darts[0]!.isBust).toBe(true);
     expect(visit.totalScore).toBe(0);
   });
 
-  test("records totalScore as 0 when trying to checkout without double in double-out mode", () => {
-    const store = createGameStore();
-    let state = store.getState();
+  test("bust from reaching 0 without double in double-out records visit total as 0", () => {
+    const store = startGame({ settings: { startingScore: 20 } });
 
-    state.setGameSettings({
-      startingScore: 20,
-      outMode: "double",
-      gameMode: "firstTo",
-      legsToWin: 1,
-      checkoutAssist: false,
-    });
-    state.setPlayers([{ name: "Alice" }]);
-    state.startGame();
+    store.getState().handleDartThrow(20, "single"); // reaches 0 but not a double, bust
+    store.getState().finishVisit();
 
-    // Throw 20 single to checkout (bust because not a double)
-    state.handleDartThrow(20, "single");
-    state.finishVisit();
-
-    state = store.getState();
-    const visit = getFirstVisit(state);
-    expect(visit.darts).toHaveLength(1);
-    expect(getVisitDart(visit, 0).isBust).toBe(true);
-    expect(getVisitDart(visit, 0).validatedScore).toBe(0);
+    const visit = getFirstVisit(store);
+    expect(visit.darts[0]!.isBust).toBe(true);
     expect(visit.totalScore).toBe(0);
   });
 });

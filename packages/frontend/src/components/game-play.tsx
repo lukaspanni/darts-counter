@@ -43,6 +43,9 @@ export function GamePlay() {
   const resetGame = useGameStore((state) => state.resetGame);
   const legWinner = useGameStore((state) => state.legWinner);
   const matchWinner = useGameStore((state) => state.matchWinner);
+  const matchStartTime = useGameStore((state) => state.matchStartTime);
+  const visitStartTime = useGameStore((state) => state.visitStartTime);
+  const matchPausedAt = useGameStore((state) => state.matchPausedAt);
   const dartsInVisit = useGameStore((state) => state.getDartsInVisit());
   const currentScore = useGameStore((state) => state.getCurrentVisitScore());
   const lastThrowBust = useGameStore((state) => state.getIsBust());
@@ -222,6 +225,9 @@ export function GamePlay() {
         currentVisitScore={currentScore}
         checkoutSuggestion={checkoutSuggestion}
         bust={lastThrowBust}
+        matchStartTime={matchStartTime}
+        visitStartTime={visitStartTime}
+        matchPausedAt={matchPausedAt}
       />
 
       {showEnhancedView ? (
