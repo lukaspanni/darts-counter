@@ -4,7 +4,7 @@ import { startGame } from "./test-helpers";
 describe("Match win detection", () => {
   test("first to 1: single leg win ends the match", () => {
     const store = startGame({
-      settings: { startingScore: 2, gameMode: "firstTo", legsToWin: 1 },
+      settings: { startingScore: 2, gameMode: "firstTo", targetLegs: 1 },
       players: ["Alice", "Bob"],
     });
 
@@ -17,7 +17,7 @@ describe("Match win detection", () => {
 
   test("first to 3: match is not won until 3rd leg", () => {
     const store = startGame({
-      settings: { startingScore: 2, gameMode: "firstTo", legsToWin: 3 },
+      settings: { startingScore: 2, gameMode: "firstTo", targetLegs: 3 },
       players: ["Alice", "Bob"],
     });
 
@@ -35,7 +35,7 @@ describe("Match win detection", () => {
 
   test("best of 3: first leg does not win, second does (majority)", () => {
     const store = startGame({
-      settings: { startingScore: 2, gameMode: "bestOf", legsToWin: 3 },
+      settings: { startingScore: 2, gameMode: "bestOf", totalLegs: 3 },
       players: ["Alice", "Bob"],
     });
 
@@ -51,7 +51,7 @@ describe("Match win detection", () => {
 
   test("best of 7: match won after 4 legs (majority)", () => {
     const store = startGame({
-      settings: { startingScore: 2, gameMode: "bestOf", legsToWin: 7 },
+      settings: { startingScore: 2, gameMode: "bestOf", totalLegs: 7 },
       players: ["Alice", "Bob"],
     });
 
@@ -67,7 +67,7 @@ describe("Match win detection", () => {
 
   test("transitions to gameOver phase on match win", () => {
     const store = startGame({
-      settings: { startingScore: 2, gameMode: "firstTo", legsToWin: 1 },
+      settings: { startingScore: 2, gameMode: "firstTo", targetLegs: 1 },
       players: ["Alice", "Bob"],
     });
 

@@ -43,7 +43,6 @@ function recordVisit(
 
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
-
 export type GameStoreState = {
   gamePhase: GamePhase;
   players: Player[];
@@ -114,7 +113,11 @@ export type GameStoreActions = {
   resetGame(this: void): void;
 
   // Logic
-  handleDartThrow(this: void, score: number, modifier: ScoreModifier): DartThrowResult;
+  handleDartThrow(
+    this: void,
+    score: number,
+    modifier: ScoreModifier,
+  ): DartThrowResult;
   handleUndoThrow(this: void): UndoResult;
 };
 
@@ -140,7 +143,7 @@ const initialSettings: GameSettings = {
   startingScore: 501,
   outMode: "single",
   gameMode: "bestOf",
-  legsToWin: 3,
+  totalLegs: 3,
   checkoutAssist: false,
 };
 
@@ -174,7 +177,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         set((state) => {
           // Guard: Only support 1-2 players
           if (players.length < 1 || players.length > 2) {
-            console.warn(`Invalid player count in setPlayers: ${players.length}. Must be 1-2 players.`);
+            console.warn(
+              `Invalid player count in setPlayers: ${players.length}. Must be 1-2 players.`,
+            );
           }
           state.players = createPlayers(
             players,
@@ -200,7 +205,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         set((state) => {
           // Guard: Validate player count in restored game
           if (snapshot.players.length < 1 || snapshot.players.length > 2) {
-            console.warn(`Invalid player count in restored game: ${snapshot.players.length}. Clamping to 1-2 players.`);
+            console.warn(
+              `Invalid player count in restored game: ${snapshot.players.length}. Clamping to 1-2 players.`,
+            );
             snapshot.players = snapshot.players.slice(0, 2);
             if (snapshot.players.length === 0) {
               // Cannot restore a game with no players
@@ -246,7 +253,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
       finishVisit() {
         const state = get();
-        const activePlayer = state.players.find((p) => p.id === state.activePlayerId);
+        const activePlayer = state.players.find(
+          (p) => p.id === state.activePlayerId,
+        );
         const { dartsInVisit, hasBust, currentVisitScore } = getVisitStats(
           state.currentVisitDarts,
         );

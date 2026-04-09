@@ -1,6 +1,10 @@
 "use client";
 
-import { type PendingGame, type PendingGameSnapshot } from "@/lib/schemas";
+import {
+  pendingGameSchema,
+  type PendingGame,
+  type PendingGameSnapshot,
+} from "@/lib/schemas";
 import { saveToLocalStorage } from "@/lib/local-storage";
 import { useCallback, useEffect, useState } from "react";
 
@@ -18,9 +22,11 @@ export function usePendingGame() {
     }
 
     try {
-      const parsed = JSON.parse(rawPendingGame) as PendingGame;
-      if (parsed?.status === "pending" && parsed.snapshot) {
-        setPendingGame(parsed);
+      const parsed = pendingGameSchema.safeParse(JSON.parse(rawPendingGame));
+      if (parsed.success) {
+        setPendingGame(parsed.data);
+      } else {
+        window.localStorage.removeItem(PENDING_GAME_STORAGE_KEY);
       }
     } catch {
       window.localStorage.removeItem(PENDING_GAME_STORAGE_KEY);

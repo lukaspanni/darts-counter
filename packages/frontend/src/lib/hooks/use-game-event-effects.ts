@@ -33,10 +33,7 @@ export function useGameEventEffects() {
         type: "gameUpdate",
         metadata: {
           gameId: liveStreamState.connection?.gameId || "",
-          startingScore: gameSettings.startingScore,
-          outMode: gameSettings.outMode,
-          gameMode: gameSettings.gameMode,
-          legsToWin: gameSettings.legsToWin,
+          settings: gameSettings,
           players: players.map((player) => ({
             id: player.id,
             name: player.name,

@@ -5,9 +5,33 @@ const defaultSettings: GameSettings = {
   startingScore: 501,
   outMode: "double",
   gameMode: "bestOf",
-  legsToWin: 3,
+  totalLegs: 3,
   checkoutAssist: false,
 };
+
+function resolveSettings(
+  settings?: Partial<GameSettings> & { gameMode?: GameSettings["gameMode"] },
+): GameSettings {
+  const sharedSettings = {
+    startingScore: settings?.startingScore ?? defaultSettings.startingScore,
+    outMode: settings?.outMode ?? defaultSettings.outMode,
+    checkoutAssist: settings?.checkoutAssist ?? defaultSettings.checkoutAssist,
+  };
+
+  if (settings?.gameMode === "firstTo") {
+    return {
+      ...sharedSettings,
+      gameMode: "firstTo",
+      targetLegs: settings.targetLegs ?? 1,
+    };
+  }
+
+  return {
+    ...sharedSettings,
+    gameMode: "bestOf",
+    totalLegs: settings?.gameMode === "bestOf" ? (settings.totalLegs ?? 3) : 3,
+  };
+}
 
 /**
  * Create a store with a game already in the "playing" phase.
@@ -15,11 +39,11 @@ const defaultSettings: GameSettings = {
  */
 export function startGame(
   options: {
-    settings?: Partial<GameSettings>;
+    settings?: Partial<GameSettings> & { gameMode?: GameSettings["gameMode"] };
     players?: string[];
   } = {},
 ) {
-  const settings = { ...defaultSettings, ...options.settings };
+  const settings = resolveSettings(options.settings);
   const players = options.players ?? ["Alice"];
 
   const store = createGameStore();

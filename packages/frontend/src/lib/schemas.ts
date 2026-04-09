@@ -20,22 +20,70 @@ export type Player = z.infer<typeof playerSchema>;
 export const gameTypeSchema = sharedGameTypeSchema;
 export type GameType = z.infer<typeof gameTypeSchema>;
 
-/**
- * Game settings schema
- * 
- * IMPORTANT: The semantics of `legsToWin` differ based on `gameMode`:
- * - firstTo mode: legsToWin = target number of legs to win (e.g., "first to 3 legs")
- * - bestOf mode: legsToWin = total legs in match (e.g., "best of 7 legs" = first to 4)
- */
-export const gameSettingsSchema = z.object({
+const gameSettingsBaseSchema = z.object({
   startingScore: z.number(),
   outMode: outModeSchema,
-  gameMode: gameTypeSchema,
-  legsToWin: z.number(),
   checkoutAssist: z.boolean().default(false),
 });
 
+const firstToGameSettingsSchema = gameSettingsBaseSchema.extend({
+  gameMode: z.literal("firstTo"),
+  targetLegs: z.number(),
+});
+
+const bestOfGameSettingsSchema = gameSettingsBaseSchema.extend({
+  gameMode: z.literal("bestOf"),
+  totalLegs: z.number(),
+});
+
+const legacyGameSettingsSchema = gameSettingsBaseSchema
+  .extend({
+    gameMode: gameTypeSchema,
+    legsToWin: z.number(),
+  })
+  .transform((settings) => {
+    if (settings.gameMode === "firstTo") {
+      return {
+        startingScore: settings.startingScore,
+        outMode: settings.outMode,
+        gameMode: "firstTo" as const,
+        targetLegs: settings.legsToWin,
+        checkoutAssist: settings.checkoutAssist,
+      };
+    }
+
+    return {
+      startingScore: settings.startingScore,
+      outMode: settings.outMode,
+      gameMode: "bestOf" as const,
+      totalLegs: settings.legsToWin,
+      checkoutAssist: settings.checkoutAssist,
+    };
+  });
+
+export const gameSettingsSchema = z.union([
+  firstToGameSettingsSchema,
+  bestOfGameSettingsSchema,
+  legacyGameSettingsSchema,
+]);
+
 export type GameSettings = z.infer<typeof gameSettingsSchema>;
+
+export function getConfiguredLegCount(settings: GameSettings): number {
+  return settings.gameMode === "firstTo"
+    ? settings.targetLegs
+    : settings.totalLegs;
+}
+
+export function getRequiredLegsToWin(settings: GameSettings): number {
+  return settings.gameMode === "firstTo"
+    ? settings.targetLegs
+    : Math.ceil(settings.totalLegs / 2);
+}
+
+export function getGameModeLabel(settings: GameSettings): string {
+  return settings.gameMode === "firstTo" ? "First to" : "Best of";
+}
 
 export const gameHistoryPlayerSchema = z.object({
   id: z.number(),

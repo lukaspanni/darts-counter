@@ -37,7 +37,7 @@ const gameHistoryFixture: GameHistory[] = [
       startingScore: 501,
       outMode: "double",
       gameMode: "bestOf",
-      legsToWin: 3,
+      totalLegs: 3,
       checkoutAssist: false,
     },
     legs: [
@@ -168,7 +168,7 @@ const gameHistoryFixture: GameHistory[] = [
       startingScore: 501,
       outMode: "double",
       gameMode: "bestOf",
-      legsToWin: 3,
+      totalLegs: 3,
       checkoutAssist: false,
     },
     legs: [

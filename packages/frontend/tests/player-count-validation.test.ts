@@ -12,10 +12,7 @@ describe("Player count validation", () => {
     });
 
     test("accepts 2 players", () => {
-      const players = createPlayers(
-        [{ name: "Alice" }, { name: "Bob" }],
-        501,
-      );
+      const players = createPlayers([{ name: "Alice" }, { name: "Bob" }], 501);
       expect(players).toHaveLength(2);
       expect(players[0]!.name).toBe("Alice");
       expect(players[1]!.name).toBe("Bob");
@@ -119,7 +116,7 @@ describe("Player count validation", () => {
           startingScore: 501,
           outMode: "double",
           gameMode: "bestOf",
-          legsToWin: 3,
+          totalLegs: 3,
           checkoutAssist: false,
         },
         currentLeg: 1,
@@ -166,7 +163,7 @@ describe("Player count validation", () => {
           startingScore: 501,
           outMode: "double",
           gameMode: "bestOf",
-          legsToWin: 3,
+          totalLegs: 3,
           checkoutAssist: false,
         },
         currentLeg: 1,
@@ -222,7 +219,7 @@ describe("Player count validation", () => {
           startingScore: 501,
           outMode: "double",
           gameMode: "bestOf",
-          legsToWin: 3,
+          totalLegs: 3,
           checkoutAssist: false,
         },
         currentLeg: 1,
@@ -252,7 +249,7 @@ describe("Player count validation", () => {
           startingScore: 501,
           outMode: "double",
           gameMode: "bestOf",
-          legsToWin: 3,
+          totalLegs: 3,
           checkoutAssist: false,
         },
         currentLeg: 1,

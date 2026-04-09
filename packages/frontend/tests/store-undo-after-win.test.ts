@@ -4,7 +4,7 @@ import { startGame } from "./test-helpers";
 describe("Undo behavior", () => {
   test("blocks undo after a leg win", () => {
     const store = startGame({
-      settings: { startingScore: 2, gameMode: "bestOf", legsToWin: 3 },
+      settings: { startingScore: 2, gameMode: "bestOf", totalLegs: 3 },
       players: ["Alice", "Bob"],
     });
 
@@ -21,7 +21,7 @@ describe("Undo behavior", () => {
 
   test("blocks undo after a match win", () => {
     const store = startGame({
-      settings: { startingScore: 2, gameMode: "firstTo", legsToWin: 1 },
+      settings: { startingScore: 2, gameMode: "firstTo", targetLegs: 1 },
       players: ["Alice", "Bob"],
     });
 
