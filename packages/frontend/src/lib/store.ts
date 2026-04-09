@@ -41,6 +41,20 @@ function recordVisit(
   });
 }
 
+function emitGameEvents(events: GameDomainEvent[]): void {
+  for (const event of events) {
+    emitGameEvent(event);
+  }
+}
+
+function createLegHistory(legNumber: number): LegHistory {
+  return {
+    legNumber,
+    winnerPlayerId: null,
+    visits: [],
+  };
+}
+
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
 
 
@@ -232,13 +246,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.currentLeg = 1;
           state.currentVisitScores = [];
           state.currentVisitDarts = [];
-          state.historyLegs = [
-            {
-              legNumber: 1,
-              winnerPlayerId: null,
-              visits: [],
-            },
-          ];
+          state.historyLegs = [createLegHistory(1)];
           state.matchStartTime = now;
           state.visitStartTime = now;
         });
@@ -286,9 +294,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.visitStartTime = Date.now();
         });
 
-        for (const event of events) {
-          emitGameEvent(event);
-        }
+        emitGameEvents(events);
 
         return {
           completed: true,
@@ -312,11 +318,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.currentLeg += 1;
           state.currentVisitScores = [];
           state.currentVisitDarts = [];
-          state.historyLegs.push({
-            legNumber: state.currentLeg,
-            winnerPlayerId: null,
-            visits: [],
-          });
+          state.historyLegs.push(createLegHistory(state.currentLeg));
           state.legWinner = null;
           const now = Date.now();
           if (state.matchPausedAt && state.matchStartTime) {
@@ -330,9 +332,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           { type: "legStarted", legNumber: nextLegNumber },
         ];
 
-        for (const event of events) {
-          emitGameEvent(event);
-        }
+        emitGameEvents(events);
 
         return {
           started: true,
@@ -352,9 +352,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
         set(initialState);
 
-        for (const event of events) {
-          emitGameEvent(event);
-        }
+        emitGameEvents(events);
       },
 
       handleDartThrow(score, modifier) {
@@ -484,9 +482,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           }
         });
 
-        for (const event of events) {
-          emitGameEvent(event);
-        }
+        emitGameEvents(events);
 
         return {
           newScore,
