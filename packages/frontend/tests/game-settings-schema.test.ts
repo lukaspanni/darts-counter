@@ -20,12 +20,12 @@ describe("gameSettingsSchema", () => {
     expect(getRequiredLegsToWin(settings)).toBe(3);
   });
 
-  test("migrates the legacy legsToWin field into the new best-of shape", () => {
+  test("parses the explicit best-of shape", () => {
     const settings = gameSettingsSchema.parse({
       startingScore: 501,
       outMode: "double",
       gameMode: "bestOf",
-      legsToWin: 7,
+      totalLegs: 7,
       checkoutAssist: false,
     });
 

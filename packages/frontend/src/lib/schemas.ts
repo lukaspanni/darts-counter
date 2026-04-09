@@ -36,35 +36,9 @@ const bestOfGameSettingsSchema = gameSettingsBaseSchema.extend({
   totalLegs: z.number(),
 });
 
-const legacyGameSettingsSchema = gameSettingsBaseSchema
-  .extend({
-    gameMode: gameTypeSchema,
-    legsToWin: z.number(),
-  })
-  .transform((settings) => {
-    if (settings.gameMode === "firstTo") {
-      return {
-        startingScore: settings.startingScore,
-        outMode: settings.outMode,
-        gameMode: "firstTo" as const,
-        targetLegs: settings.legsToWin,
-        checkoutAssist: settings.checkoutAssist,
-      };
-    }
-
-    return {
-      startingScore: settings.startingScore,
-      outMode: settings.outMode,
-      gameMode: "bestOf" as const,
-      totalLegs: settings.legsToWin,
-      checkoutAssist: settings.checkoutAssist,
-    };
-  });
-
-export const gameSettingsSchema = z.union([
+export const gameSettingsSchema = z.discriminatedUnion("gameMode", [
   firstToGameSettingsSchema,
   bestOfGameSettingsSchema,
-  legacyGameSettingsSchema,
 ]);
 
 export type GameSettings = z.infer<typeof gameSettingsSchema>;
