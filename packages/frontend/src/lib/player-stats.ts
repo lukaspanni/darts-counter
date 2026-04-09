@@ -1,4 +1,9 @@
 import type { GameHistory, VisitHistory } from "./schemas";
+import {
+  getDartsThrownByPlayerInLeg,
+  getLegWinnerName,
+  getThreeDartAverageForVisits,
+} from "./player-stats-domain";
 
 const DARTS_PER_VISIT = 3;
 
@@ -127,83 +132,59 @@ function resolveAveragePerVisit(
 function applyMatchResult(
   stats: PlayerAccumulator,
   didWinMatch: boolean,
-): PlayerAccumulator {
-  return {
-    ...stats,
-    matchesPlayed: stats.matchesPlayed + 1,
-    matchesWon: didWinMatch ? stats.matchesWon + 1 : stats.matchesWon,
-  };
+): void {
+  stats.matchesPlayed += 1;
+  if (didWinMatch) {
+    stats.matchesWon += 1;
+  }
 }
 
 function applyVisitToStats(
   stats: PlayerAccumulator,
   visit: VisitHistory,
   dartsThrownInLeg: number,
-): { nextStats: PlayerAccumulator; nextDartsThrownInLeg: number } {
+): number {
   let nextDartsThrownInLeg = dartsThrownInLeg;
-  let firstNineScored = stats.firstNineScored;
-  let firstNineDarts = stats.firstNineDarts;
-  let checkoutAttempts = stats.checkoutAttempts;
-  let checkoutSuccesses = stats.checkoutSuccesses;
-  let missedDoubles = stats.missedDoubles;
 
   visit.darts.forEach((dart) => {
     if (nextDartsThrownInLeg < 9) {
-      firstNineScored += dart.validatedScore;
-      firstNineDarts += 1;
+      stats.firstNineScored += dart.validatedScore;
+      stats.firstNineDarts += 1;
     }
     nextDartsThrownInLeg += 1;
 
     if (dart.isCheckoutAttempt) {
-      checkoutAttempts += 1;
+      stats.checkoutAttempts += 1;
     }
     if (dart.isCheckoutSuccess) {
-      checkoutSuccesses += 1;
+      stats.checkoutSuccesses += 1;
     }
     if (dart.isMissedDouble) {
-      missedDoubles += 1;
+      stats.missedDoubles += 1;
     }
   });
 
-  return {
-    nextStats: {
-      ...stats,
-      totalScored: stats.totalScored + visit.totalScore,
-      totalDarts: stats.totalDarts + visit.darts.length,
-      highestVisit: Math.max(stats.highestVisit, visit.totalScore),
-      total180s: stats.total180s + (visit.totalScore === 180 ? 1 : 0),
-      total100PlusVisits:
-        stats.total100PlusVisits + (visit.totalScore >= 100 ? 1 : 0),
-      firstNineScored,
-      firstNineDarts,
-      checkoutAttempts,
-      checkoutSuccesses,
-      missedDoubles,
-      totalVisitTimeMs: stats.totalVisitTimeMs + (visit.visitDurationMs ?? 0),
-      visitsWithTime: stats.visitsWithTime + (visit.visitDurationMs != null ? 1 : 0),
-    },
-    nextDartsThrownInLeg,
-  };
+  stats.totalScored += visit.totalScore;
+  stats.totalDarts += visit.darts.length;
+  stats.highestVisit = Math.max(stats.highestVisit, visit.totalScore);
+  stats.total180s += visit.totalScore === 180 ? 1 : 0;
+  stats.total100PlusVisits += visit.totalScore >= 100 ? 1 : 0;
+  stats.totalVisitTimeMs += visit.visitDurationMs ?? 0;
+  stats.visitsWithTime += visit.visitDurationMs != null ? 1 : 0;
+
+  return nextDartsThrownInLeg;
 }
 
-function applyLegPlayed(stats: PlayerAccumulator): PlayerAccumulator {
-  return {
-    ...stats,
-    legsPlayed: stats.legsPlayed + 1,
-  };
+function applyLegPlayed(stats: PlayerAccumulator): void {
+  stats.legsPlayed += 1;
 }
 
-function applyLegWin(
-  stats: PlayerAccumulator,
-  dartsToFinish: number,
-): PlayerAccumulator {
-  return {
-    ...stats,
-    legsWon: stats.legsWon + 1,
-    dartsToFinishTotal:
-      stats.dartsToFinishTotal + (dartsToFinish > 0 ? dartsToFinish : 0),
-    finishedLegs: stats.finishedLegs + (dartsToFinish > 0 ? 1 : 0),
-  };
+function applyLegWin(stats: PlayerAccumulator, dartsToFinish: number): void {
+  stats.legsWon += 1;
+  if (dartsToFinish > 0) {
+    stats.dartsToFinishTotal += dartsToFinish;
+    stats.finishedLegs += 1;
+  }
 }
 
 function accumulateLegVisitStats(
@@ -215,12 +196,11 @@ function accumulateLegVisitStats(
   visits.forEach((visit) => {
     const current = getOrCreateAccumulator(playerMap, visit.playerName);
     const dartsThrownInLeg = legDartsByPlayer.get(visit.playerName) ?? 0;
-    const { nextStats, nextDartsThrownInLeg } = applyVisitToStats(
+    const nextDartsThrownInLeg = applyVisitToStats(
       current,
       visit,
       dartsThrownInLeg,
     );
-    playerMap.set(visit.playerName, nextStats);
     legDartsByPlayer.set(visit.playerName, nextDartsThrownInLeg);
   });
 }
@@ -231,7 +211,7 @@ function accumulateLegParticipation(
 ) {
   game.players.forEach((player) => {
     const current = getOrCreateAccumulator(playerMap, player.name);
-    playerMap.set(player.name, applyLegPlayed(current));
+    applyLegPlayed(current);
   });
 }
 
@@ -240,19 +220,15 @@ function accumulateLegWinner(
   game: GameHistory,
   leg: GameHistory["legs"][number],
 ) {
-  const legWinnerName = game.players.find(
-    (player) => player.id === leg.winnerPlayerId,
-  )?.name;
+  const legWinnerName = getLegWinnerName(game, leg);
   if (!legWinnerName) {
     return;
   }
 
-  const dartsToFinish = leg.visits
-    .filter((visit) => visit.playerName === legWinnerName)
-    .reduce((sum, visit) => sum + visit.darts.length, 0);
+  const dartsToFinish = getDartsThrownByPlayerInLeg(leg, legWinnerName);
 
   const current = getOrCreateAccumulator(playerMap, legWinnerName);
-  playerMap.set(legWinnerName, applyLegWin(current, dartsToFinish));
+  applyLegWin(current, dartsToFinish);
 }
 
 function buildPlayerStats(player: PlayerAccumulator): PlayerStats {
@@ -313,16 +289,11 @@ function getThreeDartAverageForGame(
   game: GameHistory,
   playerName: string,
 ): number | null {
-  const visits = game.legs.flatMap((leg) =>
-    leg.visits.filter((visit) => visit.playerName === playerName),
+  return getThreeDartAverageForVisits(
+    game.legs.flatMap((leg) =>
+      leg.visits.filter((visit) => visit.playerName === playerName),
+    ),
   );
-  if (visits.length === 0) {
-    return null;
-  }
-
-  const totalScored = visits.reduce((sum, visit) => sum + visit.totalScore, 0);
-  const totalDarts = visits.reduce((sum, visit) => sum + visit.darts.length, 0);
-  return totalDarts > 0 ? (totalScored / totalDarts) * DARTS_PER_VISIT : null;
 }
 
 /**
@@ -336,10 +307,7 @@ export function calculatePlayerStats(
   gameHistory.forEach((game) => {
     game.players.forEach((player) => {
       const current = getOrCreateAccumulator(playerMap, player.name);
-      playerMap.set(
-        player.name,
-        applyMatchResult(current, game.winner === player.name),
-      );
+      applyMatchResult(current, game.winner === player.name);
     });
 
     game.legs.forEach((leg) => {

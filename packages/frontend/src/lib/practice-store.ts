@@ -62,6 +62,56 @@ const initialState: PracticeStoreState = {
   modeState: null,
 };
 
+function startSession<TState extends PracticeModeState>(
+  state: PracticeStoreState,
+  modeState: TState,
+): void {
+  state.phase = "playing";
+  state.sessionStartTime = Date.now();
+  state.modeState = modeState;
+}
+
+function buildPracticeResult(modeState: PracticeModeState): {
+  dartsThrown: number;
+  result: Record<string, unknown>;
+} {
+  if (modeState.mode === "aroundTheClock") {
+    return {
+      dartsThrown: modeState.totalDarts,
+      result: {
+        targetReached: modeState.currentTarget,
+        dartsPerSegment: modeState.dartsPerSegment,
+        sessionComplete: modeState.sessionComplete,
+      },
+    };
+  }
+
+  if (modeState.mode === "checkoutPractice") {
+    return {
+      dartsThrown: modeState.totalDartsUsed,
+      result: {
+        attemptsCompleted: modeState.attemptsCompleted,
+        attemptsSucceeded: modeState.attemptsSucceeded,
+        successRate:
+          modeState.attemptsCompleted > 0
+            ? modeState.attemptsSucceeded / modeState.attemptsCompleted
+            : 0,
+        outMode: modeState.outMode,
+        scoreRange: modeState.scoreRange,
+      },
+    };
+  }
+
+  return {
+    dartsThrown: modeState.totalDarts,
+    result: {
+      winnerIndex: modeState.winnerIndex,
+      players: modeState.players,
+      playerCount: modeState.players.length,
+    },
+  };
+}
+
 export const createPracticeStore = () =>
   createStore<PracticeStore>()(
     immer((set, get) => ({
@@ -75,28 +125,22 @@ export const createPracticeStore = () =>
 
       startAroundTheClock() {
         set((state) => {
-          state.phase = "playing";
-          state.sessionStartTime = Date.now();
           const atcState = createInitialATCState();
-          state.modeState = { ...atcState, mode: "aroundTheClock" };
+          startSession(state, { ...atcState, mode: "aroundTheClock" });
         });
       },
 
       startCheckoutPractice(scoreRange, outMode) {
         set((state) => {
-          state.phase = "playing";
-          state.sessionStartTime = Date.now();
           const cpState = createInitialCheckoutState(scoreRange, outMode);
-          state.modeState = { ...cpState, mode: "checkoutPractice" };
+          startSession(state, { ...cpState, mode: "checkoutPractice" });
         });
       },
 
       startCricket(playerCount) {
         set((state) => {
-          state.phase = "playing";
-          state.sessionStartTime = Date.now();
           const cricketState = createInitialCricketState(playerCount);
-          state.modeState = { ...cricketState, mode: "cricket" };
+          startSession(state, { ...cricketState, mode: "cricket" });
         });
       },
 
@@ -136,37 +180,7 @@ export const createPracticeStore = () =>
         if (!state.modeState || !state.sessionStartTime) return null;
 
         const durationMs = Date.now() - state.sessionStartTime;
-        let dartsThrown = 0;
-        let result: Record<string, unknown> = {};
-
-        if (state.modeState.mode === "aroundTheClock") {
-          dartsThrown = state.modeState.totalDarts;
-          result = {
-            targetReached: state.modeState.currentTarget,
-            dartsPerSegment: state.modeState.dartsPerSegment,
-            sessionComplete: state.modeState.sessionComplete,
-          };
-        } else if (state.modeState.mode === "checkoutPractice") {
-          dartsThrown = state.modeState.totalDartsUsed;
-          result = {
-            attemptsCompleted: state.modeState.attemptsCompleted,
-            attemptsSucceeded: state.modeState.attemptsSucceeded,
-            successRate:
-              state.modeState.attemptsCompleted > 0
-                ? state.modeState.attemptsSucceeded /
-                  state.modeState.attemptsCompleted
-                : 0,
-            outMode: state.modeState.outMode,
-            scoreRange: state.modeState.scoreRange,
-          };
-        } else if (state.modeState.mode === "cricket") {
-          dartsThrown = state.modeState.totalDarts;
-          result = {
-            winnerIndex: state.modeState.winnerIndex,
-            players: state.modeState.players,
-            playerCount: state.modeState.players.length,
-          };
-        }
+        const { dartsThrown, result } = buildPracticeResult(state.modeState);
 
         const session: PracticeSession = {
           id: crypto.randomUUID(),

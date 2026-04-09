@@ -41,7 +41,22 @@ function recordVisit(
   });
 }
 
+function emitGameEvents(events: GameDomainEvent[]): void {
+  for (const event of events) {
+    emitGameEvent(event);
+  }
+}
+
+function createLegHistory(legNumber: number): LegHistory {
+  return {
+    legNumber,
+    winnerPlayerId: null,
+    visits: [],
+  };
+}
+
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
+
 
 export type GameStoreState = {
   gamePhase: GamePhase;
@@ -113,11 +128,7 @@ export type GameStoreActions = {
   resetGame(this: void): void;
 
   // Logic
-  handleDartThrow(
-    this: void,
-    score: number,
-    modifier: ScoreModifier,
-  ): DartThrowResult;
+  handleDartThrow(this: void, score: number, modifier: ScoreModifier): DartThrowResult;
   handleUndoThrow(this: void): UndoResult;
 };
 
@@ -177,9 +188,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         set((state) => {
           // Guard: Only support 1-2 players
           if (players.length < 1 || players.length > 2) {
-            console.warn(
-              `Invalid player count in setPlayers: ${players.length}. Must be 1-2 players.`,
-            );
+            console.warn(`Invalid player count in setPlayers: ${players.length}. Must be 1-2 players.`);
           }
           state.players = createPlayers(
             players,
@@ -205,9 +214,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         set((state) => {
           // Guard: Validate player count in restored game
           if (snapshot.players.length < 1 || snapshot.players.length > 2) {
-            console.warn(
-              `Invalid player count in restored game: ${snapshot.players.length}. Clamping to 1-2 players.`,
-            );
+            console.warn(`Invalid player count in restored game: ${snapshot.players.length}. Clamping to 1-2 players.`);
             snapshot.players = snapshot.players.slice(0, 2);
             if (snapshot.players.length === 0) {
               // Cannot restore a game with no players
@@ -239,13 +246,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.currentLeg = 1;
           state.currentVisitScores = [];
           state.currentVisitDarts = [];
-          state.historyLegs = [
-            {
-              legNumber: 1,
-              winnerPlayerId: null,
-              visits: [],
-            },
-          ];
+          state.historyLegs = [createLegHistory(1)];
           state.matchStartTime = now;
           state.visitStartTime = now;
         });
@@ -253,9 +254,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
       finishVisit() {
         const state = get();
-        const activePlayer = state.players.find(
-          (p) => p.id === state.activePlayerId,
-        );
+        const activePlayer = state.players.find((p) => p.id === state.activePlayerId);
         const { dartsInVisit, hasBust, currentVisitScore } = getVisitStats(
           state.currentVisitDarts,
         );
@@ -295,9 +294,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.visitStartTime = Date.now();
         });
 
-        for (const event of events) {
-          emitGameEvent(event);
-        }
+        emitGameEvents(events);
 
         return {
           completed: true,
@@ -321,11 +318,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           state.currentLeg += 1;
           state.currentVisitScores = [];
           state.currentVisitDarts = [];
-          state.historyLegs.push({
-            legNumber: state.currentLeg,
-            winnerPlayerId: null,
-            visits: [],
-          });
+          state.historyLegs.push(createLegHistory(state.currentLeg));
           state.legWinner = null;
           const now = Date.now();
           if (state.matchPausedAt && state.matchStartTime) {
@@ -339,9 +332,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           { type: "legStarted", legNumber: nextLegNumber },
         ];
 
-        for (const event of events) {
-          emitGameEvent(event);
-        }
+        emitGameEvents(events);
 
         return {
           started: true,
@@ -361,9 +352,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
         set(initialState);
 
-        for (const event of events) {
-          emitGameEvent(event);
-        }
+        emitGameEvents(events);
       },
 
       handleDartThrow(score, modifier) {
@@ -493,9 +482,7 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           }
         });
 
-        for (const event of events) {
-          emitGameEvent(event);
-        }
+        emitGameEvents(events);
 
         return {
           newScore,
