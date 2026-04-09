@@ -36,12 +36,16 @@ function generateLeg(
 
       const maxVisitScore = Math.min(currentScore, 180);
       const avgTarget =
-        currentScore <= 40 ? currentScore : randomBetween(20, Math.min(maxVisitScore, 100));
+        currentScore <= 40
+          ? currentScore
+          : randomBetween(20, Math.min(maxVisitScore, 100));
       const totalScore = Math.min(avgTarget, currentScore);
 
       const isCheckout = totalScore === currentScore && currentScore <= 170;
       const checkoutSuccess = isCheckout && Math.random() > 0.4;
-      const actualScore = checkoutSuccess ? currentScore : Math.min(totalScore, currentScore - 1 > 1 ? totalScore : totalScore);
+      const actualScore = checkoutSuccess
+        ? currentScore
+        : Math.min(totalScore, currentScore - 1 > 1 ? totalScore : totalScore);
 
       const dartCount = randomBetween(1, 3);
       const darts = [];
@@ -51,8 +55,17 @@ function generateLeg(
         const isLastDart = d === dartCount - 1;
         const dartScore = isLastDart
           ? actualScore - dartTotal
-          : randomBetween(1, Math.max(1, Math.floor((actualScore - dartTotal) / (dartCount - d))));
-        const clampedScore = Math.max(0, Math.min(dartScore, actualScore - dartTotal));
+          : randomBetween(
+              1,
+              Math.max(
+                1,
+                Math.floor((actualScore - dartTotal) / (dartCount - d)),
+              ),
+            );
+        const clampedScore = Math.max(
+          0,
+          Math.min(dartScore, actualScore - dartTotal),
+        );
         dartTotal += clampedScore;
 
         darts.push({
@@ -113,14 +126,16 @@ export function generateMockGameHistory(): GameHistory[] {
 
   for (let i = 0; i < 24; i++) {
     const daysAgo = randomBetween(0, 90);
-    const date = new Date(now - daysAgo * 86400000 - randomBetween(0, 86400000));
+    const date = new Date(
+      now - daysAgo * 86400000 - randomBetween(0, 86400000),
+    );
 
     // Pick 2 players for this game
     const shuffled = [...playerPool].sort(() => Math.random() - 0.5);
     const gamePlayers = shuffled.slice(0, 2);
 
     const startingScore = Math.random() > 0.2 ? 501 : 301;
-    const legsToWin = Math.random() > 0.5 ? 3 : 2;
+    const configuredLegs = Math.random() > 0.5 ? 3 : 2;
     const gameMode = startingScore === 501 ? "firstTo" : "bestOf";
 
     const legs: GameHistory["legs"] = [];
@@ -129,9 +144,7 @@ export function generateMockGameHistory(): GameHistory[] {
     let legNum = 1;
 
     const targetWins =
-      gameMode === "firstTo"
-        ? legsToWin
-        : Math.ceil(legsToWin / 2);
+      gameMode === "firstTo" ? configuredLegs : Math.ceil(configuredLegs / 2);
 
     while (!matchWinner && legNum <= 9) {
       const { leg, winnerPlayerId } = generateLeg(
@@ -168,8 +181,9 @@ export function generateMockGameHistory(): GameHistory[] {
       settings: {
         startingScore,
         outMode: "double",
-        gameMode,
-        legsToWin,
+        ...(gameMode === "firstTo"
+          ? { gameMode: "firstTo" as const, targetLegs: configuredLegs }
+          : { gameMode: "bestOf" as const, totalLegs: configuredLegs }),
         checkoutAssist: false,
       },
       legs,

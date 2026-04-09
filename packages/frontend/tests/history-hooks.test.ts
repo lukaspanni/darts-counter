@@ -73,7 +73,7 @@ function createGame(id: string, date: string): GameHistory {
       startingScore: 501,
       outMode: "single",
       gameMode: "bestOf",
-      legsToWin: 1,
+      totalLegs: 1,
       checkoutAssist: false,
     },
     legs: [

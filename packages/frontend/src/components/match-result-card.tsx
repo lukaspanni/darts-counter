@@ -1,6 +1,12 @@
 import { Trophy } from "lucide-react";
 import { forwardRef } from "react";
-import type { Player, GameSettings, LegHistory } from "@/lib/schemas";
+import {
+  getConfiguredLegCount,
+  getGameModeLabel,
+  type Player,
+  type GameSettings,
+  type LegHistory,
+} from "@/lib/schemas";
 
 export interface MatchResultCardProps {
   players: Player[];
@@ -9,10 +15,7 @@ export interface MatchResultCardProps {
   historyLegs: LegHistory[];
 }
 
-function computePlayerMatchStats(
-  player: Player,
-  historyLegs: LegHistory[],
-) {
+function computePlayerMatchStats(player: Player, historyLegs: LegHistory[]) {
   const visits = historyLegs.flatMap((leg) =>
     leg.visits.filter((v) => v.playerId === player.id),
   );
@@ -31,15 +34,15 @@ function computePlayerMatchStats(
 
 function formatGameMode(settings: GameSettings): string {
   const outMode = settings.outMode === "double" ? "Double Out" : "Single Out";
-  const format =
-    settings.gameMode === "bestOf"
-      ? `Best of ${settings.legsToWin}`
-      : `First to ${settings.legsToWin}`;
+  const format = `${getGameModeLabel(settings)} ${getConfiguredLegCount(settings)}`;
   return `${settings.startingScore} · ${outMode} · ${format}`;
 }
 
 export const MatchResultCard = forwardRef<HTMLDivElement, MatchResultCardProps>(
-  function MatchResultCard({ players, winnerId, gameSettings, historyLegs }, ref) {
+  function MatchResultCard(
+    { players, winnerId, gameSettings, historyLegs },
+    ref,
+  ) {
     const winner = players.find((p) => p.id === winnerId);
 
     return (
@@ -49,7 +52,7 @@ export const MatchResultCard = forwardRef<HTMLDivElement, MatchResultCardProps>(
       >
         {/* Header */}
         <div className="mb-5 text-center">
-          <p className="mb-1 text-xs font-medium uppercase tracking-widest text-slate-400">
+          <p className="mb-1 text-xs font-medium tracking-widest text-slate-400 uppercase">
             Match Result
           </p>
           <p className="text-xs text-slate-500">
@@ -111,7 +114,7 @@ export const MatchResultCard = forwardRef<HTMLDivElement, MatchResultCardProps>(
                 </p>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                    <p className="text-[10px] tracking-wider text-slate-400 uppercase">
                       Average
                     </p>
                     <p className="text-sm font-bold tabular-nums">
@@ -119,7 +122,7 @@ export const MatchResultCard = forwardRef<HTMLDivElement, MatchResultCardProps>(
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                    <p className="text-[10px] tracking-wider text-slate-400 uppercase">
                       Highest
                     </p>
                     <p className="text-sm font-bold tabular-nums">
@@ -127,7 +130,7 @@ export const MatchResultCard = forwardRef<HTMLDivElement, MatchResultCardProps>(
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                    <p className="text-[10px] tracking-wider text-slate-400 uppercase">
                       180s
                     </p>
                     <p className="text-sm font-bold tabular-nums">

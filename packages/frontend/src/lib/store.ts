@@ -154,7 +154,7 @@ const initialSettings: GameSettings = {
   startingScore: 501,
   outMode: "single",
   gameMode: "bestOf",
-  legsToWin: 3,
+  totalLegs: 3,
   checkoutAssist: false,
 };
 

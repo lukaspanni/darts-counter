@@ -12,7 +12,7 @@ const settings: GameSettings = {
   startingScore: 501,
   outMode: "double",
   gameMode: "firstTo",
-  legsToWin: 1,
+  targetLegs: 1,
   checkoutAssist: false,
 };
 

@@ -1,4 +1,8 @@
-import type { GameSettings, ScoreModifier } from "@/lib/schemas";
+import {
+  type GameSettings,
+  type ScoreModifier,
+  getRequiredLegsToWin,
+} from "../schemas";
 import type { GameEngine, ThrowOutcome } from "./game-engine";
 
 function isDoubleCheckoutScore(score: number): boolean {
@@ -12,10 +16,7 @@ function isDoubleCheckoutScore(score: number): boolean {
  * safe to recreate on every action (no internal mutable state).
  */
 export function createX01Engine(settings: GameSettings): GameEngine {
-  const requiredLegs =
-    settings.gameMode === "firstTo"
-      ? settings.legsToWin
-      : Math.ceil(settings.legsToWin / 2);
+  const requiredLegs = getRequiredLegsToWin(settings);
 
   return {
     maxDartsPerVisit: 3,
@@ -39,16 +40,12 @@ export function createX01Engine(settings: GameSettings): GameEngine {
       let isBust = false;
       let isRoundWin = false;
 
-      if (
-        newScore < 0 ||
-        (settings.outMode === "double" && newScore === 1)
-      ) {
+      if (newScore < 0 || (settings.outMode === "double" && newScore === 1)) {
         newScore = playerScore;
         validatedScore = 0;
         isBust = true;
       } else if (newScore === 0) {
-        const validOut =
-          settings.outMode === "single" || modifier === "double";
+        const validOut = settings.outMode === "single" || modifier === "double";
         if (validOut) {
           isRoundWin = true;
         } else {

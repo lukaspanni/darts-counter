@@ -6,7 +6,7 @@ const singleOut: GameSettings = {
   startingScore: 501,
   outMode: "single",
   gameMode: "firstTo",
-  legsToWin: 1,
+  targetLegs: 1,
   checkoutAssist: false,
 };
 
@@ -136,31 +136,51 @@ describe("X01 scoring rules", () => {
 
 describe("X01 match win conditions", () => {
   test("firstTo 1: match won after winning 1 leg", () => {
-    const engine = createX01Engine({ ...singleOut, gameMode: "firstTo", legsToWin: 1 });
+    const engine = createX01Engine({
+      ...singleOut,
+      gameMode: "firstTo",
+      targetLegs: 1,
+    });
     expect(engine.isMatchWon(0)).toBe(false);
     expect(engine.isMatchWon(1)).toBe(true);
   });
 
   test("firstTo 3: match won after winning 3 legs", () => {
-    const engine = createX01Engine({ ...singleOut, gameMode: "firstTo", legsToWin: 3 });
+    const engine = createX01Engine({
+      ...singleOut,
+      gameMode: "firstTo",
+      targetLegs: 3,
+    });
     expect(engine.isMatchWon(2)).toBe(false);
     expect(engine.isMatchWon(3)).toBe(true);
   });
 
   test("bestOf 3: need majority (2 legs) to win", () => {
-    const engine = createX01Engine({ ...singleOut, gameMode: "bestOf", legsToWin: 3 });
+    const engine = createX01Engine({
+      ...singleOut,
+      gameMode: "bestOf",
+      totalLegs: 3,
+    });
     expect(engine.isMatchWon(1)).toBe(false);
     expect(engine.isMatchWon(2)).toBe(true);
   });
 
   test("bestOf 7: need majority (4 legs) to win", () => {
-    const engine = createX01Engine({ ...singleOut, gameMode: "bestOf", legsToWin: 7 });
+    const engine = createX01Engine({
+      ...singleOut,
+      gameMode: "bestOf",
+      totalLegs: 7,
+    });
     expect(engine.isMatchWon(3)).toBe(false);
     expect(engine.isMatchWon(4)).toBe(true);
   });
 
   test("bestOf 9: need majority (5 legs) to win", () => {
-    const engine = createX01Engine({ ...singleOut, gameMode: "bestOf", legsToWin: 9 });
+    const engine = createX01Engine({
+      ...singleOut,
+      gameMode: "bestOf",
+      totalLegs: 9,
+    });
     expect(engine.isMatchWon(4)).toBe(false);
     expect(engine.isMatchWon(5)).toBe(true);
   });

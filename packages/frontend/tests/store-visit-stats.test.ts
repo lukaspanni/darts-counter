@@ -3,7 +3,9 @@ import { startGame } from "./test-helpers";
 
 describe("Visit tracking during gameplay", () => {
   test("tracks darts thrown in current visit", () => {
-    const store = startGame({ settings: { startingScore: 501, outMode: "single" } });
+    const store = startGame({
+      settings: { startingScore: 501, outMode: "single" },
+    });
 
     expect(store.getState().getDartsInVisit()).toBe(0);
 
@@ -18,7 +20,9 @@ describe("Visit tracking during gameplay", () => {
   });
 
   test("resets dart count after finishing visit", () => {
-    const store = startGame({ settings: { startingScore: 501, outMode: "single" } });
+    const store = startGame({
+      settings: { startingScore: 501, outMode: "single" },
+    });
 
     store.getState().handleDartThrow(20, "single");
     store.getState().handleDartThrow(20, "single");
@@ -29,7 +33,9 @@ describe("Visit tracking during gameplay", () => {
   });
 
   test("accumulates visit score across darts", () => {
-    const store = startGame({ settings: { startingScore: 501, outMode: "single" } });
+    const store = startGame({
+      settings: { startingScore: 501, outMode: "single" },
+    });
 
     expect(store.getState().getCurrentVisitScore()).toBe(0);
 
@@ -44,7 +50,9 @@ describe("Visit tracking during gameplay", () => {
   });
 
   test("resets visit score after finishing visit", () => {
-    const store = startGame({ settings: { startingScore: 501, outMode: "single" } });
+    const store = startGame({
+      settings: { startingScore: 501, outMode: "single" },
+    });
 
     store.getState().handleDartThrow(20, "single");
     store.getState().finishVisit();
@@ -53,7 +61,9 @@ describe("Visit tracking during gameplay", () => {
   });
 
   test("reports no bust when throw is valid", () => {
-    const store = startGame({ settings: { startingScore: 501, outMode: "single" } });
+    const store = startGame({
+      settings: { startingScore: 501, outMode: "single" },
+    });
 
     expect(store.getState().getIsBust()).toBe(false);
 
@@ -62,14 +72,18 @@ describe("Visit tracking during gameplay", () => {
   });
 
   test("reports bust when throw exceeds remaining score", () => {
-    const store = startGame({ settings: { startingScore: 10, outMode: "single" } });
+    const store = startGame({
+      settings: { startingScore: 10, outMode: "single" },
+    });
 
     store.getState().handleDartThrow(20, "single");
     expect(store.getState().getIsBust()).toBe(true);
   });
 
   test("undo reverts dart count and visit score", () => {
-    const store = startGame({ settings: { startingScore: 501, outMode: "single" } });
+    const store = startGame({
+      settings: { startingScore: 501, outMode: "single" },
+    });
 
     store.getState().handleDartThrow(20, "single");
     store.getState().handleDartThrow(60, "triple");
@@ -84,7 +98,9 @@ describe("Visit tracking during gameplay", () => {
   });
 
   test("starting a new leg resets all visit tracking", () => {
-    const store = startGame({ settings: { startingScore: 2, gameMode: "bestOf", legsToWin: 3 } });
+    const store = startGame({
+      settings: { startingScore: 2, gameMode: "bestOf", totalLegs: 3 },
+    });
 
     store.getState().handleDartThrow(2, "double");
     store.getState().startNextLeg();

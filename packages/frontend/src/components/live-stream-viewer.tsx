@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { getViewerManager, removeViewerManager } from "@/lib/live-stream-manager";
+import {
+  getViewerManager,
+  removeViewerManager,
+} from "@/lib/live-stream-manager";
 import type {
   ServerEvent,
   LiveStreamGameMetadata,
@@ -327,8 +330,10 @@ export function LiveStreamViewer({ gameId }: LiveStreamViewerProps) {
           <CardHeader>
             <CardTitle className="text-center">
               Leg {Math.max(1, metadata.currentLeg)} ·{" "}
-              {metadata.gameMode === "bestOf" ? "Best of" : "First to"}{" "}
-              {metadata.legsToWin}
+              {metadata.settings.gameMode === "bestOf" ? "Best of" : "First to"}{" "}
+              {metadata.settings.gameMode === "bestOf"
+                ? metadata.settings.totalLegs
+                : metadata.settings.targetLegs}
             </CardTitle>
           </CardHeader>
         </Card>

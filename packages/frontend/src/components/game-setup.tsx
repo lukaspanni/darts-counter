@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Switch } from "@/components/ui/switch";
-import { gameSettingsSchema } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import { usePendingGame } from "@/lib/hooks/use-pending-game";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,14 +11,13 @@ import posthog from "posthog-js";
 import { z } from "zod";
 import { ArrowRight, RotateCcw } from "lucide-react";
 
-const gameSetupSchema = gameSettingsSchema.extend({
+const gameSetupSchema = z.object({
   startingScore: z.enum(["301", "501"]),
+  outMode: z.enum(["single", "double"]),
   gameMode: z.enum(["bestOf", "firstTo"]),
-  legsToWin: z.enum(["3", "5", "6", "7", "8", "9"]),
+  matchLegs: z.enum(["3", "5", "6", "7", "8", "9"]),
   player1: z.string().min(1, "Player 1 name is required"),
   player2: z.string().optional(),
-  // Override checkoutAssist from parent schema to ensure it's always boolean (not optional)
-  // In Zod v4, .default() makes fields optional in the input type
   checkoutAssist: z.boolean(),
 });
 
@@ -60,7 +58,7 @@ export function GameSetup() {
       startingScore: "501",
       outMode: "double",
       gameMode: "bestOf",
-      legsToWin: "3",
+      matchLegs: "3",
       player1: "",
       player2: "",
       checkoutAssist: false,
@@ -68,10 +66,10 @@ export function GameSetup() {
   });
 
   const gameMode = useWatch({ control: form.control, name: "gameMode" });
-  const legsToWin = useWatch({ control: form.control, name: "legsToWin" });
+  const matchLegs = useWatch({ control: form.control, name: "matchLegs" });
 
   const getLegsDescription = () => {
-    const legs = Number.parseInt(legsToWin || "3");
+    const legs = Number.parseInt(matchLegs || "3");
     if (gameMode === "firstTo") {
       return `First player to win ${legs} legs wins the match`;
     }
@@ -82,24 +80,35 @@ export function GameSetup() {
   const onSubmit = (data: GameSetupFormValues) => {
     clearPendingGame();
     const playerCount = data.player2 && data.player2.trim() !== "" ? 2 : 1;
+    const matchLegCount = Number.parseInt(data.matchLegs);
 
     posthog.capture("match_setup_completed", {
       history_event: "match_setup_completed",
       starting_score: Number.parseInt(data.startingScore),
       out_mode: data.outMode,
       game_mode: data.gameMode,
-      legs_to_win: Number.parseInt(data.legsToWin),
+      legs_to_win: matchLegCount,
       checkout_assist: data.checkoutAssist,
       player_count: playerCount,
     });
 
-    setGameSettings({
-      startingScore: Number.parseInt(data.startingScore),
-      outMode: data.outMode,
-      gameMode: data.gameMode,
-      legsToWin: Number.parseInt(data.legsToWin),
-      checkoutAssist: data.checkoutAssist,
-    });
+    setGameSettings(
+      data.gameMode === "firstTo"
+        ? {
+            startingScore: Number.parseInt(data.startingScore),
+            outMode: data.outMode,
+            gameMode: "firstTo",
+            targetLegs: matchLegCount,
+            checkoutAssist: data.checkoutAssist,
+          }
+        : {
+            startingScore: Number.parseInt(data.startingScore),
+            outMode: data.outMode,
+            gameMode: "bestOf",
+            totalLegs: matchLegCount,
+            checkoutAssist: data.checkoutAssist,
+          },
+    );
 
     // Note: UI only supports 1-2 players (enforced by form schema)
     const players: { name: string }[] = [{ name: data.player1 }];
@@ -151,7 +160,7 @@ export function GameSetup() {
         {/* Game Rules */}
         <div className="space-y-5">
           <fieldset>
-            <legend className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+            <legend className="text-muted-foreground mb-2 text-xs font-medium tracking-wider uppercase">
               Starting Score
             </legend>
             <Controller
@@ -168,7 +177,7 @@ export function GameSetup() {
           </fieldset>
 
           <fieldset>
-            <legend className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+            <legend className="text-muted-foreground mb-2 text-xs font-medium tracking-wider uppercase">
               Out Mode
             </legend>
             <Controller
@@ -186,7 +195,7 @@ export function GameSetup() {
 
           <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
             <fieldset>
-              <legend className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+              <legend className="text-muted-foreground mb-2 text-xs font-medium tracking-wider uppercase">
                 Match Format
               </legend>
               <Controller
@@ -203,12 +212,12 @@ export function GameSetup() {
             </fieldset>
 
             <fieldset>
-              <legend className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
+              <legend className="text-muted-foreground mb-2 text-xs font-medium tracking-wider uppercase">
                 Legs
               </legend>
               <Controller
                 control={form.control}
-                name="legsToWin"
+                name="matchLegs"
                 render={({ field }) => (
                   <SegmentedControl
                     options={legsOptions}
@@ -230,7 +239,7 @@ export function GameSetup() {
 
         {/* Players */}
         <fieldset className="space-y-5">
-          <legend className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+          <legend className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
             Players
           </legend>
 
@@ -260,8 +269,7 @@ export function GameSetup() {
                 htmlFor="player2"
                 className="text-muted-foreground mb-1.5 block text-sm font-medium"
               >
-                Player 2
-                <span className="ml-1 font-normal">(optional)</span>
+                Player 2<span className="ml-1 font-normal">(optional)</span>
               </label>
               <Input
                 id="player2"

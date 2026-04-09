@@ -2,6 +2,7 @@ import "client-only";
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { LiveStreamControl } from "@/components/live-stream-control";
+import { getConfiguredLegCount, getGameModeLabel } from "@/lib/schemas";
 import { useGameStore } from "@/lib/store-provider";
 import posthog from "posthog-js";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -21,7 +22,7 @@ export function PreGameStart() {
       starting_score: gameSettings.startingScore,
       out_mode: gameSettings.outMode,
       game_mode: gameSettings.gameMode,
-      legs_to_win: gameSettings.legsToWin,
+      legs_to_win: getConfiguredLegCount(gameSettings),
     });
     setActivePlayer(startingPlayerId);
     startGame();
@@ -52,8 +53,8 @@ export function PreGameStart() {
         <p className="text-muted-foreground text-sm">
           {gameSettings.startingScore} ·{" "}
           {gameSettings.outMode === "single" ? "Single" : "Double"} out ·{" "}
-          {gameSettings.gameMode === "firstTo" ? "First to" : "Best of"}{" "}
-          {gameSettings.legsToWin} legs
+          {getGameModeLabel(gameSettings)} {getConfiguredLegCount(gameSettings)}{" "}
+          legs
         </p>
       </div>
 
@@ -67,7 +68,7 @@ export function PreGameStart() {
               onClick={() => setStartingPlayerId(player.id)}
               aria-pressed={isSelected}
               className={cn(
-                "relative rounded-lg border-2 px-4 py-6 text-center outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]",
+                "focus-visible:ring-ring relative rounded-lg border-2 px-4 py-6 text-center transition-all outline-none focus-visible:ring-2 active:scale-[0.98]",
                 isSelected
                   ? "border-primary bg-primary/5 dark:bg-primary/10"
                   : "border-border hover:border-foreground/20 bg-transparent",
