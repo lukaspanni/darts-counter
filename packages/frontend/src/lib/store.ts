@@ -12,6 +12,12 @@ import type {
 import { emitGameEvent, type GameDomainEvent } from "./game-events";
 import { createX01Engine } from "./core/x01-match-engine";
 import { createPlayers } from "./core/player-init";
+import {
+  applyThrowToPlayer,
+  buildThrowResult,
+  completeLeg,
+  rotateActivePlayer,
+} from "./store-match-lifecycle";
 
 function recordVisit(
   state: GameStoreState,
@@ -42,7 +48,6 @@ function recordVisit(
 }
 
 type GamePhase = "setup" | "preGame" | "playing" | "gameOver";
-
 
 export type GameStoreState = {
   gamePhase: GamePhase;
@@ -114,7 +119,11 @@ export type GameStoreActions = {
   resetGame(this: void): void;
 
   // Logic
-  handleDartThrow(this: void, score: number, modifier: ScoreModifier): DartThrowResult;
+  handleDartThrow(
+    this: void,
+    score: number,
+    modifier: ScoreModifier,
+  ): DartThrowResult;
   handleUndoThrow(this: void): UndoResult;
 };
 
@@ -174,7 +183,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         set((state) => {
           // Guard: Only support 1-2 players
           if (players.length < 1 || players.length > 2) {
-            console.warn(`Invalid player count in setPlayers: ${players.length}. Must be 1-2 players.`);
+            console.warn(
+              `Invalid player count in setPlayers: ${players.length}. Must be 1-2 players.`,
+            );
           }
           state.players = createPlayers(
             players,
@@ -200,7 +211,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
         set((state) => {
           // Guard: Validate player count in restored game
           if (snapshot.players.length < 1 || snapshot.players.length > 2) {
-            console.warn(`Invalid player count in restored game: ${snapshot.players.length}. Clamping to 1-2 players.`);
+            console.warn(
+              `Invalid player count in restored game: ${snapshot.players.length}. Clamping to 1-2 players.`,
+            );
             snapshot.players = snapshot.players.slice(0, 2);
             if (snapshot.players.length === 0) {
               // Cannot restore a game with no players
@@ -246,7 +259,9 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
       finishVisit() {
         const state = get();
-        const activePlayer = state.players.find((p) => p.id === state.activePlayerId);
+        const activePlayer = state.players.find(
+          (p) => p.id === state.activePlayerId,
+        );
         const { dartsInVisit, hasBust, currentVisitScore } = getVisitStats(
           state.currentVisitDarts,
         );
@@ -275,12 +290,10 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
             recordVisit(state, activePlayer, state.currentVisitDarts);
           }
 
-          if (state.players.length > 1) {
-            const next = state.players.find(
-              (p) => p.id !== state.activePlayerId,
-            );
-            if (next) state.activePlayerId = next.id;
-          }
+          state.activePlayerId = rotateActivePlayer(
+            state.players,
+            state.activePlayerId,
+          );
           state.currentVisitScores = [];
           state.currentVisitDarts = [];
           state.visitStartTime = Date.now();
@@ -372,74 +385,23 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
           isDoubleAttempt,
           isMissedDouble,
         } = engine.processThrow(player.score, score, modifier);
-        const isMatchWin = isLegWin && engine.isMatchWon(player.legsWon + 1);
-        const originalScore = player.score;
-        const playerCount = state.players.length;
-
         const currentLegIndex = state.currentLeg - 1;
-        const prevVisitTotal =
-          player.scoreHistory[currentLegIndex]?.reduce(
-            (sum, s) => sum + s,
-            0,
-          ) ?? 0;
-        const currentVisitTotal = prevVisitTotal + validatedScore;
-        const totalScoreAfter = player.totalScore + (originalScore - newScore);
-        const dartsThrownAfter = player.dartsThrown + 1;
-        const winnerAverage =
-          dartsThrownAfter > 0
-            ? Number(((totalScoreAfter / dartsThrownAfter) * 3).toFixed(2))
-            : 0;
-
-        const events: GameDomainEvent[] = [
-          {
-            type: "dartThrown",
-            playerId: player.id,
-            playerName: player.name,
-            legNumber: state.currentLeg,
-            score,
-            modifier,
-            validatedScore,
-            newScore,
-            isBust,
-            isLegWin,
-            currentVisitTotal,
-          },
-        ];
-
-        if (currentVisitTotal === engine.maxVisitScore) {
-          events.push({
-            type: "visitMaxScored",
-            playerId: player.id,
-            playerName: player.name,
-            legNumber: state.currentLeg,
-            score: engine.maxVisitScore,
-          });
-        }
-
-        if (isLegWin) {
-          events.push({
-            type: "legWon",
-            winnerId: player.id,
-            winnerName: player.name,
-            legNumber: state.currentLeg,
-            isMatchWin,
-            playerCount,
-          });
-        }
-
-        if (isMatchWin) {
-          events.push({
-            type: "matchWon",
-            winnerId: player.id,
-            winnerName: player.name,
-            legNumber: state.currentLeg,
-            playerCount,
-            winnerAverage,
-            legsPlayed: state.currentLeg,
-            startingScore: state.gameSettings.startingScore,
-            outMode: state.gameSettings.outMode,
-          });
-        }
+        const throwResult = buildThrowResult({
+          player,
+          legNumber: state.currentLeg,
+          playerCount: state.players.length,
+          gameSettings: state.gameSettings,
+          currentLegScores: player.scoreHistory[currentLegIndex] ?? [],
+          score,
+          modifier,
+          newScore,
+          validatedScore,
+          isBust,
+          isLegWin,
+          isCheckoutAttempt,
+          isDoubleAttempt,
+          isMissedDouble,
+        });
 
         set((state) => {
           const p = state.players.find((x) => x.id === state.activePlayerId);
@@ -447,56 +409,57 @@ export const createGameStore = (initState: GameStoreState = initialState) => {
 
           const legIdx = state.currentLeg - 1;
 
-          p.score = newScore;
-          p.totalScore += originalScore - newScore;
-          p.dartsThrown += 1;
-          p.scoreHistory[legIdx] ??= [];
-          p.scoreHistory[legIdx].push(validatedScore);
-          state.currentVisitDarts.push({
-            score,
-            modifier,
-            validatedScore,
-            isBust,
-            isCheckoutAttempt,
-            isCheckoutSuccess: isLegWin,
-            isDoubleAttempt,
-            isMissedDouble,
-          });
+          const playerUpdate = applyThrowToPlayer(
+            p,
+            p.scoreHistory[legIdx] ?? [],
+            throwResult,
+          );
 
-          state.currentVisitScores.push(validatedScore);
+          p.score = playerUpdate.score;
+          p.totalScore = playerUpdate.totalScore;
+          p.dartsThrown = playerUpdate.dartsThrown;
+          p.scoreHistory[legIdx] = playerUpdate.legScores;
+          state.currentVisitDarts.push(throwResult.dart);
+          state.currentVisitScores.push(throwResult.validatedScore);
 
-          if (isLegWin) {
+          if (throwResult.isLegWin) {
             const currentLeg = state.historyLegs[state.currentLeg - 1];
             recordVisit(state, p, state.currentVisitDarts);
             if (currentLeg) currentLeg.winnerPlayerId = p.id;
 
+            const completedLeg = completeLeg(
+              p.id,
+              throwResult.isMatchWin,
+              Date.now(),
+            );
+
             state.currentVisitScores = [];
             state.currentVisitDarts = [];
             p.legsWon += 1;
-            state.legWinner = p.id;
-            state.visitStartTime = null;
-            state.matchPausedAt = Date.now();
+            state.legWinner = completedLeg.legWinner;
+            state.matchWinner = completedLeg.matchWinner;
+            state.visitStartTime = completedLeg.visitStartTime;
+            state.matchPausedAt = completedLeg.matchPausedAt;
 
-            if (isMatchWin) {
-              state.matchWinner = p.id;
-              state.gamePhase = "gameOver";
+            if (completedLeg.nextGamePhase) {
+              state.gamePhase = completedLeg.nextGamePhase;
             }
           }
         });
 
-        for (const event of events) {
+        for (const event of throwResult.events) {
           emitGameEvent(event);
         }
 
         return {
-          newScore,
-          validatedScore,
-          isBust,
-          isLegWin,
-          isMatchWin,
-          matchWinner: isMatchWin ? player.id : null,
-          currentVisitTotal,
-          events,
+          newScore: throwResult.newScore,
+          validatedScore: throwResult.validatedScore,
+          isBust: throwResult.isBust,
+          isLegWin: throwResult.isLegWin,
+          isMatchWin: throwResult.isMatchWin,
+          matchWinner: throwResult.matchWinner,
+          currentVisitTotal: throwResult.currentVisitTotal,
+          events: throwResult.events,
         };
       },
 
