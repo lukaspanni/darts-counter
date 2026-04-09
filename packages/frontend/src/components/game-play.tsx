@@ -31,6 +31,44 @@ import { useEffect, useState } from "react";
 
 const MAX_DARTS_PER_VISIT = 3;
 
+type VisitActionButtonsProps = {
+  dartsInVisit: number;
+  canThrowMoreDarts: boolean;
+  disableUndo: boolean;
+  onUndo: () => void;
+  onFinishVisit: () => void;
+};
+
+function VisitActionButtons({
+  dartsInVisit,
+  canThrowMoreDarts,
+  disableUndo,
+  onUndo,
+  onFinishVisit,
+}: VisitActionButtonsProps) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <Button
+        variant="outline"
+        onClick={onUndo}
+        disabled={disableUndo}
+        className="h-12"
+      >
+        <RotateCcw className="mr-2 h-4 w-4" /> Undo
+      </Button>
+      <Button
+        onClick={onFinishVisit}
+        disabled={dartsInVisit === 0}
+        className="h-12"
+        variant={!canThrowMoreDarts ? "default" : "outline"}
+      >
+        <Check className="mr-2 h-4 w-4" />
+        {!canThrowMoreDarts ? "Confirm Visit" : "Finish Visit"}
+      </Button>
+    </div>
+  );
+}
+
 export function GamePlay() {
   const players = useGameStore((state) => state.players);
   const activePlayerId = useGameStore((state) => state.activePlayerId);
@@ -63,6 +101,8 @@ export function GamePlay() {
   const activePlayer = players.find((p) => p.id === activePlayerId);
   const canThrowMoreDarts =
     dartsInVisit < MAX_DARTS_PER_VISIT && !lastThrowBust;
+  const disableUndo =
+    dartsInVisit === 0 || legWinner !== null || matchWinner !== null;
   const showEnhancedView = settings.enhancedView;
 
   useEffect(() => {
@@ -247,23 +287,13 @@ export function GamePlay() {
             )}
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              onClick={handleUndo}
-              disabled={dartsInVisit === 0 || legWinner !== null || matchWinner !== null}
-              className="h-12"
-            >
-              <RotateCcw className="mr-2 h-4 w-4" /> Undo
-            </Button>
-            <Button
-              onClick={endTurn}
-              disabled={dartsInVisit === 0}
-              className="h-12"
-              variant={!canThrowMoreDarts ? "default" : "outline"}
-            >
-              <Check className="mr-2 h-4 w-4" />
-              {!canThrowMoreDarts ? "Confirm Visit" : "Finish Visit"}
-            </Button>
+            <VisitActionButtons
+              dartsInVisit={dartsInVisit}
+              canThrowMoreDarts={canThrowMoreDarts}
+              disableUndo={disableUndo}
+              onUndo={handleUndo}
+              onFinishVisit={endTurn}
+            />
           </div>
           <Button
             variant={"destructive"}
@@ -278,24 +308,14 @@ export function GamePlay() {
             onScoreEntry={handleScoreEntry}
             canThrowMoreDarts={canThrowMoreDarts}
           />
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              onClick={handleUndo}
-              disabled={dartsInVisit === 0 || legWinner !== null || matchWinner !== null}
-              className="h-12"
-            >
-              <RotateCcw className="mr-2 h-4 w-4" /> Undo
-            </Button>
-            <Button
-              onClick={endTurn}
-              disabled={dartsInVisit === 0}
-              className="h-12"
-              variant={!canThrowMoreDarts ? "default" : "outline"}
-            >
-              <Check className="mr-2 h-4 w-4" />
-              {!canThrowMoreDarts ? "Confirm Visit" : "Finish Visit"}
-            </Button>
+          <div className="mt-4">
+            <VisitActionButtons
+              dartsInVisit={dartsInVisit}
+              canThrowMoreDarts={canThrowMoreDarts}
+              disableUndo={disableUndo}
+              onUndo={handleUndo}
+              onFinishVisit={endTurn}
+            />
           </div>
           <Button
             variant={"destructive"}
