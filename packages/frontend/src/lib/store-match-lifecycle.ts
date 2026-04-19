@@ -1,4 +1,5 @@
 import type { GameDomainEvent } from "./game-events";
+import { getRequiredLegsToWin } from "./schemas";
 import type { GameSettings, Player, ScoreModifier, VisitDart } from "./schemas";
 
 type ThrowContext = {
@@ -46,11 +47,6 @@ export type CompletedLegState = {
   visitStartTime: null;
 };
 
-function getRequiredLegs(settings: GameSettings): number {
-  return settings.gameMode === "firstTo"
-    ? settings.legsToWin
-    : Math.ceil(settings.legsToWin / 2);
-}
 
 export function rotateActivePlayer(
   players: Player[],
@@ -68,7 +64,7 @@ export function rotateActivePlayer(
 export function buildThrowResult(context: ThrowContext): BuiltThrowResult {
   const isMatchWin =
     context.isLegWin &&
-    context.player.legsWon + 1 >= getRequiredLegs(context.gameSettings);
+    context.player.legsWon + 1 >= getRequiredLegsToWin(context.gameSettings);
   const scoreDelta = context.player.score - context.newScore;
   const totalScoreAfter = context.player.totalScore + scoreDelta;
   const dartsThrownAfter = context.player.dartsThrown + 1;
