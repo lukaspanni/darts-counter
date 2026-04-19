@@ -31,7 +31,7 @@ describe("createGameStore", () => {
       startingScore: 40,
       outMode: "double",
       gameMode: "firstTo",
-      legsToWin: 1,
+      targetLegs: 1,
       checkoutAssist: false,
     });
     store.getState().setPlayers([{ name: "Alice" }]);
@@ -62,7 +62,7 @@ describe("createGameStore", () => {
       startingScore: 40,
       outMode: "double",
       gameMode: "firstTo",
-      legsToWin: 2,
+      targetLegs: 2,
       checkoutAssist: false,
     });
     store.getState().setPlayers([{ name: "Alice" }]);
