@@ -12,7 +12,11 @@
     "noImplicitAny": true,
     "noImplicitOverride": true,
     "checkJs": true,
-    "lib": ["dom", "dom.iterable", "ES2022"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ES2022"
+    ],
     "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -23,11 +27,16 @@
       }
     ],
     "incremental": true,
-    "typeRoots": ["./node_modules/@types"],
-    "baseUrl": ".",
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@darts-counter/shared": ["../shared/src/index.ts"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@darts-counter/shared": [
+        "../shared/src/index.ts"
+      ]
     }
   },
   "include": [
@@ -39,5 +48,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
