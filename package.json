@@ -12,5 +12,9 @@
     "lint:fix": "pnpm --filter darts-scorer lint:fix",
     "format": "pnpm --filter darts-scorer format",
     "typecheck": "pnpm --filter darts-scorer typecheck"
+  },
+  "devDependencies": {
+    "node-addon-api": "^8.9.0",
+    "node-gyp": "^13.0.0"
   }
 }
