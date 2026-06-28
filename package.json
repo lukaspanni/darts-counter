@@ -12,12 +12,5 @@
     "lint:fix": "pnpm --filter darts-scorer lint:fix",
     "format": "pnpm --filter darts-scorer format",
     "typecheck": "pnpm --filter darts-scorer typecheck"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "core-js",
-      "protobufjs",
-      "sharp"
-    ]
   }
 }
