@@ -13,11 +13,8 @@
     "format": "pnpm --filter darts-scorer format",
     "typecheck": "pnpm --filter darts-scorer typecheck"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "core-js",
-      "protobufjs",
-      "sharp"
-    ]
+  "devDependencies": {
+    "node-addon-api": "^8.9.0",
+    "node-gyp": "^13.0.0"
   }
 }
