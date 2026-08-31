@@ -27,8 +27,8 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.2(react@19.2.4))
       '@posthog/react':
-        specifier: ^1.9.0
-        version: 1.9.0(@types/react@19.2.14)(posthog-js@1.364.7)(react@19.2.4)
+        specifier: ^1.10.5
+        version: 1.10.5(@types/react@19.2.14)(posthog-js@1.364.7)(react@19.2.4)
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1003,8 +1003,8 @@ packages:
   '@posthog/core@1.24.6':
     resolution: {integrity: sha512-9WkcRKqmXSWIJcca6m3VwA9YbFd4HiG2hKEtDq6FcwEHlvfDhQQUZ5/sJZ47Fw8OtyNMHQ6rW4+COttk4Bg5NQ==}
 
-  '@posthog/react@1.9.0':
-    resolution: {integrity: sha512-lVdTsWT5+PtHBu44gSQ7QohbLjAYqHkFAIGAQ+HV8Eh9yj+OcnQ7mXCmyhaMlTBD3z7D0H1eWMp4vQaFnsIyWQ==}
+  '@posthog/react@1.10.5':
+    resolution: {integrity: sha512-lehh9+mJwb6iEjRBkIvh8olnJ6RV+YgQgdgJ6fdTr+T7EMoml/G1k+q92Oil8vZPcA9Dzg+2n0xaLY5yZrY3YA==}
     peerDependencies:
       '@types/react': '>=16.8.0'
       posthog-js: '>=1.257.2'
@@ -4021,7 +4021,7 @@ snapshots:
 
   '@posthog/core@1.24.6': {}
 
-  '@posthog/react@1.9.0(@types/react@19.2.14)(posthog-js@1.364.7)(react@19.2.4)':
+  '@posthog/react@1.10.5(@types/react@19.2.14)(posthog-js@1.364.7)(react@19.2.4)':
     dependencies:
       posthog-js: 1.364.7
       react: 19.2.4
